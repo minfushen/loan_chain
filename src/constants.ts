@@ -23,6 +23,7 @@ export const SCENES: Scene[] = [
     icon: Building2,
     modules: [
       { id: 'internal', title: '候选资产池' },
+      { id: 'feed', title: '智能推荐流' },
       { id: 'graph', title: '关系图谱' },
       { id: 'linked', title: '公私联动验证' },
       { id: 'standard', title: '标准小微规则' },
