@@ -5,7 +5,6 @@ import {
   ChartNetwork,
   DatabaseZap,
   FileCheck2,
-  Handshake,
 } from 'lucide-react';
 import { Scene } from './types';
 
@@ -76,13 +75,12 @@ export const SCENES: Scene[] = [
   },
   {
     id: 'partner-management',
-    title: '合作方管理',
-    icon: Handshake,
+    title: '数据与接入',
+    icon: DatabaseZap,
     modules: [
-      { id: 'ecosystem', title: '接入总览' },
-      { id: 'sources', title: '数据来源' },
-      { id: 'templates', title: '银行模板' },
-      { id: 'delivery', title: '实施路径' },
+      { id: 'startup', title: '启动条件' },
+      { id: 'capability', title: '数据能力' },
+      { id: 'integration', title: '合作接入' },
     ],
   },
 ];

@@ -42,6 +42,7 @@ import { useDemo } from '../../demo/DemoContext';
 import { SceneHero, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
 import { SAMPLE_YUTONG, SAMPLE_CHIYUAN, SAMPLE_RUIXIN, SAMPLE_RUIFENG, SAMPLES } from '../../demo/chainLoan/data';
 import { SelectedSampleSummary, SampleSwitcher, PanelCard, InsightCard } from '../ProductPrimitives';
+import { TrendLineChart, DonutChart, CHART_COLORS } from '../Charts';
 
 interface PostLoanSceneProps {
   activeModule: string;
@@ -459,19 +460,19 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <WorkbenchPanel title="近 30 天经营轨迹" icon={Activity}>
-                    <div className="space-y-2">
-                      {[
-                        { period: '第 1 周', highlight: '订单 8 笔 · 回款 ¥32万' },
-                        { period: '第 2 周', highlight: '订单 6 笔 · 回款 ¥28万' },
-                        { period: '第 3 周', highlight: '订单 9 笔 · 回款 ¥36万' },
-                        { period: '第 4 周', highlight: '订单 7 笔 · 回款 ¥31万' },
-                      ].map((w) => (
-                        <div key={w.period} className="flex items-center justify-between rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-2">
-                          <span className="text-xs font-medium text-[#0F172A]">{w.period}</span>
-                          <span className="text-[11px] text-[#64748B]">{w.highlight}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <TrendLineChart
+                      data={[
+                        { name: 'W1', orders: 8, payments: 32 },
+                        { name: 'W2', orders: 6, payments: 28 },
+                        { name: 'W3', orders: 9, payments: 36 },
+                        { name: 'W4', orders: 7, payments: 31 },
+                      ]}
+                      lines={[
+                        { key: 'orders', color: CHART_COLORS.blue, label: '订单(笔)' },
+                        { key: 'payments', color: CHART_COLORS.emerald, label: '回款(万)' },
+                      ]}
+                      height={160}
+                    />
                   </WorkbenchPanel>
 
                   <WorkbenchPanel title="关键事件时间轴" icon={Clock3}>

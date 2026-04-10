@@ -15,7 +15,7 @@ import {
   Activity,
   Eye,
   BarChart3,
-  Handshake,
+  DatabaseZap,
   ChevronRight,
   Clock,
   History,
@@ -25,6 +25,7 @@ import { SampleSwitcher, StatusPill, SceneQuestion } from '../ProductPrimitives'
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { ActionBar } from '../../demo/DemoComponents';
 import { CHAIN_LOAN_STAGE_LABELS, SAMPLES } from '../../demo/chainLoan/data';
+import { MiniAreaChart, DonutChart, CHART_COLORS } from '../Charts';
 import type { SceneId } from '../../types';
 
 interface CockpitSceneProps {
@@ -58,7 +59,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
   const riskLabel = riskState === 'risk' ? '中度预警' : riskState === 'watch' ? '恢复观察' : '正常';
 
   const judgment = (() => {
-    if (!active) return '演示未启动，点击合作方管理开始';
+    if (!active) return '演示未启动，点击数据与接入开始';
     if (recoveryComplete) return `恢复条件已满足，额度已回升至 ${currentSample.recommendedLimit}，进入常规监控`;
     if (riskSimulated) return `${currentSample.riskFlags.slice(0, 2).join('、') || '经营波动'}，已收缩额度至 ${currentSample.currentLimit}，观察中`;
     if (stageIndex >= STAGE_ORDER.indexOf('approved')) return `授信已批准 ${currentSample.recommendedLimit}，经营闭环正常运行`;
@@ -88,7 +89,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
     ];
     if (stageIndex >= STAGE_ORDER.indexOf('pre_credit')) return [{ label: '进入资产池', target: 'asset-pool' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('identified')) return [{ label: '查看客群池', target: 'customer-pool' as SceneId }];
-    return [{ label: '进入合作方管理', target: 'partner-management' as SceneId }];
+    return [{ label: '进入数据与接入', target: 'partner-management' as SceneId }];
   })();
 
   /* ── Tasks ── */
@@ -132,7 +133,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
     { label: '风险监控', target: 'risk-monitor', icon: <ShieldAlert size={14} />, stat: `预警 ${riskCount} 笔` },
     { label: '贷后经营', target: 'post-loan', icon: <Activity size={14} />, stat: `恢复 ${recoveryCount} 户` },
     { label: '授信资产池', target: 'asset-pool', icon: <BarChart3 size={14} />, stat: `在营 ${activeSamples} 户` },
-    { label: '合作方管理', target: 'partner-management', icon: <Handshake size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
+    { label: '数据与接入', target: 'partner-management', icon: <DatabaseZap size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
   ];
 
   const TaskRow = ({ label, source, target }: { label: string; source: string; target: SceneId }) => (
@@ -170,22 +171,29 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
 
       <SceneQuestion question="今天最该处理什么、先看哪一户、下一步点哪里" />
 
-      {/* ── 2. 今日工作概览 ── */}
+      {/* ── 2. 今日工作概览 (带迷你趋势图) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5">
         {[
-          { label: '待补审', value: reviewCount, color: 'text-[#DC2626]', bg: 'bg-[#FEF2F2]', icon: FileCheck2 },
-          { label: '新增预警', value: riskCount, color: 'text-[#EA580C]', bg: 'bg-[#FFF7ED]', icon: ShieldAlert },
-          { label: '恢复观察', value: recoveryCount, color: 'text-[#475569]', bg: 'bg-[#F1F5F9]', icon: Eye },
-          { label: '待跟进客户', value: followUpCount, color: 'text-[#2563EB]', bg: 'bg-[#EFF6FF]', icon: Users },
-          { label: 'AI 待确认建议', value: aiSuggestionCount, color: 'text-[#7C3AED]', bg: 'bg-[#F5F3FF]', icon: Sparkles },
+          { label: '待补审', value: reviewCount, color: 'text-[#DC2626]', chartColor: CHART_COLORS.red, icon: FileCheck2, trend: [3,2,4,1,2,1,reviewCount] },
+          { label: '新增预警', value: riskCount, color: 'text-[#EA580C]', chartColor: CHART_COLORS.amber, icon: ShieldAlert, trend: [1,0,2,1,0,1,riskCount] },
+          { label: '恢复观察', value: recoveryCount, color: 'text-[#475569]', chartColor: CHART_COLORS.slate, icon: Eye, trend: [2,3,2,1,1,1,recoveryCount] },
+          { label: '待跟进客户', value: followUpCount, color: 'text-[#2563EB]', chartColor: CHART_COLORS.blue, icon: Users, trend: [4,3,5,4,3,2,followUpCount] },
+          { label: 'AI 待确认建议', value: aiSuggestionCount, color: 'text-[#7C3AED]', chartColor: CHART_COLORS.violet, icon: Sparkles, trend: [3,5,4,6,5,4,aiSuggestionCount] },
         ].map((m) => (
-          <div key={m.label} className="rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-3">
-            <div className="flex items-center gap-1.5 text-[10px] text-[#94A3B8] uppercase tracking-wider">
+          <div key={m.label} className="rounded-xl border border-border bg-card px-3.5 py-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
               <m.icon size={11} />
               {m.label}
             </div>
-            <div className="mt-1.5">
-              <span className={`text-2xl font-bold leading-none ${m.value > 0 ? m.color : 'text-[#CBD5E1]'}`}>{m.value}</span>
+            <div className="mt-1 flex items-end justify-between gap-2">
+              <span className={`text-2xl font-bold leading-none ${m.value > 0 ? m.color : 'text-muted-foreground/40'}`}>{m.value}</span>
+              <div className="w-16 shrink-0 opacity-70">
+                <MiniAreaChart
+                  data={m.trend.map((v, i) => ({ name: `d${i}`, value: v }))}
+                  color={m.chartColor}
+                  height={28}
+                />
+              </div>
             </div>
           </div>
         ))}
@@ -328,23 +336,54 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
         </Button>
       </div>
 
-      {/* ── 6. 快捷业务入口 ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-        {domainEntries.map((entry) => (
-          <button
-            key={entry.label}
-            className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2.5 hover:border-[#BFDBFE] hover:shadow-sm transition-all text-left group"
-            onClick={() => navigate(entry.target)}
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] group-hover:border-[#BFDBFE] group-hover:text-[#2563EB] group-hover:bg-[#EFF6FF] transition-colors shrink-0">
-              {entry.icon}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[12px] font-medium text-[#0F172A] group-hover:text-[#2563EB] transition-colors truncate">{entry.label}</div>
-              <div className="text-[10px] text-[#94A3B8]">{entry.stat}</div>
-            </div>
-          </button>
-        ))}
+      {/* ── 6. 快捷业务入口 + 资产分布 ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_240px] gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {domainEntries.map((entry) => (
+            <button
+              key={entry.label}
+              className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-3 hover:border-primary/30 hover:shadow-md transition-all text-left group"
+              onClick={() => navigate(entry.target)}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground group-hover:border-primary/30 group-hover:text-primary group-hover:bg-primary/5 transition-colors shrink-0">
+                {entry.icon}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[12px] font-semibold text-foreground group-hover:text-primary transition-colors truncate">{entry.label}</div>
+                <div className="text-[10px] text-muted-foreground">{entry.stat}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+          <div className="text-[11px] font-medium text-muted-foreground mb-1">样本分布</div>
+          <DonutChart
+            data={[
+              { name: 'A可授信', value: SAMPLES.filter(s => s.segmentTag === 'A可授信').length, color: CHART_COLORS.emerald },
+              { name: 'B可做需处理', value: SAMPLES.filter(s => s.segmentTag === 'B可做但需处理').length, color: CHART_COLORS.blue },
+              { name: 'C待观察', value: SAMPLES.filter(s => s.segmentTag === 'C待观察').length, color: CHART_COLORS.amber },
+              { name: 'D风险中', value: SAMPLES.filter(s => s.segmentTag === 'D风险经营中').length, color: CHART_COLORS.red },
+            ]}
+            height={140}
+            innerRadius={36}
+            outerRadius={56}
+            centerLabel="总样本"
+            centerValue={`${SAMPLES.length}`}
+          />
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 justify-center">
+            {[
+              { label: 'A可授信', color: CHART_COLORS.emerald },
+              { label: 'B需处理', color: CHART_COLORS.blue },
+              { label: 'C待观察', color: CHART_COLORS.amber },
+              { label: 'D风险中', color: CHART_COLORS.red },
+            ].map(l => (
+              <span key={l.label} className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
+                {l.label}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {active && <ActionBar />}

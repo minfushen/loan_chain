@@ -35,6 +35,7 @@ import {
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { SceneHero, ActionBar } from '../../demo/DemoComponents';
 import { SAMPLES, SAMPLE_YUTONG, SAMPLE_CHIYUAN, SAMPLE_JIALI, SAMPLE_RUIXIN, SAMPLE_RUIFENG } from '../../demo/chainLoan/data';
+import { StageFunnelChart, DistributionBarChart, CHART_COLORS } from '../Charts';
 
 interface AssetPoolSceneProps {
   activeModule: string;
@@ -77,12 +78,15 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
               <WorkbenchPanel title="推荐额度分布">
-                <div className="space-y-3">
-                  <FlowRow label="50万以下" value="860 户 (26%)" percentage={26} />
-                  <FlowRow label="50万 - 100万" value="1,080 户 (33%)" percentage={33} />
-                  <FlowRow label="100万 - 200万" value="920 户 (28%)" percentage={28} />
-                  <FlowRow label="200万以上" value="400 户 (13%)" percentage={13} />
-                </div>
+                <DistributionBarChart
+                  data={[
+                    { name: '<50万', value: 860, color: CHART_COLORS.sky },
+                    { name: '50-100万', value: 1080, color: CHART_COLORS.blue },
+                    { name: '100-200万', value: 920, color: CHART_COLORS.violet },
+                    { name: '>200万', value: 400, color: CHART_COLORS.emerald },
+                  ]}
+                  height={180}
+                />
               </WorkbenchPanel>
 
               <WorkbenchPanel title="产品匹配分布">
@@ -389,27 +393,20 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
               <WorkbenchPanel title="资产生成漏斗">
-                <div className="space-y-4">
-                  {[
-                    { stage: '客群识别', value: '12,480 户', pct: 100, desc: '已接入内部结算、税票、物流、公私联动数据' },
-                    { stage: '形成预授信', value: '3,260 户', pct: 26, desc: '通过规则引擎筛选，匹配产品与额度建议' },
-                    { stage: '进入补审', value: '680 户', pct: 5, desc: '需人工确认经营证据、脱核替代性材料' },
-                    { stage: '形成资产', value: '1,120 户', pct: 9, desc: '完成审批放款，进入贷中持续经营' },
-                  ].map((f) => (
-                    <div key={f.stage}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-[#0F172A]">{f.stage}</span>
-                          <span className="text-xs text-[#64748B]">{f.value}</span>
-                        </div>
-                        <span className="text-xs font-semibold text-[#2563EB]">{f.pct}%</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
-                        <div className="h-full rounded-full bg-[#60A5FA] transition-all" style={{ width: `${f.pct}%` }} />
-                      </div>
-                      <div className="mt-1 text-[10px] text-[#94A3B8]">{f.desc}</div>
-                    </div>
-                  ))}
+                <StageFunnelChart
+                  data={[
+                    { name: '客群识别', value: 12480, color: CHART_COLORS.blue },
+                    { name: '形成预授信', value: 3260, color: CHART_COLORS.sky },
+                    { name: '进入补审', value: 680, color: CHART_COLORS.amber },
+                    { name: '形成资产', value: 1120, color: CHART_COLORS.emerald },
+                  ]}
+                  height={200}
+                />
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                  <div>识别→预授信: <span className="font-semibold text-foreground">26.1%</span></div>
+                  <div>预授信→补审: <span className="font-semibold text-foreground">20.9%</span></div>
+                  <div>补审→在营: <span className="font-semibold text-foreground">77.4%</span></div>
+                  <div>全链路: <span className="font-semibold text-foreground">9.0%</span></div>
                 </div>
               </WorkbenchPanel>
 

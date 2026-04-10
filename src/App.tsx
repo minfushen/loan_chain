@@ -83,7 +83,7 @@ function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] flex flex-col font-sans text-[#1E293B]">
+    <div className="min-h-screen bg-muted/40 flex flex-col font-sans text-foreground">
       {/* ─── Header ─────────────────────────────────────────── */}
       <header className="h-12 bg-[#0F172A] flex items-center justify-between px-5 sticky top-0 z-50">
         {/* Left: brand + status */}
@@ -170,10 +170,10 @@ function AppShell() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeScene}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.12 }}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
             className="flex-1 flex flex-col overflow-hidden"
           >
             {renderScene()}

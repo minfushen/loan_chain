@@ -52,14 +52,14 @@ export function PageHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-[#E2E8F0] bg-white px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
+    <div className="rounded-xl border border-border bg-card px-5 py-3 flex items-center justify-between gap-4 flex-wrap shadow-sm">
       <div className="flex items-center gap-4 min-w-0">
-        <span className="text-sm font-semibold text-[#0F172A] shrink-0">{title}</span>
-        {subtitle && <span className="text-[11px] text-[#94A3B8] truncate">{subtitle}</span>}
+        <span className="text-sm font-semibold text-foreground shrink-0">{title}</span>
+        {subtitle && <span className="text-[11px] text-muted-foreground truncate">{subtitle}</span>}
         {tags && tags.length > 0 && (
           <div className="flex items-center gap-1.5">
             {tags.map((t) => (
-              <Badge key={t} className="bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-[10px]">{t}</Badge>
+              <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>
             ))}
           </div>
         )}
@@ -89,11 +89,11 @@ export function WorkbenchPanel({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={cn('border border-[#E5E7EB]', className)}>
+    <Card className={cn('border border-border shadow-sm', className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            {Icon && <Icon size={14} className="text-[#2563EB]" />}
+            {Icon && <Icon size={14} className="text-primary" />}
             {title}
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export function MetricCard({
   const trendColor = trend?.startsWith('-') ? 'text-[#DC2626]' : 'text-[#16A34A]';
 
   return (
-    <Card className="border border-[#E5E7EB] bg-white">
+    <Card className="border border-border shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -163,12 +163,12 @@ export function MetricCard({
             ) : (
               <div className={`w-2 h-2 rounded-full ${t.dot}`} />
             )}
-            <span className="text-[11px] text-[#94A3B8]">{label}</span>
+            <span className="text-[11px] text-muted-foreground">{label}</span>
           </div>
           {trend && <span className={cn('text-xs font-medium', trendColor)}>{trend}</span>}
         </div>
-        <div className="mt-2 text-xl font-semibold text-[#0F172A]">{value}</div>
-        {detail && <div className="mt-1 text-[11px] text-[#64748B]">{detail}</div>}
+        <div className="mt-2 text-xl font-semibold text-foreground">{value}</div>
+        {detail && <div className="mt-1 text-[11px] text-muted-foreground">{detail}</div>}
       </CardContent>
     </Card>
   );
@@ -181,12 +181,12 @@ export function MetricCard({
 export function FlowRow({ label, value, percentage, ...rest }: BaseProps & { label: string; value: string; percentage: number }) {
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs text-[#64748B]">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{label}</span>
-        <span className="font-medium text-[#0F172A]">{value}</span>
+        <span className="font-medium text-foreground">{value}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-        <div className="h-full rounded-full bg-[#60A5FA]" style={{ width: `${percentage}%` }} />
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );

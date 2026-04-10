@@ -13,6 +13,7 @@ import { FlowRow, AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, Insi
 import { useDemo } from '../../demo/DemoContext';
 import { SceneHero, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
 import { SAMPLES, getRiskEventForSample } from '../../demo/chainLoan/data';
+import { TrendLineChart, DonutChart, CHART_COLORS } from '../Charts';
 
 interface RiskMonitorSceneProps {
   activeModule: string;
@@ -56,10 +57,36 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
         return (
           <div className="space-y-4">
             {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
-            <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#E2E8F0]">
-                <div className="text-sm font-semibold text-[#0F172A]">监控指标看板</div>
-                <div className="mt-0.5 text-[11px] text-[#94A3B8]">实时监控在贷客户经营与资金状态</div>
+            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+              <div className="px-5 py-3 border-b border-border">
+                <div className="text-sm font-semibold text-foreground">回款周期趋势</div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">{currentSample.shortName} · 近 8 周</div>
+              </div>
+              <div className="px-4 py-3">
+                <TrendLineChart
+                  data={[
+                    { name: 'W1', actual: 32, threshold: 40 },
+                    { name: 'W2', actual: 33, threshold: 40 },
+                    { name: 'W3', actual: 31, threshold: 40 },
+                    { name: 'W4', actual: 34, threshold: 40 },
+                    { name: 'W5', actual: riskSimulated ? 38 : 33, threshold: 40 },
+                    { name: 'W6', actual: riskSimulated ? 42 : 32, threshold: 40 },
+                    { name: 'W7', actual: riskSimulated ? 46 : 34, threshold: 40 },
+                    { name: 'W8', actual: riskSimulated ? 49 : 33, threshold: 40 },
+                  ]}
+                  lines={[
+                    { key: 'actual', color: riskSimulated ? CHART_COLORS.red : CHART_COLORS.blue, label: '实际天数' },
+                    { key: 'threshold', color: CHART_COLORS.amber, label: '阈值线', dashed: true },
+                  ]}
+                  height={180}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+              <div className="px-5 py-3 border-b border-border">
+                <div className="text-sm font-semibold text-foreground">监控指标看板</div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">实时监控在贷客户经营与资金状态</div>
               </div>
               <div className="divide-y divide-[#E2E8F0]">
                 {[
@@ -299,6 +326,39 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
               confidence={riskSimulated ? currentSample.agentHints.confidence : 96}
               action={riskSimulated ? currentSample.agentHints.suggestedAction : '自动监控中'}
             />
+
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="text-sm font-semibold text-foreground mb-3">风险分布</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DonutChart
+                  data={[
+                    { name: '正常', value: SAMPLES.filter(s => s.riskStatus === '正常').length, color: CHART_COLORS.emerald },
+                    { name: '观察', value: SAMPLES.filter(s => s.riskStatus === '观察').length, color: CHART_COLORS.amber },
+                    { name: '中度预警', value: SAMPLES.filter(s => s.riskStatus === '中度预警').length, color: CHART_COLORS.red },
+                    { name: '恢复中', value: SAMPLES.filter(s => s.riskStatus === '恢复中').length, color: CHART_COLORS.violet },
+                  ]}
+                  height={140}
+                  innerRadius={36}
+                  outerRadius={56}
+                  centerLabel="样本总数"
+                  centerValue={`${SAMPLES.length}`}
+                />
+                <div className="flex flex-col justify-center gap-2">
+                  {[
+                    { label: '正常监控', count: SAMPLES.filter(s => s.riskStatus === '正常').length, color: CHART_COLORS.emerald },
+                    { label: '观察中', count: SAMPLES.filter(s => s.riskStatus === '观察').length, color: CHART_COLORS.amber },
+                    { label: '中度预警', count: SAMPLES.filter(s => s.riskStatus === '中度预警').length, color: CHART_COLORS.red },
+                    { label: '恢复中', count: SAMPLES.filter(s => s.riskStatus === '恢复中').length, color: CHART_COLORS.violet },
+                  ].map(r => (
+                    <div key={r.label} className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
+                      <span className="text-xs text-muted-foreground flex-1">{r.label}</span>
+                      <span className="text-xs font-semibold text-foreground">{r.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.95fr] gap-6">
               <Card className={`border ${riskSimulated ? 'border-[#FCA5A5]' : 'border-[#E2E8F0]'}`}>
