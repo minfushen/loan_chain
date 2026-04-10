@@ -78,8 +78,8 @@ export const SCENES: Scene[] = [
     title: '数据与接入',
     icon: DatabaseZap,
     modules: [
-      { id: 'data-overview', title: '数据总览' },
-      { id: 'ingestion', title: '接入管理' },
+      { id: 'workbench', title: '接入工作台' },
+      { id: 'sources', title: '数据源配置' },
       { id: 'capability-map', title: '能力映射' },
       { id: 'gaps', title: '推进与缺口' },
     ],
