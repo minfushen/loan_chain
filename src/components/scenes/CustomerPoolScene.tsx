@@ -63,7 +63,7 @@ import { AnimatePresence, motion } from 'framer-motion';
    ══════════════════════════════════════════════════════════════════ */
 
 type SourceType = 'system' | 'filter' | 'field';
-type StageType = 'identified' | 'pre_credit' | 'approved' | 'vetoed';
+type StageType = 'identified' | 'pre_credit' | 'manual_review' | 'approved' | 'vetoed';
 type Urgency = 'hot' | 'warm' | 'cold';
 
 interface CandidateRow {
@@ -86,6 +86,7 @@ interface CandidateRow {
 const STAGE_STYLES: Record<StageType, { label: string; border: string; bg: string; text: string; icon?: string }> = {
   identified: { label: '已识别', border: '#A9AEB8', bg: '#F2F3F5', text: '#646A73' },
   pre_credit: { label: '预授信', border: '#1677FF', bg: '#E8F3FF', text: '#1677FF' },
+  manual_review: { label: '补审', border: '#722ED1', bg: '#F3E8FF', text: '#722ED1' },
   approved: { label: '已批准', border: '#00B42A', bg: '#E8FFEA', text: '#00B42A' },
   vetoed: { label: '一票否决', border: '#F53F3F', bg: '#FFECE8', text: '#F53F3F', icon: '❌' },
 };
@@ -107,6 +108,10 @@ const CANDIDATES: CandidateRow[] = [
   { id: 'c8', shortName: '常州永信化工', fullName: '常州永信化工有限公司', sources: [{ type: 'filter', label: '化工摸排' }], matchReason: '胶水辅料供应商，交易笔数较少', stage: 'identified', bizScore: 2, personScore: 0, updatedAgo: '2天前', locked: true, lockReason: '法人征信未校验，无法自动推进' },
   { id: 'c9', shortName: '某某新能源电子', fullName: '某某储能电子有限公司', sources: [{ type: 'filter', label: '储能摸排' }], matchReason: '注资 500 万 + 5 年，法人为新户', stage: 'pre_credit', bizScore: 4, personScore: 1, updatedAgo: '1小时前', locked: false },
   { id: 'c10', shortName: '某某农业发展', fullName: '某某农业发展有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '征信查询结果异常，存在逾期', stage: 'vetoed', bizScore: 2, personScore: 0, updatedAgo: '今天', locked: true, lockReason: '征信逾期，一票否决' },
+  { id: 'c11', shortName: '科陆储能', fullName: '深圳科陆储能技术有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'filter', label: '新能源方案' }], matchReason: '二级供应商，桥接节点角色，多源融合，行业特征匹配', stage: 'pre_credit', bizScore: 5, personScore: 4, updatedAgo: '3小时前', locked: false, stageUpgraded: true, stageUpgradeFrom: '已识别' },
+  { id: 'c12', shortName: '顺丰达物流', fullName: '深圳顺丰达物流有限公司', sources: [{ type: 'field', label: '外勤录入' }], matchReason: '缺失法人身份证，无法解锁公私联动验证', stage: 'identified', bizScore: 2, personScore: 0, updatedAgo: '1天前', locked: true, lockReason: '法人身份信息缺失，无法解锁公私联动验证' },
+  { id: 'c13', shortName: '王子包装', fullName: '东莞王子包装印刷厂', sources: [{ type: 'system', label: '系统推荐' }, { type: 'field', label: '跑楼补全' }], matchReason: '代发稳定 + 法人身份已补全，公私交叉验证通过', stage: 'approved', bizScore: 5, personScore: 5, updatedAgo: '10分钟前', locked: false, stageUpgraded: true, stageUpgradeFrom: '预授信' },
+  { id: 'c14', shortName: '佛山盛拓模组', fullName: '佛山盛拓模组有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'system', label: '代发异常' }], matchReason: '代发工资人数激增 30%，但近月对公流水骤降，异动矛盾需人工核实', stage: 'manual_review', bizScore: 4, personScore: 3, updatedAgo: '6小时前', locked: false },
 ];
 
 /* ── Feed data ── */
@@ -136,6 +141,10 @@ const FEED_ITEMS: FeedItem[] = [
   { id: 'f6', shortName: '驰远物流', fullName: '无锡驰远物流服务有限公司', urgency: 'cold', timestamp: '1天前', anomalySummary: '运单频次高达月均 61 笔，但缺失法人征信。产品需差异化匹配运费贷', featureTags: ['运单频次高', '缺法人征信', '适配运费贷'], bizScore: 3, personScore: 0, stage: 'identified', sampleId: 'sample-chiyuan' },
   { id: 'f7', shortName: '常州永信化工', fullName: '常州永信化工有限公司', urgency: 'cold', timestamp: '2天前', anomalySummary: '胶水辅料供应商，交易笔数仅 15，金额 89 万。关系强度 76，达到门槛但偏低', featureTags: ['交易偏少', '辅料供应商'], bizScore: 2, personScore: 0, stage: 'identified' },
   { id: 'f8', shortName: '某某储能电子', fullName: '某某储能电子有限公司', urgency: 'cold', timestamp: '3天前', anomalySummary: '储能方案摸排命中：注资 500 万 + 成立 5 年，法人为新户，个人维度待补', featureTags: ['储能方案', '法人新户', '待补全'], bizScore: 4, personScore: 1, stage: 'pre_credit' },
+  { id: 'f9', shortName: '王子包装', fullName: '东莞王子包装印刷厂', urgency: 'hot', timestamp: '10分钟前', anomalySummary: '外勤补全法人身份证后，公私联动评分跃升，代发工资连续 18 个月、42 人，三流匹配度 94%，阶段自动提升至已批准', featureTags: ['代发稳定', '公私联动通过', '三流匹配高', '融合提升'], bizScore: 5, personScore: 5, stage: 'approved', stageUpgraded: true, stageUpgradeFrom: '预授信' },
+  { id: 'f10', shortName: '佛山盛拓模组', fullName: '佛山盛拓模组有限公司', urgency: 'hot', timestamp: '6小时前', anomalySummary: '代发工资人数激增 30%（28→36 人），但近月对公流水骤降 41%，异动信号矛盾。疑似业务扩张与资金回笼脱节，需人工核实经营真实性', featureTags: ['代发异常', '流水骤降', '异动矛盾', '需人工核实'], bizScore: 4, personScore: 3, stage: 'manual_review' },
+  { id: 'f11', shortName: '科陆储能', fullName: '深圳科陆储能技术有限公司', urgency: 'warm', timestamp: '3小时前', anomalySummary: '多源融合识别完成：系统推荐 + 新能源方案摸排双重命中。行业特征匹配度高，处于二级供应商桥接位置，交易笔数 35，关系强度 88', featureTags: ['多源融合', '桥接节点', '行业匹配', '新能源链'], bizScore: 5, personScore: 4, stage: 'pre_credit', stageUpgraded: true, stageUpgradeFrom: '已识别' },
+  { id: 'f12', shortName: '顺丰达物流', fullName: '深圳顺丰达物流有限公司', urgency: 'cold', timestamp: '1天前', anomalySummary: '外勤录入基本工商信息，但法人身份证缺失导致无法解锁公私联动验证。运单频次中等，阶段锁死在"已识别"', featureTags: ['外勤录入', '信息不完整', '阶段锁死', '缺法人身份'], bizScore: 2, personScore: 0, stage: 'identified' },
 ];
 
 const URGENCY_STYLES: Record<Urgency, { borderColor: string; label: string; dotColor: string; opacity: string }> = {
@@ -858,7 +867,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
             <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E6EB] bg-white px-4 py-2.5 shadow-inner">
               <div className="flex items-center gap-2">
                 <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">来源: 全部</option><option value="system">系统推荐</option><option value="filter">条件筛选</option><option value="field">外勤录入</option></select>
-                <select value={stageFilter} onChange={e => { setStageFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">阶段: 全部</option><option value="identified">已识别</option><option value="pre_credit">预授信</option><option value="approved">已批准</option><option value="vetoed">一票否决</option></select>
+                <select value={stageFilter} onChange={e => { setStageFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">阶段: 全部</option><option value="identified">已识别</option><option value="pre_credit">预授信</option><option value="manual_review">补审</option><option value="approved">已批准</option><option value="vetoed">一票否决</option></select>
                 <div className="relative"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#C9CDD4]" size={13} /><Input placeholder="搜索企业名称..." className="pl-8 h-8 w-48 text-[12px] bg-white border-[#E5E6EB]" /></div>
               </div>
               <div className="flex items-center gap-2">
