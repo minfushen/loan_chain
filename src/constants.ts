@@ -16,6 +16,9 @@ export const SCENES: Scene[] = [
     icon: Blocks,
     modules: [
       { id: 'overview', title: '工作台' },
+      { id: 'todo', title: '待办任务' },
+      { id: 'risk-alert', title: '风险预警' },
+      { id: 'data-overview', title: '数据概览' },
     ],
   },
   {
@@ -39,7 +42,7 @@ export const SCENES: Scene[] = [
     icon: FileCheck2,
     modules: [
       { id: 'matching', title: '产品匹配' },
-      { id: 'flow', title: '审批流程' },
+      { id: 'flow', title: '预审与推单' },
       { id: 'summary', title: '审批摘要' },
       { id: 'review', title: '补审作业' },
     ],
@@ -51,7 +54,7 @@ export const SCENES: Scene[] = [
     modules: [
       { id: 'activated', title: '在营资产列表' },
       { id: 'risk-assets', title: '风险资产' },
-      { id: 'repayment', title: '还款管理' },
+      { id: 'repayment', title: '还款状态看板' },
       { id: 'pipeline', title: '转化看板' },
     ],
   },
@@ -62,7 +65,7 @@ export const SCENES: Scene[] = [
     modules: [
       { id: 'warning', title: '预警总览' },
       { id: 'signals', title: '监控指标' },
-      { id: 'actions', title: '处置动作' },
+      { id: 'actions', title: '处置任务下发' },
       { id: 'quality', title: '规则效果' },
     ],
   },
@@ -86,6 +89,8 @@ export const SCENES: Scene[] = [
       { id: 'long-tail', title: '长尾场景规则' },
       { id: 'product-config', title: '产品配置' },
       { id: 'approval-rules', title: '审批规则' },
+      { id: 'due-diligence', title: '智能尽调工具' },
+      { id: 'data-source', title: '数据源管理' },
     ],
   },
 ];

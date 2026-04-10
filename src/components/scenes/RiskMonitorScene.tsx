@@ -3,471 +3,527 @@ import SceneLayout from '../SceneLayout';
 import { SCENES } from '../../constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Radar,
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Edit,
+  Eye,
+  FileText,
+  Loader2,
+  Plus,
+  Power,
+  Search,
+  Send,
+  Settings,
   ShieldAlert,
+  Trash2,
   TrendingDown,
+  TrendingUp,
+  XCircle,
 } from 'lucide-react';
-import { FlowRow, AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, InsightCard, ActionSuggestionCard, AiJudgmentBlock } from '../ProductPrimitives';
+import {
+  PageHeader,
+  WorkbenchPanel,
+  MetricCard,
+  FlowRow,
+  MiniTrend,
+  InsightStrip,
+  AiNote,
+  ActionQueueCard,
+} from '../ProductPrimitives';
 import { useDemo } from '../../demo/DemoContext';
-import { SceneHero, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
-import { SAMPLES, getRiskEventForSample } from '../../demo/chainLoan/data';
-import { TrendLineChart, DonutChart, CHART_COLORS } from '../Charts';
+import { ActionBar } from '../../demo/DemoComponents';
+import { SAMPLES } from '../../demo/chainLoan/data';
+import { TrendLineChart, DonutChart, DistributionBarChart, CHART_COLORS } from '../Charts';
+import { cn } from '@/lib/utils';
 
-interface RiskMonitorSceneProps {
-  activeModule: string;
-  onModuleChange: (id: string) => void;
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   Static data for the scene
+   ══════════════════════════════════════════════════════════════════════════ */
 
-export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskMonitorSceneProps) {
-  const scene = SCENES.find((item) => item.id === 'risk-monitor')!;
-  const { active, riskSimulated, simulateRisk, stage, currentSample, selectSample, selectedSampleId } = useDemo();
+const MONITORING_RULES = [
+  { id: 'mr-01', name: '逾期 15 天以上触发预警', type: '逾期' as const, threshold: '15 天', trigger: '连续 1 次', status: '启用' as const, hitRate: '6.2%', hitCount: 50, lastTriggered: '2小时前' },
+  { id: 'mr-02', name: '还款金额下降 30% 触发预警', type: '还款异常' as const, threshold: '30%', trigger: '连续 2 个月', status: '启用' as const, hitRate: '3.8%', hitCount: 20, lastTriggered: '1天前' },
+  { id: 'mr-03', name: '对公账户连续 3 周净流出', type: '流水异常' as const, threshold: '3 周', trigger: '连续 3 周', status: '启用' as const, hitRate: '2.1%', hitCount: 12, lastTriggered: '3天前' },
+  { id: 'mr-04', name: '物流签收延迟 ≥ 3 笔/10天', type: '流水异常' as const, threshold: '3 笔/10天', trigger: '10 天窗口', status: '启用' as const, hitRate: '1.5%', hitCount: 8, lastTriggered: '5天前' },
+  { id: 'mr-05', name: '单一客户集中度 > 55%', type: '还款异常' as const, threshold: '55%', trigger: '月度快照', status: '启用' as const, hitRate: '4.0%', hitCount: 14, lastTriggered: '2天前' },
+  { id: 'mr-06', name: '连续 2 个月未开票', type: '流水异常' as const, threshold: '2 个月', trigger: '连续 2 月', status: '禁用' as const, hitRate: '0.8%', hitCount: 3, lastTriggered: '2周前' },
+  { id: 'mr-07', name: '回款周期拉长 > 40%', type: '逾期' as const, threshold: '40%', trigger: '连续 1 次', status: '启用' as const, hitRate: '5.5%', hitCount: 28, lastTriggered: '6小时前' },
+  { id: 'mr-08', name: '授信使用率骤降 > 50%', type: '流水异常' as const, threshold: '50%', trigger: '连续 1 月', status: '启用' as const, hitRate: '1.2%', hitCount: 5, lastTriggered: '1周前' },
+];
 
-  const isRiskStage = stage === 'risk_alert';
-  const sampleRiskEvent = getRiskEventForSample(currentSample);
+const DISPOSAL_TASKS = [
+  { id: 'dt-01', name: '瑞泰新能源材料', reason: '逾期 18 天 + 物流延迟', status: '待处理' as const, priority: '高' as const, dueDate: '2026-04-10', manager: '王敏', template: '逾期催收通知' },
+  { id: 'dt-02', name: '王子新材料', reason: '连续 4 周净流出', status: '待处理' as const, priority: '高' as const, dueDate: '2026-04-10', manager: '陈立', template: '异常排查通知' },
+  { id: 'dt-03', name: '新宙邦科技', reason: '客户集中度偏高 62%', status: '处理中' as const, priority: '中' as const, dueDate: '2026-04-12', manager: '李雪婷', template: '额度调整通知' },
+  { id: 'dt-04', name: '驰远物流服务', reason: '运单频次近期下降', status: '处理中' as const, priority: '中' as const, dueDate: '2026-04-13', manager: '王敏', template: '履约排查通知' },
+  { id: 'dt-05', name: '裕同包装科技', reason: '到期前 7 天预提醒', status: '待处理' as const, priority: '低' as const, dueDate: '2026-04-15', manager: '张三', template: '到期提醒通知' },
+  { id: 'dt-06', name: '佳利包装', reason: '证据覆盖率不足', status: '已完成' as const, priority: '低' as const, dueDate: '2026-04-05', manager: '张三', template: '补充材料通知' },
+  { id: 'dt-07', name: '科陆储能技术', reason: '到期前 15 天预提醒', status: '已完成' as const, priority: '低' as const, dueDate: '2026-04-01', manager: '李雪婷', template: '到期提醒通知' },
+];
 
-  const maxLimit = parseInt(currentSample.recommendedLimit) || 120;
-  const shrunkLimit = parseInt(currentSample.currentLimit) || Math.round(maxLimit * 0.8);
+const RULE_EFFECT_DATA = [
+  { name: '逾期 15 天', triggers: 50, conversion: 60, accuracy: 71 },
+  { name: '还款下降 30%', triggers: 20, conversion: 40, accuracy: 55 },
+  { name: '净流出 3 周', triggers: 12, conversion: 58, accuracy: 68 },
+  { name: '物流延迟', triggers: 8, conversion: 50, accuracy: 52 },
+  { name: '集中度 > 55%', triggers: 14, conversion: 45, accuracy: 63 },
+  { name: '回款拉长 40%', triggers: 28, conversion: 65, accuracy: 78 },
+  { name: '授信使用骤降', triggers: 5, conversion: 30, accuracy: 42 },
+];
 
-  const [availableLimit, setAvailableLimit] = React.useState(maxLimit);
+const TREND_7D = [
+  { name: '4/4', rate: 4.1 },
+  { name: '4/5', rate: 4.2 },
+  { name: '4/6', rate: 4.3 },
+  { name: '4/7', rate: 4.2 },
+  { name: '4/8', rate: 4.4 },
+  { name: '4/9', rate: 4.5 },
+  { name: '4/10', rate: 4.5 },
+];
 
-  React.useEffect(() => {
-    if (!riskSimulated) {
-      setAvailableLimit(maxLimit);
-      return;
-    }
-    let frame = maxLimit;
-    const step = Math.max(1, Math.round((maxLimit - shrunkLimit) / 8));
-    const timer = window.setInterval(() => {
-      frame -= step;
-      if (frame <= shrunkLimit) {
-        setAvailableLimit(shrunkLimit);
-        window.clearInterval(timer);
-        return;
-      }
-      setAvailableLimit(frame);
-    }, 45);
-    return () => window.clearInterval(timer);
-  }, [riskSimulated, maxLimit, shrunkLimit]);
+const STATUS_TASK_STYLE = {
+  '待处理': { bg: 'bg-[#FEF2F2]', text: 'text-[#DC2626]', border: 'border-[#FCA5A5]' },
+  '处理中': { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', border: 'border-[#FED7AA]' },
+  '已完成': { bg: 'bg-[#ECFDF3]', text: 'text-[#047857]', border: 'border-[#A7F3D0]' },
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Main Component
+   ══════════════════════════════════════════════════════════════════════════ */
+
+interface Props { activeModule: string; onModuleChange: (id: string) => void }
+
+export default function RiskMonitorScene({ activeModule, onModuleChange }: Props) {
+  const scene = SCENES.find(s => s.id === 'risk-monitor')!;
+  const { active, riskSimulated, currentSample, selectSample, selectedSampleId } = useDemo();
+
+  const [taskStatusFilter, setTaskStatusFilter] = React.useState('all');
+  const [effectRange, setEffectRange] = React.useState('30');
+
+  const filteredTasks = DISPOSAL_TASKS.filter(t => taskStatusFilter === 'all' || t.status === taskStatusFilter);
 
   const renderContent = () => {
     switch (activeModule) {
-      case 'signals':
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 1: 预警总览 (DEFAULT)
+         ════════════════════════════════════════════════════════════════════ */
+      case 'warning':
+      default:
         return (
           <div className="space-y-4">
-            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
-            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-              <div className="px-5 py-3 border-b border-border">
-                <div className="text-sm font-semibold text-foreground">回款周期趋势</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">{currentSample.shortName} · 近 8 周</div>
+            {/* Header */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShieldAlert size={14} className="text-[#DC2626]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">预警总览</span>
+                <span className="text-[11px] text-[#94A3B8]">数据口径: 全量 · 截至 {new Date().toLocaleDateString('zh-CN')}</span>
               </div>
-              <div className="px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#DC2626] border-[#FCA5A5]" onClick={() => onModuleChange('signals')}>
+                  <Eye size={10} /> 查看风险资产
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]" onClick={() => onModuleChange('signals')}>
+                  <Settings size={10} /> 设置预警规则
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MetricCard label="风险资产" value="50 户" detail="占在营比 4.5%" tone="red" />
+              <MetricCard label="逾期率" value="4.5%" detail="+0.2% 近 7 天" tone="amber" />
+              <MetricCard label="高风险" value="5 户" detail="需紧急介入" tone="red" />
+              <MetricCard label="待处置任务" value={`${DISPOSAL_TASKS.filter(t => t.status === '待处理').length} 个`} detail="含高优先级" tone="amber" />
+            </div>
+
+            {/* Risk level distribution (donut) + overdue trend (line) */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
+                <div className="text-[13px] font-semibold text-[#0F172A]">风险等级分布</div>
+                <div className="grid grid-cols-[1fr_1fr] gap-4 items-center">
+                  <DonutChart
+                    data={[
+                      { name: '低风险', value: 30, color: CHART_COLORS.emerald },
+                      { name: '中风险', value: 15, color: CHART_COLORS.amber },
+                      { name: '高风险', value: 5, color: CHART_COLORS.red },
+                    ]}
+                    height={160}
+                    innerRadius={40}
+                    outerRadius={62}
+                    centerLabel="风险户"
+                    centerValue="50"
+                  />
+                  <div className="space-y-3">
+                    {[
+                      { label: '低风险', count: 30, pct: '60%', color: CHART_COLORS.emerald, dots: 5 },
+                      { label: '中风险', count: 15, pct: '30%', color: CHART_COLORS.amber, dots: 3 },
+                      { label: '高风险', count: 5, pct: '10%', color: CHART_COLORS.red, dots: 1 },
+                    ].map(r => (
+                      <div key={r.label} className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
+                        <span className="text-[11px] text-[#64748B] flex-1">{r.label}</span>
+                        <span className="text-[12px] font-semibold text-[#0F172A]">{r.count} 户</span>
+                        <span className="text-[10px] text-[#94A3B8]">{r.pct}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
+                <div className="text-[13px] font-semibold text-[#0F172A]">逾期率趋势（近 7 天）</div>
                 <TrendLineChart
-                  data={[
-                    { name: 'W1', actual: 32, threshold: 40 },
-                    { name: 'W2', actual: 33, threshold: 40 },
-                    { name: 'W3', actual: 31, threshold: 40 },
-                    { name: 'W4', actual: 34, threshold: 40 },
-                    { name: 'W5', actual: riskSimulated ? 38 : 33, threshold: 40 },
-                    { name: 'W6', actual: riskSimulated ? 42 : 32, threshold: 40 },
-                    { name: 'W7', actual: riskSimulated ? 46 : 34, threshold: 40 },
-                    { name: 'W8', actual: riskSimulated ? 49 : 33, threshold: 40 },
-                  ]}
+                  data={TREND_7D.map(d => ({ name: d.name, actual: d.rate, threshold: 5 }))}
                   lines={[
-                    { key: 'actual', color: riskSimulated ? CHART_COLORS.red : CHART_COLORS.blue, label: '实际天数' },
+                    { key: 'actual', color: CHART_COLORS.red, label: '逾期率 (%)' },
                     { key: 'threshold', color: CHART_COLORS.amber, label: '阈值线', dashed: true },
                   ]}
-                  height={180}
+                  height={160}
                 />
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-              <div className="px-5 py-3 border-b border-border">
-                <div className="text-sm font-semibold text-foreground">监控指标看板</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">实时监控在贷客户经营与资金状态</div>
-              </div>
-              <div className="divide-y divide-[#E2E8F0]">
-                {[
-                  { name: '回款周期拉长', threshold: '拉长幅度 > 40%', current: riskSimulated ? `${currentSample.avgReceivableCycle}（+44%）` : `${currentSample.avgReceivableCycle}（稳定）`, severity: (riskSimulated && parseInt(currentSample.avgReceivableCycle) > 40 ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '额度临时收缩', explain: '回款账期持续拉长意味着下游资金链承压' },
-                  { name: '物流履约延迟', threshold: '10 天内 ≥ 3 笔延迟', current: riskSimulated ? currentSample.logisticsStatus : '正常', severity: (riskSimulated && currentSample.logisticsStatus.includes('延迟') ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '联合回款排查', explain: '物流延迟可能反映订单交付能力恶化' },
-                  { name: '对公账户净流出', threshold: '连续 3 周净流出', current: riskSimulated ? currentSample.accountFlowStatus : '净流入', severity: (riskSimulated && currentSample.riskFlags.length > 0 ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '生成排查任务', explain: '持续净流出可能表示主营收入萎缩' },
-                  { name: '开票或订单波动', threshold: '连续 2 个月未开票', current: currentSample.invoiceContinuityMonths >= 10 ? '正常' : '连续性不足', severity: (currentSample.invoiceContinuityMonths < 6 ? 'warn' : 'normal') as 'high' | 'warn' | 'normal', action: '触发预警', explain: '断票或订单突降意味着业务实质可能已变化' },
-                  { name: '客户集中度上升', threshold: '单一客户占比 > 55%', current: currentSample.maxCustomerConcentration, severity: (parseInt(currentSample.maxCustomerConcentration) > 55 ? 'warn' : 'normal') as 'high' | 'warn' | 'normal', action: '自动收缩敞口', explain: '过度依赖单一客户增大违约传染风险' },
-                ].map((sig) => (
-                  <div key={sig.name} className="px-5 py-3 flex items-center gap-4">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${sig.severity === 'high' ? 'bg-[#DC2626]' : sig.severity === 'warn' ? 'bg-[#F59E0B]' : 'bg-[#16A34A]'}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium text-[#0F172A]">{sig.name}</div>
-                      <div className="mt-0.5 text-[11px] text-[#64748B]">阈值: {sig.threshold} · 动作: {sig.action}</div>
-                      <div className="mt-0.5 text-[10px] text-[#94A3B8]">{sig.explain}</div>
+            {/* Risk level trend line chart (30 day) */}
+            <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
+              <div className="text-[13px] font-semibold text-[#0F172A]">风险等级变化趋势（近 30 天）</div>
+              <TrendLineChart
+                data={[
+                  { name: '第 1 周', low: 28, mid: 12, high: 3 },
+                  { name: '第 2 周', low: 29, mid: 13, high: 4 },
+                  { name: '第 3 周', low: 30, mid: 14, high: 4 },
+                  { name: '第 4 周', low: 30, mid: 15, high: 5 },
+                ]}
+                lines={[
+                  { key: 'low', color: CHART_COLORS.emerald, label: '低风险' },
+                  { key: 'mid', color: CHART_COLORS.amber, label: '中风险' },
+                  { key: 'high', color: CHART_COLORS.red, label: '高风险' },
+                ]}
+                height={180}
+              />
+            </div>
+
+            {/* Risk watch list */}
+            <WorkbenchPanel title="风险关注清单" badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">{SAMPLES.filter(s => s.riskFlags.length > 0).length} 家关注</Badge>}>
+              <div className="divide-y divide-[#F1F5F9]">
+                {SAMPLES.filter(s => s.riskFlags.length > 0).map(s => (
+                  <button key={s.id} onClick={() => selectSample(s.id)} className={cn('w-full flex items-center justify-between py-2.5 px-2 -mx-2 text-left rounded-lg transition-colors', s.id === selectedSampleId ? 'bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]')}>
+                    <div className="min-w-0">
+                      <div className={cn('text-[12px] font-medium truncate', s.id === selectedSampleId ? 'text-[#2563EB]' : 'text-[#0F172A]')}>{s.shortName}</div>
+                      <div className="text-[10px] text-[#94A3B8]">{s.roleInChain} · {s.riskFlags.join('、')}</div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className={`text-xs font-medium ${sig.severity === 'high' ? 'text-[#DC2626]' : sig.severity === 'warn' ? 'text-[#C2410C]' : 'text-[#16A34A]'}`}>
-                        {sig.current}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge className={cn('text-[9px] border', s.riskStatus === '中度预警' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]' : s.riskStatus === '观察' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]')}>{s.riskStatus}</Badge>
+                      <span className="text-[11px] font-medium text-[#0F172A]">{s.currentLimit}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </WorkbenchPanel>
+
+            {active && <ActionBar />}
+          </div>
+        );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 2: 监控指标 (Rule Engine)
+         ════════════════════════════════════════════════════════════════════ */
+      case 'signals':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Settings size={14} className="text-[#2563EB]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">监控指标</span>
+                <span className="text-[11px] text-[#94A3B8]">共 {MONITORING_RULES.length} 条规则</span>
+              </div>
+              <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white">
+                <Plus size={10} /> 添加规则
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MetricCard label="启用规则" value={`${MONITORING_RULES.filter(r => r.status === '启用').length} 条`} detail="正在生效" tone="green" />
+              <MetricCard label="禁用规则" value={`${MONITORING_RULES.filter(r => r.status === '禁用').length} 条`} detail="暂停监控" tone="slate" />
+              <MetricCard label="本月总触发" value={`${MONITORING_RULES.reduce((s, r) => s + r.hitCount, 0)} 次`} detail="所有启用规则" tone="amber" />
+              <MetricCard label="平均命中率" value={`${(MONITORING_RULES.reduce((s, r) => s + parseFloat(r.hitRate), 0) / MONITORING_RULES.length).toFixed(1)}%`} detail="基于在营资产" tone="blue" />
+            </div>
+
+            {/* Rule table */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="grid grid-cols-[1fr_80px_100px_80px_70px_80px_100px] gap-0 px-4 py-2.5 border-b border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-medium text-[#94A3B8] uppercase tracking-wider">
+                <div>规则名称</div><div>阈值</div><div>触发条件</div><div>状态</div><div>命中率</div><div>触发次数</div><div>操作</div>
+              </div>
+              {MONITORING_RULES.map(rule => (
+                <div key={rule.id} className="grid grid-cols-[1fr_80px_100px_80px_70px_80px_100px] gap-0 px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 items-center hover:bg-[#FAFBFF] transition-colors">
+                  <div>
+                    <div className="text-[12px] font-medium text-[#0F172A]">{rule.name}</div>
+                    <div className="text-[10px] text-[#94A3B8] mt-0.5">类型: {rule.type} · 最近触发: {rule.lastTriggered}</div>
+                  </div>
+                  <div className="text-[11px] font-mono text-[#334155]">{rule.threshold}</div>
+                  <div className="text-[11px] text-[#64748B]">{rule.trigger}</div>
+                  <div>
+                    <Badge className={cn('text-[9px] border', rule.status === '启用' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]')}>
+                      {rule.status === '启用' ? <><Power size={8} className="mr-0.5" /> 启用</> : '禁用'}
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] font-semibold text-[#0F172A]">{rule.hitRate}</div>
+                  <div className="text-[11px] text-[#64748B]">{rule.hitCount} 次/月</div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5 text-[#2563EB]"><Edit size={10} /></Button>
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5 text-[#94A3B8]"><Trash2 size={10} /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add rule hint */}
+            <div className="rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 text-center">
+              <div className="text-[11px] text-[#94A3B8]">点击"添加规则"可配置新的监控指标</div>
+              <div className="mt-1 text-[10px] text-[#CBD5E1]">支持逾期、还款异常、流水异常等多种规则类型 · 配置阈值和触发条件后即时生效</div>
+            </div>
+
+            {active && <ActionBar />}
+          </div>
+        );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 3: 处置动作 (Disposal Tasks)
+         ════════════════════════════════════════════════════════════════════ */
+      case 'actions':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle size={14} className="text-[#C2410C]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">处置任务下发</span>
+                <span className="text-[11px] text-[#94A3B8]">共 {DISPOSAL_TASKS.length} 个任务</span>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-[#64748B] gap-1"><Search size={10} /> 搜索</Button>
+            </div>
+
+            {/* Architecture boundary notice */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5 flex items-center gap-2 text-[11px] text-[#94A3B8]">
+              <Send size={12} className="shrink-0" />
+              <span>本系统仅生成处置策略与任务，实际催收触达（短信/电话/企微）由 CRM 系统或客服平台执行并留痕。</span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MetricCard label="待下发" value={`${DISPOSAL_TASKS.filter(t => t.status === '待处理').length} 个`} detail="含高优先级" tone="red" />
+              <MetricCard label="已推送CRM" value={`${DISPOSAL_TASKS.filter(t => t.status === '处理中').length} 个`} detail="CRM跟进中" tone="amber" />
+              <MetricCard label="CRM已完成" value={`${DISPOSAL_TASKS.filter(t => t.status === '已完成').length} 个`} detail="近 30 天" tone="green" />
+              <MetricCard label="平均处置时长" value="2.4 天" detail="从下发到CRM反馈完成" tone="blue" />
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4">
+              {/* Left: Task list */}
+              <div className="space-y-3">
+                {/* Filter bar */}
+                <div className="flex items-center gap-2">
+                  {[
+                    { value: 'all', label: '全部' },
+                    { value: '待处理', label: '待下发' },
+                    { value: '处理中', label: '已推送CRM' },
+                    { value: '已完成', label: 'CRM已完成' },
+                  ].map(opt => (
+                    <button key={opt.value} onClick={() => setTaskStatusFilter(opt.value)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors border', taskStatusFilter === opt.value ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]' : 'text-[#64748B] border-[#E2E8F0] hover:bg-[#F8FAFC]')}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Task cards */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+                  {filteredTasks.map(task => {
+                    const st = STATUS_TASK_STYLE[task.status];
+                    return (
+                      <div key={task.id} className="px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 hover:bg-[#FAFBFF] transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge className={cn('text-[9px] border', st.bg, st.text, st.border)}>
+                              {task.status === '待处理' ? <Clock size={8} className="mr-0.5" /> : task.status === '处理中' ? <Loader2 size={8} className="mr-0.5" /> : <CheckCircle2 size={8} className="mr-0.5" />}
+                              {task.status === '待处理' ? '待下发' : task.status === '处理中' ? '已推送CRM' : 'CRM已完成'}
+                            </Badge>
+                            <span className="text-[12px] font-medium text-[#0F172A]">{task.name}</span>
+                            {task.priority === '高' && <Badge className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">高优</Badge>}
+                          </div>
+                          <span className="text-[10px] text-[#94A3B8]">{task.manager} · 截止 {task.dueDate}</span>
+                        </div>
+                        <div className="mt-1.5 text-[11px] text-[#64748B]">原因: {task.reason}</div>
+                        <div className="mt-2 flex items-center gap-2">
+                          {task.status === '待处理' && (
+                            <>
+                              <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#DC2626] border-[#FCA5A5]"><Send size={9} /> 生成催收任务推送CRM</Button>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Eye size={9} /> 查看详情</Button>
+                            </>
+                          )}
+                          {task.status === '处理中' && (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE] text-[9px]">已为{task.manager}在CRM创建催收跟进任务</Badge>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Eye size={9} /> 查看详情</Button>
+                            </div>
+                          )}
+                          {task.status === '已完成' && (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[9px]">CRM反馈: 处置完成</Badge>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Eye size={9} /> 查看详情</Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-[#94A3B8] mt-0.5">{sig.severity === 'high' ? '预警触发' : sig.severity === 'warn' ? '观察中' : '正常监控'}</div>
+                    );
+                  })}
+                  {filteredTasks.length === 0 && <div className="text-center py-10 text-[#94A3B8] text-xs">无匹配任务</div>}
+                </div>
+              </div>
+
+              {/* Right: Task template & dispatch panel */}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 space-y-3">
+                  <div className="text-[12px] font-semibold text-[#0F172A]">任务模板（推送至CRM/企微）</div>
+                  {[
+                    { name: '逾期催收跟进', desc: '生成CRM催收跟进任务', target: '→ CRM' },
+                    { name: '异常排查跟进', desc: '生成CRM异常排查任务', target: '→ CRM' },
+                    { name: '额度调整通知', desc: '生成企微通知任务', target: '→ 企微' },
+                    { name: '到期提醒跟进', desc: '生成CRM到期跟进任务', target: '→ CRM' },
+                  ].map(t => (
+                    <div key={t.name} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 hover:bg-[#EFF6FF] transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <FileText size={10} className="text-[#64748B]" />
+                          <span className="text-[11px] font-medium text-[#0F172A]">{t.name}</span>
+                        </div>
+                        <Badge className="bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE] text-[9px]">{t.target}</Badge>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-[#94A3B8]">{t.desc}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 space-y-3">
+                  <div className="text-[12px] font-semibold text-[#0F172A]">批量下发</div>
+                  <Button variant="outline" size="sm" className="w-full h-8 text-[10px] gap-1.5 text-[#DC2626] border-[#FCA5A5]">
+                    <Send size={10} /> 批量推送催收任务至CRM
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full h-8 text-[10px] gap-1.5 text-[#2563EB] border-[#BFDBFE]">
+                    <ArrowRight size={10} /> 转入贷后经营
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {active && <ActionBar />}
+          </div>
+        );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 4: 规则效果 (Rule Effectiveness)
+         ════════════════════════════════════════════════════════════════════ */
+      case 'quality':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <TrendingUp size={14} className="text-[#2563EB]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">规则效果</span>
+                <span className="text-[11px] text-[#94A3B8]">数据口径: 近 {effectRange} 天</span>
+              </div>
+              <select className="h-7 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-2 text-[11px] text-[#334155]" value={effectRange} onChange={e => setEffectRange(e.target.value)}>
+                <option value="7">近 7 天</option>
+                <option value="30">近 30 天</option>
+                <option value="90">近 90 天</option>
+              </select>
+            </div>
+
+            {/* Metric cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MetricCard label="总触发次数" value={`${RULE_EFFECT_DATA.reduce((s, d) => s + d.triggers, 0)} 次`} detail="+10% 较上周期" tone="blue" />
+              <MetricCard label="平均转化率" value={`${Math.round(RULE_EFFECT_DATA.reduce((s, d) => s + d.conversion, 0) / RULE_EFFECT_DATA.length)}%`} detail="触发→确认风险" tone="amber" />
+              <MetricCard label="平均准确率" value={`${Math.round(RULE_EFFECT_DATA.reduce((s, d) => s + d.accuracy, 0) / RULE_EFFECT_DATA.length)}%`} detail="预警后确认为真" tone="green" />
+              <MetricCard label="有效规则数" value={`${MONITORING_RULES.filter(r => r.status === '启用').length} 条`} detail="-1 条较上周期" tone="slate" />
+            </div>
+
+            {/* Charts: trigger bar + conversion line */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
+                <div className="text-[13px] font-semibold text-[#0F172A]">各规则触发次数</div>
+                <DistributionBarChart
+                  data={RULE_EFFECT_DATA.map(d => ({ name: d.name, value: d.triggers, color: CHART_COLORS.blue }))}
+                  height={200}
+                />
+              </div>
+              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
+                <div className="text-[13px] font-semibold text-[#0F172A]">各规则转化率与准确率</div>
+                <TrendLineChart
+                  data={RULE_EFFECT_DATA.map(d => ({ name: d.name, conversion: d.conversion, accuracy: d.accuracy }))}
+                  lines={[
+                    { key: 'conversion', color: CHART_COLORS.blue, label: '转化率 (%)' },
+                    { key: 'accuracy', color: CHART_COLORS.emerald, label: '准确率 (%)' },
+                  ]}
+                  height={200}
+                />
+              </div>
+            </div>
+
+            {/* Rule detail breakdown */}
+            <WorkbenchPanel title="规则效果明细">
+              <div className="space-y-3">
+                {RULE_EFFECT_DATA.map(d => (
+                  <div key={d.name} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[12px] font-medium text-[#0F172A]">{d.name}</span>
+                      <div className="flex items-center gap-3 text-[10px] text-[#94A3B8]">
+                        <span>触发 {d.triggers} 次</span>
+                        <span>转化 {d.conversion}%</span>
+                        <span>准确 {d.accuracy}%</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <div className="text-[9px] text-[#94A3B8] mb-1">触发量</div>
+                        <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden"><div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${(d.triggers / 50) * 100}%` }} /></div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] text-[#94A3B8] mb-1">转化率</div>
+                        <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden"><div className="h-full rounded-full bg-[#F59E0B]" style={{ width: `${d.conversion}%` }} /></div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] text-[#94A3B8] mb-1">准确率</div>
+                        <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden"><div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${d.accuracy}%` }} /></div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-            {active && <ActionBar />}
-          </div>
-        );
-      case 'actions':
-        return (
-          <div className="space-y-4">
-            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
+            </WorkbenchPanel>
 
-            {/* 风险处置流程条 */}
-            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
-              {['风险识别', '自动处置', '人工复核', '处置确认', '效果评估'].map((step, i) => {
-                const currentIdx = riskSimulated ? 2 : 0;
-                const done = i < currentIdx;
-                const isActive = i === currentIdx;
-                return (
-                  <React.Fragment key={step}>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${done ? 'bg-[#ECFDF3] text-[#047857]' : isActive ? 'bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]' : 'text-[#94A3B8]'}`}>
-                      <span className={`w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold ${done ? 'bg-[#047857] text-white' : isActive ? 'bg-[#DC2626] text-white' : 'bg-[#E2E8F0] text-[#94A3B8]'}`}>{done ? '✓' : i + 1}</span>
-                      {step}
-                    </div>
-                    {i < 4 && <div className={`flex-1 h-px ${i < currentIdx ? 'bg-[#047857]' : 'bg-[#E2E8F0]'}`} />}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            {riskSimulated && (
-              <ActionSuggestionCard
-                action="启动人工复核"
-                reason={`${currentSample.shortName} 已触发自动额度收缩，建议人工确认回款周期与物流状态后决定是否进入恢复观察。`}
-                priority="high"
-                agent="风险处置 Agent"
-              />
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="border border-[#E5E7EB]">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">自动处置</CardTitle>
-                    <Badge className="bg-[#EFF6FF] text-[#1890FF] border border-[#BFDBFE] text-[10px]">系统执行</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {[
-                    { action: '额度临时收缩', trigger: '风险评分 ≥ 中度', sla: '实时', count: '23 次/月' },
-                    { action: '生成复核任务', trigger: '预警命中 ≥ 2 条规则', sla: '< 5 分钟', count: '18 次/月' },
-                    { action: '暂停自动续贷', trigger: '连续预警未解除', sla: '实时', count: '5 次/月' },
-                  ].map((item) => (
-                    <div key={item.action} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-medium text-[#0F172A]">{item.action}</span>
-                        <span className="text-[11px] text-[#94A3B8]">{item.count}</span>
-                      </div>
-                      <div className="mt-1 text-[11px] text-[#64748B]">触发: {item.trigger} · 响应: {item.sla}</div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <Card className="border border-[#E5E7EB]">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">人工处置</CardTitle>
-                    <Badge className="bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA] text-[10px]">需人工确认</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {[
-                    { action: '补充经营材料', trigger: '自动处置后仍需核验', sla: '< 24 小时', count: '12 次/月' },
-                    { action: '核查异常交易', trigger: '大额异动或关联交易', sla: '< 48 小时', count: '4 次/月' },
-                    { action: '现场尽调', trigger: '高风险且额度 > 100 万', sla: '< 72 小时', count: '1 次/月' },
-                  ].map((item) => (
-                    <div key={item.action} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-medium text-[#0F172A]">{item.action}</span>
-                        <span className="text-[11px] text-[#94A3B8]">{item.count}</span>
-                      </div>
-                      <div className="mt-1 text-[11px] text-[#64748B]">触发: {item.trigger} · 响应: {item.sla}</div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-            {active && <ActionBar />}
-          </div>
-        );
-      case 'quality':
-        return (
-          <div className="space-y-4">
-            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
-            <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-3 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-[#0F172A]">规则效果评估</span>
-                <span className="text-[11px] text-[#94A3B8]">数据口径: 最近 90 天 · 更新: 每日</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { label: '预警准确率', value: '71%', sub: '命中预警后 30 天内确认风险', dot: 'blue' },
-                { label: '误报率', value: '12%', sub: '预警后无实质性风险发生', dot: 'green' },
-                { label: '处置后改善率', value: '63%', sub: '额度收缩后风险指标回落', dot: 'amber' },
-              ].map(m => (
-                <Card key={m.label} className="border border-[#E5E7EB] bg-white">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${m.dot === 'blue' ? 'bg-[#2563EB]' : m.dot === 'green' ? 'bg-[#16A34A]' : 'bg-[#F59E0B]'}`} />
-                      <span className="text-[11px] text-[#94A3B8]">{m.label}</span>
-                    </div>
-                    <div className="mt-2 text-xl font-semibold text-[#0F172A]">{m.value}</div>
-                    <div className="mt-1 text-[11px] text-[#64748B]">{m.sub}</div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">规则效果明细</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <FlowRow label="动账预警 → 风险确认" value="71%" percentage={71} />
-                <FlowRow label="断票规则 → 及时拦截" value="84%" percentage={84} />
-                <FlowRow label="集中度调额 → 风险改善" value="63%" percentage={63} />
-                <FlowRow label="回款周期预警 → 提前干预" value="78%" percentage={78} />
-                <FlowRow label="物流延迟 → 联合排查有效" value="55%" percentage={55} />
-              </CardContent>
-            </Card>
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">资产质量趋势</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Asset quality trend */}
+            <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
+              <div className="text-[13px] font-semibold text-[#0F172A]">资产质量趋势</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { label: '不良率', value: '0.82%', change: '-0.05%', good: true },
                   { label: '关注类占比', value: '2.41%', change: '-0.18%', good: true },
                   { label: '逾期 30+ 天', value: '0.34%', change: '+0.02%', good: false },
-                ].map((item) => (
+                ].map(item => (
                   <div key={item.label} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-center">
                     <div className="text-[10px] text-[#94A3B8]">{item.label}</div>
                     <div className="mt-1 text-2xl font-semibold text-[#0F172A]">{item.value}</div>
-                    <div className={`mt-1 text-xs font-medium ${item.good ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>{item.change}</div>
+                    <div className={cn('mt-1 text-xs font-medium', item.good ? 'text-[#16A34A]' : 'text-[#DC2626]')}>{item.change}</div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-            {active && <ActionBar />}
-          </div>
-        );
-      default:
-        return (
-          <div className="space-y-4">
-            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
-            <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-3 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-[#0F172A]">预警总览</span>
-                <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">仅服务已在营客户</Badge>
-                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-              </div>
-              <div className="flex items-center gap-2">
-                {['正常监控', '观察中', '预警触发'].map(t => (
-                  <Badge key={t} className="bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-[10px]">{t}</Badge>
                 ))}
               </div>
             </div>
 
-            <SelectedSampleSummary sample={currentSample} />
-
-            {riskSimulated && <RiskEventPanel />}
-
-            {/* 风险动作链 */}
-            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5">
-              {['风险信号出现', '进入观察 / 触发预警', '收缩额度 / 生成复核', '进入恢复判断'].map((step, i) => {
-                const doneIdx = riskSimulated ? 2 : currentSample.riskFlags.length > 0 ? 1 : 0;
-                const done = i < doneIdx;
-                const isCurrent = i === doneIdx;
-                return (
-                  <React.Fragment key={step}>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium ${done ? 'bg-[#ECFDF3] text-[#047857]' : isCurrent ? 'bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]' : 'text-[#94A3B8]'}`}>
-                      <span className={`w-3.5 h-3.5 rounded-full text-[8px] flex items-center justify-center font-bold ${done ? 'bg-[#047857] text-white' : isCurrent ? 'bg-[#DC2626] text-white' : 'bg-[#E2E8F0] text-[#94A3B8]'}`}>{done ? '✓' : i + 1}</span>
-                      {step}
-                    </div>
-                    {i < 3 && <div className={`flex-1 h-px ${done ? 'bg-[#047857]' : 'bg-[#E2E8F0]'}`} />}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {(() => {
-                const riskTier = riskSimulated ? '预警触发' : currentSample.riskFlags.length > 0 ? '观察中' : '正常监控';
-                return [
-                  { label: '风险主体', value: currentSample.shortName, sub: `${currentSample.roleInChain} · ${currentSample.chainName}`, dot: 'blue' },
-                  { label: '当前可用额度', value: riskSimulated ? `${availableLimit}万` : currentSample.currentLimit, sub: riskSimulated ? `系统已自动收缩，原额度 ${maxLimit}万` : '尚未触发额度收缩', dot: riskSimulated ? 'red' : currentSample.riskStatus !== '正常' ? 'amber' : 'green' },
-                  { label: '风险状态', value: riskTier, sub: currentSample.riskFlags.length > 0 ? currentSample.riskFlags.join('、') : '经营指标在阈值范围内', dot: riskTier === '预警触发' ? 'red' : riskTier === '观察中' ? 'amber' : 'green' },
-                  { label: '联动动作', value: riskSimulated ? '已执行' : '待触发', sub: riskSimulated ? '已收缩额度并生成复核任务' : '信号触发后自动收缩额度', dot: riskSimulated ? 'amber' : 'slate' },
-                ] as { label: string; value: string; sub: string; dot: string }[];
-              })().map(m => (
-                <Card key={m.label} className="border border-[#E5E7EB] bg-white">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${m.dot === 'blue' ? 'bg-[#2563EB]' : m.dot === 'green' ? 'bg-[#16A34A]' : m.dot === 'red' ? 'bg-[#DC2626]' : m.dot === 'amber' ? 'bg-[#F59E0B]' : 'bg-[#94A3B8]'}`} />
-                      <span className="text-[11px] text-[#94A3B8]">{m.label}</span>
-                    </div>
-                    <div className={`mt-2 text-xl font-semibold ${m.dot === 'red' ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{m.value}</div>
-                    <div className="mt-1 text-[11px] text-[#64748B]">{m.sub}</div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <AiJudgmentBlock
-              judgment={riskSimulated ? `检测到中度风险，${currentSample.shortName}额度已收缩至 ${shrunkLimit} 万` : `${currentSample.shortName}经营状态正常，持续监控中`}
-              basis={riskSimulated
-                ? [currentSample.riskFlags.join('、') || '经营波动', `回款周期 ${currentSample.avgReceivableCycle}`, `额度由 ${maxLimit} 万收缩至 ${shrunkLimit} 万`]
-                : ['各项经营指标在正常区间', `回款周期 ${currentSample.avgReceivableCycle}`, '无异常信号']}
-              confidence={riskSimulated ? currentSample.agentHints.confidence : 96}
-              action={riskSimulated ? currentSample.agentHints.suggestedAction : '自动监控中'}
-            />
-
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <div className="text-sm font-semibold text-foreground mb-3">风险分布</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DonutChart
-                  data={[
-                    { name: '正常', value: SAMPLES.filter(s => s.riskStatus === '正常').length, color: CHART_COLORS.emerald },
-                    { name: '观察', value: SAMPLES.filter(s => s.riskStatus === '观察').length, color: CHART_COLORS.amber },
-                    { name: '中度预警', value: SAMPLES.filter(s => s.riskStatus === '中度预警').length, color: CHART_COLORS.red },
-                    { name: '恢复中', value: SAMPLES.filter(s => s.riskStatus === '恢复中').length, color: CHART_COLORS.violet },
-                  ]}
-                  height={140}
-                  innerRadius={36}
-                  outerRadius={56}
-                  centerLabel="样本总数"
-                  centerValue={`${SAMPLES.length}`}
-                />
-                <div className="flex flex-col justify-center gap-2">
-                  {[
-                    { label: '正常监控', count: SAMPLES.filter(s => s.riskStatus === '正常').length, color: CHART_COLORS.emerald },
-                    { label: '观察中', count: SAMPLES.filter(s => s.riskStatus === '观察').length, color: CHART_COLORS.amber },
-                    { label: '中度预警', count: SAMPLES.filter(s => s.riskStatus === '中度预警').length, color: CHART_COLORS.red },
-                    { label: '恢复中', count: SAMPLES.filter(s => s.riskStatus === '恢复中').length, color: CHART_COLORS.violet },
-                  ].map(r => (
-                    <div key={r.label} className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                      <span className="text-xs text-muted-foreground flex-1">{r.label}</span>
-                      <span className="text-xs font-semibold text-foreground">{r.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.95fr] gap-6">
-              <Card className={`border ${riskSimulated ? 'border-[#FCA5A5]' : 'border-[#E2E8F0]'}`}>
-                <CardHeader>
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <TrendingDown size={18} className={riskSimulated ? 'text-[#DC2626]' : 'text-[#1890FF]'} />
-                      额度自动收缩演示
-                    </CardTitle>
-                    {!active && (
-                      <Button
-                        className={riskSimulated ? 'bg-[#0F172A] hover:bg-[#1E293B]' : 'bg-[#DC2626] hover:bg-[#B91C1C]'}
-                        onClick={() => riskSimulated ? setAvailableLimit(120) : simulateRisk()}
-                      >
-                        {riskSimulated ? '重置预警场景' : '模拟风险事件'}
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="rounded-3xl border border-[#E2E8F0] bg-white p-6">
-                    <div className="text-xs text-[#64748B]">可用额度</div>
-                    <div className={`mt-3 text-5xl font-bold tracking-tight ${riskSimulated ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>
-                      {availableLimit}万
-                    </div>
-                    <div className="mt-3 text-sm text-[#64748B]">{riskSimulated ? `额度从 ${maxLimit} 万收缩至 ${shrunkLimit} 万。` : '点击按钮后展示额度收缩过程。'}</div>
-                    <div className="mt-5 h-3 rounded-full bg-[#F1F5F9] overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${riskSimulated ? 'bg-[#DC2626]' : 'bg-[#1890FF]'}`}
-                        style={{ width: `${(availableLimit / maxLimit) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                      ['回款周期', riskSimulated ? sampleRiskEvent.impact.receivableCycle : currentSample.avgReceivableCycle],
-                      ['履约状态', riskSimulated ? sampleRiskEvent.impact.fulfillmentDelay : currentSample.logisticsStatus],
-                      ['敞口调整', riskSimulated ? sampleRiskEvent.impact.exposureAdjustment : '未调整'],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] p-4">
-                        <div className="text-[10px] uppercase tracking-wide text-[#94A3B8]">{label}</div>
-                        <div className={`mt-2 text-lg font-bold ${riskSimulated ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className={`border ${riskSimulated ? 'border-[#FCA5A5]' : 'border-[#E2E8F0]'}`}>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Radar size={18} className={riskSimulated ? 'text-[#DC2626]' : 'text-[#1890FF]'} />
-                    风险探针报告
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className={`rounded-2xl border p-4 ${riskSimulated ? 'border-[#FCA5A5]' : 'border-[#B9DCFF]'}`}>
-                    <div className="text-sm font-semibold text-[#0F172A]">
-                      {riskSimulated ? sampleRiskEvent.name : '尚未触发风险事件'}
-                    </div>
-                    <p className="mt-2 text-xs leading-6 text-[#64748B]">{riskSimulated ? sampleRiskEvent.summary : `${currentSample.shortName}当前经营状态正常，系统持续监控中。`}</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {(riskSimulated
-                      ? sampleRiskEvent.triggerRules
-                      : [`回款周期稳定在 ${currentSample.avgReceivableCycle}`, `物流状态：${currentSample.logisticsStatus}`, `账户状态：${currentSample.accountFlowStatus}`]
-                    ).map((item) => (
-                      <div key={item} className="flex items-start gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4 text-sm leading-6 text-[#334155]">
-                        <ShieldAlert size={16} className={`mt-1 shrink-0 ${riskSimulated ? 'text-[#DC2626]' : 'text-[#1890FF]'}`} />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {riskSimulated && (
-                    <AiNote action={currentSample.agentHints.suggestedAction}>
-                      {currentSample.riskFlags.length > 0 ? currentSample.riskFlags.join('、') : '经营波动'} — 已收缩额度至 {shrunkLimit} 万
-                    </AiNote>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="border border-[#E5E7EB]">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">风险关注清单</CardTitle>
-                  <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">{SAMPLES.filter(s => s.riskFlags.length > 0).length} 家关注</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="divide-y divide-[#E2E8F0]">
-                {SAMPLES.filter(s => s.riskFlags.length > 0).map((s) => (
-                  <button key={s.id} onClick={() => selectSample(s.id)} className={`w-full flex items-center justify-between py-2.5 first:pt-0 last:pb-0 text-left rounded-lg px-2 -mx-2 transition-colors ${s.id === selectedSampleId ? 'bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]'}`}>
-                    <div className="min-w-0">
-                      <div className={`text-xs font-medium truncate ${s.id === selectedSampleId ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>{s.shortName}</div>
-                      <div className="text-[10px] text-[#94A3B8]">{s.roleInChain} · {s.riskFlags.join('、')}</div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge className={`text-[10px] border ${s.riskStatus === '中度预警' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]' : s.riskStatus === '观察' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'}`}>
-                        {s.riskStatus}
-                      </Badge>
-                      <span className="text-xs font-medium text-[#0F172A]">{s.currentLimit}</span>
-                    </div>
-                  </button>
-                ))}
-              </CardContent>
-            </Card>
+            <AiNote action="优化低效规则">
+              "授信使用骤降" 规则准确率仅 42%，建议调整阈值或增加复合触发条件以降低误报率。
+            </AiNote>
 
             {active && <ActionBar />}
           </div>

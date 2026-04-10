@@ -15,6 +15,7 @@ import {
   ClipboardPaste,
   Download,
   Eye,
+  FileSearch,
   FileSpreadsheet,
   FileText,
   Filter,
@@ -38,6 +39,13 @@ import {
   TrendingDown,
   Zap,
   Clock,
+  Camera,
+  FileImage,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Smartphone,
+  ArrowRight,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,6 +74,9 @@ type SourceType = 'system' | 'filter' | 'field';
 type StageType = 'identified' | 'pre_credit' | 'manual_review' | 'approved' | 'vetoed';
 type Urgency = 'hot' | 'warm' | 'cold';
 
+type HitFeatureType = 'tag' | 'graph' | 'model';
+interface HitFeature { type: HitFeatureType; label: string }
+
 interface CandidateRow {
   id: string;
   shortName: string;
@@ -81,7 +92,14 @@ interface CandidateRow {
   sampleId?: string;
   stageUpgraded?: boolean;
   stageUpgradeFrom?: string;
+  hitFeatures?: HitFeature[];
 }
+
+const HIT_FEATURE_STYLE: Record<HitFeatureType, { bg: string; text: string; border: string; prefix: string }> = {
+  tag: { bg: 'bg-[#EFF6FF]', text: 'text-[#2563EB]', border: 'border-[#BFDBFE]', prefix: '标签命中' },
+  graph: { bg: 'bg-[#F0FDF4]', text: 'text-[#16A34A]', border: 'border-[#A7F3D0]', prefix: '图谱命中' },
+  model: { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', border: 'border-[#FED7AA]', prefix: '模型命中' },
+};
 
 const STAGE_STYLES: Record<StageType, { label: string; border: string; bg: string; text: string; icon?: string }> = {
   identified: { label: '已识别', border: '#A9AEB8', bg: '#F2F3F5', text: '#646A73' },
@@ -98,20 +116,20 @@ const SOURCE_ICON: Record<SourceType, React.ReactNode> = {
 };
 
 const CANDIDATES: CandidateRow[] = [
-  { id: 'c1', shortName: '衡远包装', fullName: '常州衡远包装材料有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'field', label: '跑楼补全' }], matchReason: '代发稳定 + 法人身份已补全，公私交叉验证通过', stage: 'approved', bizScore: 5, personScore: 5, updatedAgo: '10分钟前', locked: false, sampleId: 'sample-hengyuan', stageUpgraded: true, stageUpgradeFrom: '预授信' },
-  { id: 'c2', shortName: '佳利包装', fullName: '溧阳佳利包装材料有限公司', sources: [{ type: 'system', label: '系统推荐' }], matchReason: '经营流水波动偏大，物流佐证不完整', stage: 'identified', bizScore: 3, personScore: 1, updatedAgo: '1小时前', locked: false, sampleId: 'sample-jiali' },
-  { id: 'c3', shortName: '驰远物流', fullName: '无锡驰远物流服务有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '运单频次高，缺法人征信', stage: 'identified', bizScore: 3, personScore: 0, updatedAgo: '昨天', locked: true, lockReason: '法人征信未校验，无法自动推进', sampleId: 'sample-chiyuan' },
-  { id: 'c4', shortName: '锐信新材', fullName: '苏州锐信新材料有限公司', sources: [{ type: 'filter', label: '储能摸排' }], matchReason: '注资 500 万 + 成立 5 年，集中度偏高', stage: 'pre_credit', bizScore: 4, personScore: 1, updatedAgo: '1小时前', locked: false, sampleId: 'sample-ruixin' },
-  { id: 'c5', shortName: '瑞丰辅料', fullName: '昆山瑞丰辅料有限公司', sources: [{ type: 'system', label: '系统推荐' }], matchReason: '近期回款恶化，物流延迟', stage: 'pre_credit', bizScore: 4, personScore: 4, updatedAgo: '2小时前', locked: false, sampleId: 'sample-ruifeng' },
-  { id: 'c6', shortName: '盛拓模组', fullName: '盛拓模组科技有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'filter', label: '新能源方案' }], matchReason: '二级供应商，桥接节点角色', stage: 'pre_credit', bizScore: 5, personScore: 3, updatedAgo: '3小时前', locked: false, stageUpgraded: true, stageUpgradeFrom: '已识别' },
-  { id: 'c7', shortName: '金利达新材', fullName: '金利达新材料有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '上游原材料供应商，交易关系稳定', stage: 'identified', bizScore: 4, personScore: 2, updatedAgo: '昨天', locked: false },
-  { id: 'c8', shortName: '常州永信化工', fullName: '常州永信化工有限公司', sources: [{ type: 'filter', label: '化工摸排' }], matchReason: '胶水辅料供应商，交易笔数较少', stage: 'identified', bizScore: 2, personScore: 0, updatedAgo: '2天前', locked: true, lockReason: '法人征信未校验，无法自动推进' },
-  { id: 'c9', shortName: '某某新能源电子', fullName: '某某储能电子有限公司', sources: [{ type: 'filter', label: '储能摸排' }], matchReason: '注资 500 万 + 5 年，法人为新户', stage: 'pre_credit', bizScore: 4, personScore: 1, updatedAgo: '1小时前', locked: false },
-  { id: 'c10', shortName: '某某农业发展', fullName: '某某农业发展有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '征信查询结果异常，存在逾期', stage: 'vetoed', bizScore: 2, personScore: 0, updatedAgo: '今天', locked: true, lockReason: '征信逾期，一票否决' },
-  { id: 'c11', shortName: '科陆储能', fullName: '深圳科陆储能技术有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'filter', label: '新能源方案' }], matchReason: '二级供应商，桥接节点角色，多源融合，行业特征匹配', stage: 'pre_credit', bizScore: 5, personScore: 4, updatedAgo: '3小时前', locked: false, stageUpgraded: true, stageUpgradeFrom: '已识别' },
-  { id: 'c12', shortName: '顺丰达物流', fullName: '深圳顺丰达物流有限公司', sources: [{ type: 'field', label: '外勤录入' }], matchReason: '缺失法人身份证，无法解锁公私联动验证', stage: 'identified', bizScore: 2, personScore: 0, updatedAgo: '1天前', locked: true, lockReason: '法人身份信息缺失，无法解锁公私联动验证' },
-  { id: 'c13', shortName: '王子包装', fullName: '东莞王子包装印刷厂', sources: [{ type: 'system', label: '系统推荐' }, { type: 'field', label: '跑楼补全' }], matchReason: '代发稳定 + 法人身份已补全，公私交叉验证通过', stage: 'approved', bizScore: 5, personScore: 5, updatedAgo: '10分钟前', locked: false, stageUpgraded: true, stageUpgradeFrom: '预授信' },
-  { id: 'c14', shortName: '佛山盛拓模组', fullName: '佛山盛拓模组有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'system', label: '代发异常' }], matchReason: '代发工资人数激增 30%，但近月对公流水骤降，异动矛盾需人工核实', stage: 'manual_review', bizScore: 4, personScore: 3, updatedAgo: '6小时前', locked: false },
+  { id: 'c1', shortName: '衡远包装', fullName: '常州衡远包装材料有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'field', label: '跑楼补全' }], matchReason: '代发稳定 + 法人身份已补全，公私交叉验证通过', stage: 'approved', bizScore: 5, personScore: 5, updatedAgo: '10分钟前', locked: false, sampleId: 'sample-hengyuan', stageUpgraded: true, stageUpgradeFrom: '预授信', hitFeatures: [{ type: 'tag', label: '高新制造' }, { type: 'graph', label: '宁川新能源二级供应商' }, { type: 'model', label: '预授信通过' }] },
+  { id: 'c2', shortName: '佳利包装', fullName: '溧阳佳利包装材料有限公司', sources: [{ type: 'system', label: '系统推荐' }], matchReason: '经营流水波动偏大，物流佐证不完整', stage: 'identified', bizScore: 3, personScore: 1, updatedAgo: '1小时前', locked: false, sampleId: 'sample-jiali', hitFeatures: [{ type: 'graph', label: '宁川新能源疑似三级供应商' }] },
+  { id: 'c3', shortName: '驰远物流', fullName: '无锡驰远物流服务有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '运单频次高，缺法人征信', stage: 'identified', bizScore: 3, personScore: 0, updatedAgo: '昨天', locked: true, lockReason: '法人征信未校验，无法自动推进', sampleId: 'sample-chiyuan', hitFeatures: [{ type: 'graph', label: '链上物流服务节点' }, { type: 'tag', label: '高频运单' }] },
+  { id: 'c4', shortName: '锐信新材', fullName: '苏州锐信新材料有限公司', sources: [{ type: 'filter', label: '储能摸排' }], matchReason: '注资 500 万 + 成立 5 年，集中度偏高', stage: 'pre_credit', bizScore: 4, personScore: 1, updatedAgo: '1小时前', locked: false, sampleId: 'sample-ruixin', hitFeatures: [{ type: 'tag', label: '新材料制造' }, { type: 'graph', label: '宁川新能源二级辅料供应商' }, { type: 'model', label: '预授信通过（集中度预警）' }] },
+  { id: 'c5', shortName: '瑞丰辅料', fullName: '昆山瑞丰辅料有限公司', sources: [{ type: 'system', label: '系统推荐' }], matchReason: '近期回款恶化，物流延迟', stage: 'pre_credit', bizScore: 4, personScore: 4, updatedAgo: '2小时前', locked: false, sampleId: 'sample-ruifeng', hitFeatures: [{ type: 'tag', label: '辅料制造' }, { type: 'graph', label: '宁川新能源三级供应商' }, { type: 'model', label: '风险预警中' }] },
+  { id: 'c6', shortName: '盛拓模组', fullName: '盛拓模组科技有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'filter', label: '新能源方案' }], matchReason: '二级供应商，桥接节点角色', stage: 'pre_credit', bizScore: 5, personScore: 3, updatedAgo: '3小时前', locked: false, stageUpgraded: true, stageUpgradeFrom: '已识别', hitFeatures: [{ type: 'graph', label: '桥接节点·核心企业直接供应商' }, { type: 'tag', label: '新能源模组' }] },
+  { id: 'c7', shortName: '金利达新材', fullName: '金利达新材料有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '上游原材料供应商，交易关系稳定', stage: 'identified', bizScore: 4, personScore: 2, updatedAgo: '昨天', locked: false, hitFeatures: [{ type: 'tag', label: '原材料供应' }] },
+  { id: 'c8', shortName: '常州永信化工', fullName: '常州永信化工有限公司', sources: [{ type: 'filter', label: '化工摸排' }], matchReason: '胶水辅料供应商，交易笔数较少', stage: 'identified', bizScore: 2, personScore: 0, updatedAgo: '2天前', locked: true, lockReason: '法人征信未校验，无法自动推进', hitFeatures: [{ type: 'tag', label: '化工辅料' }] },
+  { id: 'c9', shortName: '某某新能源电子', fullName: '某某储能电子有限公司', sources: [{ type: 'filter', label: '储能摸排' }], matchReason: '注资 500 万 + 5 年，法人为新户', stage: 'pre_credit', bizScore: 4, personScore: 1, updatedAgo: '1小时前', locked: false, hitFeatures: [{ type: 'tag', label: '储能电子' }, { type: 'model', label: '预授信通过' }] },
+  { id: 'c10', shortName: '某某农业发展', fullName: '某某农业发展有限公司', sources: [{ type: 'field', label: '跑楼录入' }], matchReason: '征信查询结果异常，存在逾期', stage: 'vetoed', bizScore: 2, personScore: 0, updatedAgo: '今天', locked: true, lockReason: '征信逾期，一票否决', hitFeatures: [{ type: 'tag', label: '涉农经营' }] },
+  { id: 'c11', shortName: '科陆储能', fullName: '深圳科陆储能技术有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'filter', label: '新能源方案' }], matchReason: '二级供应商，桥接节点角色，多源融合，行业特征匹配', stage: 'pre_credit', bizScore: 5, personScore: 4, updatedAgo: '3小时前', locked: false, stageUpgraded: true, stageUpgradeFrom: '已识别', hitFeatures: [{ type: 'tag', label: '储能技术' }, { type: 'graph', label: '核心企业二级供应商' }, { type: 'model', label: '多源融合高置信' }] },
+  { id: 'c12', shortName: '顺丰达物流', fullName: '深圳顺丰达物流有限公司', sources: [{ type: 'field', label: '外勤录入' }], matchReason: '缺失法人身份证，无法解锁公私联动验证', stage: 'identified', bizScore: 2, personScore: 0, updatedAgo: '1天前', locked: true, lockReason: '法人身份信息缺失，无法解锁公私联动验证', hitFeatures: [{ type: 'tag', label: '物流服务' }] },
+  { id: 'c13', shortName: '王子包装', fullName: '东莞王子包装印刷厂', sources: [{ type: 'system', label: '系统推荐' }, { type: 'field', label: '跑楼补全' }], matchReason: '代发稳定 + 法人身份已补全，公私交叉验证通过', stage: 'approved', bizScore: 5, personScore: 5, updatedAgo: '10分钟前', locked: false, stageUpgraded: true, stageUpgradeFrom: '预授信', hitFeatures: [{ type: 'tag', label: '包装印刷' }, { type: 'graph', label: '核心企业三级供应商' }, { type: 'model', label: '预授信通过' }] },
+  { id: 'c14', shortName: '佛山盛拓模组', fullName: '佛山盛拓模组有限公司', sources: [{ type: 'system', label: '系统推荐' }, { type: 'system', label: '代发异常' }], matchReason: '代发工资人数激增 30%，但近月对公流水骤降，异动矛盾需人工核实', stage: 'manual_review', bizScore: 4, personScore: 3, updatedAgo: '6小时前', locked: false, hitFeatures: [{ type: 'tag', label: '新能源模组' }, { type: 'model', label: '异动矛盾·需人工核实' }] },
 ];
 
 /* ── Feed data ── */
@@ -205,7 +223,7 @@ const SourceTag: React.FC<{ type: SourceType; label: string }> = ({ type, label 
 function SmartFeedFlow() {
   const [query, setQuery] = useState('');
   const [parsedEntities, setParsedEntities] = useState<string[]>([]);
-  const { selectSample } = useDemo();
+  const { selectSample, navigate } = useDemo();
 
   const handleQuery = () => {
     if (!query.trim()) { setParsedEntities([]); return; }
@@ -330,6 +348,9 @@ function SmartFeedFlow() {
                       <ConfidenceDots score={item.personScore} label="人" showHint />
                     </div>
                     <div className="flex items-center gap-1.5">
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-[#7C3AED] hover:bg-[#F3E8FF] gap-1" onClick={e => { e.stopPropagation(); navigate('partner-management', 'due-diligence'); }}>
+                        <FileSearch size={9} />一键尽调
+                      </Button>
                       <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-[#86909C] gap-1">
                         <Eye size={9} />详情
                       </Button>
@@ -811,7 +832,7 @@ function RelationGraph() {
 
 export default function CustomerPoolScene({ activeModule, onModuleChange }: { activeModule: string; onModuleChange: (id: string) => void }) {
   const scene = SCENES.find((item) => item.id === 'customer-pool')!;
-  const { active, selectSample, selectedSampleId } = useDemo();
+  const { active, selectSample, selectedSampleId, navigate } = useDemo();
   const [filterOpen, setFilterOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [detailCandidate, setDetailCandidate] = useState<CandidateRow | null>(null);
@@ -867,7 +888,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
         </div>
         <div className="rounded-xl border border-[#E5E6EB] bg-white overflow-hidden">
           <Table>
-            <TableHeader><TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA]"><TableHead className="text-[11px] font-medium text-[#86909C] h-9 pl-4 w-8">□</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">企业简称</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">来源标签</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">阶段</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">双维置信度</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9 pr-4 text-right">更新</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA]"><TableHead className="text-[11px] font-medium text-[#86909C] h-9 pl-4 w-8">□</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">企业简称</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">命中特征</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">来源标签</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">阶段</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">双维置信度</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">更新</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9 pr-4 text-right">操作</TableHead></TableRow></TableHeader>
             <TableBody>
               {paged.map(c => {
                 const isLocked = c.locked;
@@ -878,10 +899,19 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
                       <div className="flex items-center gap-2"><span className={cn('text-[13px] font-medium', isLocked ? 'text-[#A9AEB8]' : 'text-[#1D2129]')}>{c.shortName}</span>{c.stageUpgraded && c.stageUpgradeFrom && <StageUpgradeBadge from={c.stageUpgradeFrom} to={STAGE_STYLES[c.stage].label} />}</div>
                       <div className="text-[11px] text-[#86909C] mt-0.5 max-w-[240px] line-clamp-2 group-hover:line-clamp-none" title={c.matchReason}>↳ {c.matchReason}</div>
                     </TableCell>
+                    <TableCell className="py-2.5">
+                      <div className="flex flex-wrap gap-1">
+                        {(c.hitFeatures || []).slice(0, 3).map(f => {
+                          const s = HIT_FEATURE_STYLE[f.type];
+                          return <span key={f.label} className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-[9px] border', s.bg, s.text, s.border)}>[{s.prefix}] {f.label}</span>;
+                        })}
+                      </div>
+                    </TableCell>
                     <TableCell className="py-2.5"><div className="flex flex-wrap gap-1">{c.sources.map(s => <SourceTag key={s.label} type={s.type} label={s.label} />)}</div></TableCell>
                     <TableCell className="py-2.5"><StageBadge stage={c.stage} /></TableCell>
                     <TableCell className="py-2.5"><div className="space-y-0.5"><ConfidenceDots score={c.bizScore} label="企" /><ConfidenceDots score={c.personScore} label="人" showHint /></div></TableCell>
-                    <TableCell className="py-2.5 pr-4 text-right"><div className={cn('text-[11px]', isLocked ? 'text-[#C9CDD4]' : 'text-[#86909C]')}>{c.updatedAgo}</div>{isLocked && <div className="mt-1" title={c.lockReason}><Button variant="ghost" size="sm" className="h-5 text-[9px] px-1.5 text-[#A9AEB8] cursor-not-allowed" disabled>推进</Button></div>}</TableCell>
+                    <TableCell className="py-2.5"><div className={cn('text-[11px]', isLocked ? 'text-[#C9CDD4]' : 'text-[#86909C]')}>{c.updatedAgo}</div>{isLocked && <div className="mt-1" title={c.lockReason}><Button variant="ghost" size="sm" className="h-5 text-[9px] px-1.5 text-[#A9AEB8] cursor-not-allowed" disabled>推进</Button></div>}</TableCell>
+                    <TableCell className="py-2.5 pr-4 text-right"><Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 gap-1 text-[#7C3AED] hover:bg-[#F3E8FF]" onClick={e => { e.stopPropagation(); navigate('partner-management', 'due-diligence'); }}><FileSearch size={10} />尽调</Button></TableCell>
                   </TableRow>
                 );
               })}
@@ -940,7 +970,10 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
                         <div className="flex gap-1">{c.sources.filter(s => s.type === 'filter').map(s => <SourceTag key={s.label} type={s.type} label={s.label} />)}</div>
                         <StageBadge stage={c.stage} />
                       </div>
-                      <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 gap-1 text-[#7C3AED] hover:bg-[#F3E8FF]" onClick={e => { e.stopPropagation(); navigate('partner-management', 'due-diligence'); }}><FileSearch size={10} />一键尽调</Button>
+                        <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -949,47 +982,240 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
           </div>
         );
 
-      case 'field-flow':
+      case 'field-flow': {
+        const fieldCandidates = CANDIDATES.filter(c => c.sources.some(s => s.type === 'field'));
+
+        const FIELD_TASKS = [
+          { id: 'ft1', company: '常州衡远包装材料有限公司', shortName: '衡远包装', type: '纸质合同影像', uploadTime: '今天 09:32', uploader: '张三经理', device: 'PAD', status: 'pending' as const, aiResult: { name: '常州衡远包装材料有限公司', regCapital: '500万', legalPerson: '王某某', bizScope: '包装材料生产、销售', confidence: 96 }, conflicts: [] as string[] },
+          { id: 'ft2', company: '无锡驰远物流服务有限公司', shortName: '驰远物流', type: '营业执照拍照', uploadTime: '今天 10:15', uploader: '张三经理', device: 'PAD', status: 'pending' as const, aiResult: { name: '无锡驰远物流服务有限公司', regCapital: '300万', legalPerson: '李某某', bizScope: '道路货物运输', confidence: 91 }, conflicts: ['法人姓名与征信系统不一致'] },
+          { id: 'ft3', company: '金利达新材料有限公司', shortName: '金利达新材', type: '现场走访记录', uploadTime: '昨天 15:40', uploader: '李四经理', device: '手机', status: 'reviewed' as const, aiResult: { name: '金利达新材料有限公司', regCapital: '800万', legalPerson: '陈某某', bizScope: '新材料研发、生产', confidence: 88 }, conflicts: [] as string[] },
+          { id: 'ft4', company: '顺丰达物流有限公司', shortName: '顺丰达物流', type: '纸质合同影像', uploadTime: '昨天 14:20', uploader: '王五经理', device: 'PAD', status: 'rejected' as const, aiResult: { name: '深圳顺丰达物流有限公司', regCapital: '200万', legalPerson: '—', bizScope: '未能完整解析', confidence: 42 }, conflicts: ['影像模糊，法人信息缺失', '经营范围未能解析'] },
+          { id: 'ft5', company: '东莞王子包装印刷厂', shortName: '王子包装', type: '营业执照拍照', uploadTime: '2天前', uploader: '张三经理', device: 'PAD', status: 'pooled' as const, aiResult: { name: '东莞王子包装印刷厂', regCapital: '350万', legalPerson: '赵某某', bizScope: '包装印刷', confidence: 94 }, conflicts: [] as string[] },
+        ];
+
+        const statusConfig = {
+          pending: { label: '待复核', bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', border: 'border-[#FED7AA]' },
+          reviewed: { label: '已复核', bg: 'bg-[#EFF6FF]', text: 'text-[#2563EB]', border: 'border-[#BFDBFE]' },
+          rejected: { label: '退回重采', bg: 'bg-[#FEF2F2]', text: 'text-[#DC2626]', border: 'border-[#FCA5A5]' },
+          pooled: { label: '已入池', bg: 'bg-[#ECFDF3]', text: 'text-[#047857]', border: 'border-[#A7F3D0]' },
+        };
+
         return (
           <div className="space-y-4">
-            <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><UserPlus size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">外勤录入流</span><span className="text-[10px] text-[#86909C]">跑楼成果沉淀与融合</span></div>
+            {/* Header */}
+            <div className="rounded-xl border border-[#E5E6EB] bg-white px-5 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera size={15} className="text-[#1677FF]" />
+                <span className="text-[14px] font-semibold text-[#1D2129]">外勤录入流</span>
+                <span className="text-[10px] text-[#86909C]">移动采集 → AI解析 → 入池复核</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-8 text-[12px] text-[#4E5969] border-[#E5E6EB] gap-1"><RefreshCw size={12} />刷新任务</Button>
                 <Button size="sm" className="h-8 text-[12px] bg-[#1677FF] hover:bg-[#0E5FC2] gap-1" onClick={() => setImportOpen(true)}><Upload size={12} />导入外勤名单</Button>
               </div>
-              <div className="grid grid-cols-4 gap-3">
+            </div>
+
+            {/* Pipeline strip */}
+            <div className="rounded-lg border border-[#E5E6EB] bg-[#F7F8FA] px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-6">
                 {[
-                  { label: '今日跑楼', value: '15', color: '#1677FF' },
-                  { label: '本周新增', value: '42', color: '#00B42A' },
-                  { label: '融合提升', value: '8', color: '#FF7D00' },
-                  { label: '待补全', value: '11', color: '#86909C' },
-                ].map(m => (
-                  <div key={m.label} className="rounded-lg border border-[#E5E6EB] p-3 text-center">
-                    <div className="text-[20px] font-bold" style={{ color: m.color }}>{m.value}</div>
-                    <div className="text-[11px] text-[#86909C]">{m.label}</div>
-                  </div>
+                  { icon: Smartphone, label: 'PAD/手机采集', desc: '现场拍照上传', active: true },
+                  { icon: Sparkles, label: 'AI自动解析', desc: 'OCR + 字段提取', active: true },
+                  { icon: AlertCircle, label: '冲突检测', desc: '与行内数据比对', active: true },
+                  { icon: CheckCircle, label: '复核入池', desc: '确认后进入候选列表', active: false },
+                ].map((step, i) => (
+                  <React.Fragment key={step.label}>
+                    {i > 0 && <ArrowRight size={14} className="text-[#C9CDD4] shrink-0" />}
+                    <div className="flex items-center gap-2">
+                      <div className={cn('w-7 h-7 rounded-full flex items-center justify-center shrink-0', step.active ? 'bg-[#E8F3FF] text-[#1677FF]' : 'bg-[#F2F3F5] text-[#C9CDD4]')}>
+                        <step.icon size={13} />
+                      </div>
+                      <div>
+                        <div className={cn('text-[11px] font-medium', step.active ? 'text-[#1D2129]' : 'text-[#A9AEB8]')}>{step.label}</div>
+                        <div className="text-[9px] text-[#86909C]">{step.desc}</div>
+                      </div>
+                    </div>
+                  </React.Fragment>
                 ))}
               </div>
-              <div className="pt-3 border-t border-[#F2F3F5]">
-                <div className="text-[12px] font-medium text-[#1D2129] mb-2">最近外勤录入</div>
-                <div className="space-y-2">
-                  {CANDIDATES.filter(c => c.sources.some(s => s.type === 'field')).slice(0, 5).map(c => (
-                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-[#F2F3F5] px-3 py-2 hover:bg-[#F7F8FA] cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[12px] font-medium text-[#1D2129]">{c.shortName}</span>
-                        <StageBadge stage={c.stage} />
-                        {c.stageUpgraded && c.stageUpgradeFrom && <StageUpgradeBadge from={c.stageUpgradeFrom} to={STAGE_STYLES[c.stage].label} />}
-                        {c.locked && <span className="text-[9px] text-[#F53F3F]">⚠ {c.lockReason}</span>}
-                      </div>
-                      <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
-                    </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { label: '待复核', value: `${FIELD_TASKS.filter(t => t.status === 'pending').length}`, color: '#C2410C', desc: '需人工确认' },
+                { label: '今日采集', value: '15', color: '#1677FF', desc: 'PAD端上传' },
+                { label: '本周新增', value: '42', color: '#00B42A', desc: '累计入池' },
+                { label: 'AI解析成功率', value: '89%', color: '#722ED1', desc: '置信度 > 80%' },
+                { label: '数据冲突率', value: '12%', color: '#F53F3F', desc: '需人工核实' },
+              ].map(m => (
+                <div key={m.label} className="rounded-lg border border-[#E5E6EB] bg-white p-3 text-center">
+                  <div className="text-[18px] font-bold" style={{ color: m.color }}>{m.value}</div>
+                  <div className="text-[11px] font-medium text-[#1D2129]">{m.label}</div>
+                  <div className="text-[9px] text-[#86909C]">{m.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Main content: task list + preview */}
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4">
+              {/* Left: Task list */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  {(['all', 'pending', 'reviewed', 'rejected', 'pooled'] as const).map(f => (
+                    <button key={f} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors border', f === 'all' ? 'bg-[#E8F3FF] text-[#1677FF] border-[#BEDAFF]' : 'text-[#4E5969] border-[#E5E6EB] hover:bg-[#F7F8FA]')}>
+                      {f === 'all' ? '全部' : statusConfig[f].label}
+                    </button>
                   ))}
+                </div>
+
+                <div className="rounded-xl border border-[#E5E6EB] bg-white overflow-hidden">
+                  {FIELD_TASKS.map(task => {
+                    const sc = statusConfig[task.status];
+                    const hasConflict = task.conflicts.length > 0;
+                    return (
+                      <div key={task.id} className={cn('px-4 py-3.5 border-b border-[#F2F3F5] last:border-b-0 hover:bg-[#FAFBFF] transition-colors', hasConflict && task.status === 'pending' && 'bg-[#FEF2F2]/30')}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge className={cn('text-[9px] border', sc.bg, sc.text, sc.border)}>{sc.label}</Badge>
+                            <span className="text-[12px] font-medium text-[#1D2129]">{task.shortName}</span>
+                            <span className="text-[10px] text-[#86909C]">·</span>
+                            <span className="text-[10px] text-[#86909C]">{task.type}</span>
+                            {hasConflict && <Badge className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px] gap-0.5"><AlertTriangle size={8} />数据冲突</Badge>}
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-[#86909C]">
+                            <span className="flex items-center gap-1">{task.device === 'PAD' ? <Smartphone size={10} /> : <Camera size={10} />}{task.device}</span>
+                            <span>{task.uploader}</span>
+                            <span>{task.uploadTime}</span>
+                          </div>
+                        </div>
+
+                        {/* AI extraction preview */}
+                        <div className="mt-2 rounded-lg border border-[#E5E6EB] bg-[#F7F8FA] p-3">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Sparkles size={10} className="text-[#722ED1]" />
+                            <span className="text-[10px] font-medium text-[#722ED1]">AI提取结果</span>
+                            <span className="text-[9px] text-[#86909C] ml-auto">置信度: <span className={cn('font-semibold', task.aiResult.confidence >= 80 ? 'text-[#00B42A]' : task.aiResult.confidence >= 60 ? 'text-[#FF7D00]' : 'text-[#F53F3F]')}>{task.aiResult.confidence}%</span></span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-[10px]">
+                            <div><span className="text-[#86909C]">企业名称:</span> <span className="text-[#1D2129] font-medium">{task.aiResult.name}</span></div>
+                            <div><span className="text-[#86909C]">注册资本:</span> <span className="text-[#1D2129]">{task.aiResult.regCapital}</span></div>
+                            <div><span className="text-[#86909C]">法定代表人:</span> <span className="text-[#1D2129]">{task.aiResult.legalPerson}</span></div>
+                            <div><span className="text-[#86909C]">经营范围:</span> <span className="text-[#1D2129]">{task.aiResult.bizScope}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Conflict alerts */}
+                        {hasConflict && (
+                          <div className="mt-2 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 space-y-1">
+                            {task.conflicts.map((c, i) => (
+                              <div key={i} className="flex items-center gap-1.5 text-[10px] text-[#DC2626]">
+                                <AlertTriangle size={10} className="shrink-0" />
+                                <span>{c}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="mt-2.5 flex items-center gap-2">
+                          {task.status === 'pending' && (
+                            <>
+                              <Button size="sm" className="h-6 text-[10px] px-2.5 gap-1 bg-[#1677FF] hover:bg-[#0E5FC2] text-white"><CheckCircle size={9} /> 确认入池</Button>
+                              {hasConflict && <Button variant="outline" size="sm" className="h-6 text-[10px] px-2.5 gap-1 text-[#C2410C] border-[#FED7AA]"><AlertCircle size={9} /> 标记冲突待核实</Button>}
+                              <Button variant="outline" size="sm" className="h-6 text-[10px] px-2.5 gap-1 text-[#F53F3F] border-[#FCA5A5]"><X size={9} /> 退回重采</Button>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#4E5969]"><Eye size={9} /> 查看影像</Button>
+                            </>
+                          )}
+                          {task.status === 'reviewed' && (
+                            <>
+                              <Button size="sm" className="h-6 text-[10px] px-2.5 gap-1 bg-[#00B42A] hover:bg-[#009A29] text-white"><CheckCircle size={9} /> 一键入池</Button>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#4E5969]"><Eye size={9} /> 查看详情</Button>
+                            </>
+                          )}
+                          {task.status === 'rejected' && (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">已退回，等待客户经理重新采集</Badge>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#4E5969]"><Eye size={9} /> 查看原因</Button>
+                            </div>
+                          )}
+                          {task.status === 'pooled' && (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[9px]">已进入候选资产列表</Badge>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#4E5969]"><Eye size={9} /> 查看详情</Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right: Summary panel */}
+              <div className="space-y-4">
+                {/* Data source pipeline */}
+                <div className="rounded-xl border border-[#E5E6EB] bg-white p-4 space-y-3">
+                  <div className="text-[12px] font-semibold text-[#1D2129] flex items-center gap-1.5"><FileImage size={13} className="text-[#1677FF]" />采集渠道统计</div>
+                  <div className="space-y-2">
+                    {[
+                      { channel: 'PAD端拍照', count: 28, percent: 67 },
+                      { channel: '手机端上传', count: 9, percent: 21 },
+                      { channel: 'PC端影像导入', count: 5, percent: 12 },
+                    ].map(ch => (
+                      <div key={ch.channel} className="flex items-center gap-3">
+                        <span className="text-[10px] text-[#4E5969] w-24 shrink-0">{ch.channel}</span>
+                        <div className="flex-1 h-2 rounded-full bg-[#F2F3F5] overflow-hidden">
+                          <div className="h-full rounded-full bg-[#1677FF]" style={{ width: `${ch.percent}%` }} />
+                        </div>
+                        <span className="text-[10px] font-medium text-[#1D2129] w-10 text-right">{ch.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent pooled */}
+                <div className="rounded-xl border border-[#E5E6EB] bg-white p-4 space-y-3">
+                  <div className="text-[12px] font-semibold text-[#1D2129]">最近入池（外勤来源）</div>
+                  <div className="space-y-2">
+                    {fieldCandidates.filter(c => !c.locked).slice(0, 4).map(c => (
+                      <div key={c.id} className="flex items-center justify-between rounded-lg border border-[#F2F3F5] px-3 py-2 hover:bg-[#F7F8FA] cursor-pointer" onClick={() => setDetailCandidate(c)}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-medium text-[#1D2129]">{c.shortName}</span>
+                          <StageBadge stage={c.stage} />
+                        </div>
+                        <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Downstream entry */}
+                <div className="rounded-xl border border-[#E5E6EB] bg-white p-4 space-y-3">
+                  <div className="text-[12px] font-semibold text-[#1D2129]">下游功能衔接</div>
+                  <div className="space-y-1.5">
+                    {[
+                      { label: '候选资产列表', desc: '查看全部候选企业', moduleId: 'list' },
+                      { label: '预授信池', desc: '查看已通过预授信', moduleId: 'pre-credit' },
+                      { label: '补审队列', desc: '查看待补审企业', moduleId: 'review-queue' },
+                    ].map(entry => (
+                      <button key={entry.moduleId} className="w-full flex items-center justify-between rounded-lg border border-[#E5E6EB] bg-[#F7F8FA] px-3 py-2.5 hover:bg-[#E8F3FF] transition-colors text-left">
+                        <div>
+                          <div className="text-[11px] font-medium text-[#1D2129]">{entry.label}</div>
+                          <div className="text-[9px] text-[#86909C]">{entry.desc}</div>
+                        </div>
+                        <ArrowRight size={12} className="text-[#86909C]" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
+
             <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
           </div>
         );
+      }
 
       case 'list':
         return renderCandidateTable();

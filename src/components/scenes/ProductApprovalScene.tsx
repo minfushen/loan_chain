@@ -3,43 +3,125 @@ import SceneLayout from '../SceneLayout';
 import { SCENES } from '../../constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  ArrowRightLeft,
+  AlertTriangle,
+  ArrowRight,
   CheckCircle,
   CheckCircle2,
+  ChevronRight,
   CircleAlert,
+  CircleDot,
+  Clock,
+  CreditCard,
+  Eye,
   FileCheck2,
+  FileText,
   Filter,
+  Info,
+  Link2,
   PackageCheck,
+  Pencil,
   Route,
   Search,
-  Wallet,
-  Zap,
   ShieldCheck,
-  ArrowRight,
   Sparkles,
-  ChevronRight,
-  CircleDot,
+  Upload,
+  User,
+  Wallet,
+  XCircle,
+  Zap,
 } from 'lucide-react';
-import { AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, InsightCard, ConfidenceCard, SectionShell, AiJudgmentBlock } from '../ProductPrimitives';
+import {
+  AiNote,
+  SampleSwitcher,
+  PanelCard,
+  SectionShell,
+  ConfidenceCard,
+  AiJudgmentBlock,
+} from '../ProductPrimitives';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { SceneHero, ActionBar } from '../../demo/DemoComponents';
 import { SAMPLES, getRuleHitsForSample } from '../../demo/chainLoan/data';
+import { cn } from '@/lib/utils';
 
-interface ProductApprovalSceneProps {
+/* ══════════════════════════════════════════════════════════════════════════
+   Types & Constants
+   ══════════════════════════════════════════════════════════════════════════ */
+
+interface Props {
   activeModule: string;
   onModuleChange: (id: string) => void;
 }
 
-export default function ProductApprovalScene({ activeModule, onModuleChange }: ProductApprovalSceneProps) {
-  const scene = SCENES.find((item) => item.id === 'product-approval')!;
+const PRODUCT_CATALOG = [
+  {
+    id: 'P-001', name: '公私联动贷', icon: Link2,
+    target: '法人按揭/代发/结算客户', limit: '50–200万', rate: '4.5%–5.8%', term: '12个月',
+    segment: '存量唤醒', riskLevel: '低风险' as const, status: '已上线' as const,
+    tags: ['公私联动', '法人按揭客户', '代发稳定'],
+    matchCondition: (s: typeof SAMPLES[0]) => s.relationStrength >= 80 && s.authenticityScore >= 85,
+  },
+  {
+    id: 'P-002', name: '税易贷', icon: FileText,
+    target: '税票流水达标小微', limit: '50–200万', rate: '6.2%–7.5%', term: '6–12个月',
+    segment: '标准数据授信', riskLevel: '低风险' as const, status: '已上线' as const,
+    tags: ['纳税稳定', '高新企业', '无逾期'],
+    matchCondition: (s: typeof SAMPLES[0]) => s.invoiceContinuityMonths >= 10,
+  },
+  {
+    id: 'P-003', name: '订单微贷', icon: PackageCheck,
+    target: '脱核链贷场景主体', limit: '30–150万', rate: '7.0%–8.2%', term: '6个月',
+    segment: '长尾场景', riskLevel: '中风险' as const, status: '试运行' as const,
+    tags: ['产业链关系', '三流验证', '脱核补审'],
+    matchCondition: (s: typeof SAMPLES[0]) => s.productType.includes('订单'),
+  },
+  {
+    id: 'P-004', name: '运费贷', icon: Route,
+    target: '链上物流服务主体', limit: '20–100万', rate: '6.8%–7.8%', term: '3–6个月',
+    segment: '长尾场景', riskLevel: '中风险' as const, status: '试运行' as const,
+    tags: ['运单频次', '结算验证', '履约稳定'],
+    matchCondition: (s: typeof SAMPLES[0]) => s.productType.includes('运费'),
+  },
+];
+
+const RISK_LEVEL_STYLES = {
+  '低风险': 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]',
+  '中风险': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+  '高风险': 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ConfidenceDots — 双维置信度点阵
+   ══════════════════════════════════════════════════════════════════════════ */
+function ConfidenceDots({ label, value, max = 5 }: { label: string; value: number; max?: number }) {
+  const filled = Math.round((value / 100) * max);
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] text-[#94A3B8] w-3">{label}</span>
+      <div className="flex gap-0.5">
+        {Array.from({ length: max }).map((_, i) => (
+          <div key={i} className={`w-2 h-2 rounded-full ${i < filled ? 'bg-[#16A34A]' : 'bg-[#E5E6EB]'}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Component
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export default function ProductApprovalScene({ activeModule, onModuleChange }: Props) {
+  const scene = SCENES.find((s) => s.id === 'product-approval')!;
   const { active, stage, stageIndex, advanceStage, currentSample, selectSample, selectedSampleId } = useDemo();
   const [selectedFlowId, setSelectedFlowId] = React.useState('flow-2');
+  const [productTypeFilter, setProductTypeFilter] = React.useState<string>('all');
+  const [riskFilter, setRiskFilter] = React.useState<string>('all');
+  const [reviewFilter, setReviewFilter] = React.useState<string>('all');
+  const [reviewTimeFilter, setReviewTimeFilter] = React.useState<string>('all');
 
   const isPastApproval = stageIndex >= STAGE_ORDER.indexOf('approved');
   const isAtManualReview = stage === 'manual_review';
-  const approvalState = isPastApproval ? 'approved' : 'pending';
   const sampleRuleHits = getRuleHitsForSample(currentSample);
 
   const counterparty = currentSample.keyCounterparty;
@@ -48,6 +130,20 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
   const baseCycle = parseInt(currentSample.avgReceivableCycle) || 30;
   const hasLogisticsIssue = currentSample.logisticsStatus.includes('延迟') || currentSample.logisticsStatus.includes('不连续');
   const evidenceGrade = currentSample.evidenceCoverage >= 85 ? '充分' : currentSample.evidenceCoverage >= 65 ? '一般' : '不足';
+
+  const matchedProduct = PRODUCT_CATALOG.find(p => p.matchCondition(currentSample)) ?? PRODUCT_CATALOG[2];
+  const otherProducts = PRODUCT_CATALOG.filter(p => p.id !== matchedProduct.id);
+
+  const filteredProducts = PRODUCT_CATALOG.filter(p => {
+    if (productTypeFilter !== 'all' && p.name !== productTypeFilter) return false;
+    if (riskFilter !== 'all' && p.riskLevel !== riskFilter) return false;
+    return true;
+  });
+
+  const riskWarnings: string[] = [];
+  if (currentSample.riskFlags.length > 0) riskWarnings.push(...currentSample.riskFlags);
+  if (parseInt(currentSample.maxCustomerConcentration) > 50) riskWarnings.push('客户集中度偏高');
+  if (hasLogisticsIssue) riskWarnings.push('需核实下游履约周期');
 
   const verificationFlows = [
     {
@@ -69,571 +165,597 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
       settlement: { code: `SET-${currentSample.id.slice(-4)}-2394`, amount: `${Math.round(baseAmt * 0.37)}万`, cycle: `T+${baseCycle + 2}`, date: '05-14' },
     },
   ];
-  const selectedFlow = verificationFlows.find((f) => f.id === selectedFlowId) ?? verificationFlows[0];
+  const selectedFlow = verificationFlows.find(f => f.id === selectedFlowId) ?? verificationFlows[0];
 
-  const handleApprove = () => {
-    if (isAtManualReview && active) advanceStage();
-  };
-
-  // ─── Product configuration data ────────────────────────────────────────────
-  const PRODUCTS = [
-    { id: 'P-001', name: '信用快贷', target: '存量代发/结算/按揭客户', limit: '10–50万', rate: '5.8%–6.5%', term: '12个月', segment: '存量唤醒', rulePackage: '基础准入 + 公私联动', status: '已上线' as const },
-    { id: 'P-002', name: '数据贷', target: '税票流水达标小微', limit: '50–200万', rate: '6.2%–7.5%', term: '6–12个月', segment: '标准数据授信', rulePackage: '税票融合 + 图谱评分', status: '已上线' as const },
-    { id: 'P-003', name: '订单微贷', target: '脱核链贷场景主体', limit: '30–150万', rate: '7.0%–8.2%', term: '6个月', segment: '长尾场景', rulePackage: '产业数据 + 经营实质 + 脱核补审', status: '试运行' as const },
-    { id: 'P-004', name: '运费贷', target: '链上物流服务主体', limit: '20–100万', rate: '6.8%–7.8%', term: '3–6个月', segment: '长尾场景', rulePackage: '运单频次 + 结算验证', status: '试运行' as const },
-  ];
-
-  // ─── Rules data (reused from old 'rules' module) ──────────────────────────
-  const RULES_DATA = [
-    { id: 'R-001', name: '高频对手规则', category: '基础' as const, trigger: '月均交易 ≥ 3 笔 & 连续 4 月未中断', scope: '关系识别', status: '启用' as const, priority: 'P1', owner: '张明远', updatedAt: '2026-03-18', dataSources: ['对公流水', '交易频次'], actionChain: '关系候选加分 → 进入候选池', hitRate: '18.4%', hitCount: 312, falsePositiveRate: '3.2%', reviewPassRate: '—', contribution: '识别率 +12%', trend: 'up' as const },
-    { id: 'R-002', name: '稳定账期规则', category: '基础' as const, trigger: '收付间隔落在合理账期区间', scope: '关系识别', status: '启用' as const, priority: 'P1', owner: '张明远', updatedAt: '2026-03-18', dataSources: ['对公流水', '回款流水'], actionChain: '关系强度加分 → 提升候选等级', hitRate: '15.2%', hitCount: 258, falsePositiveRate: '4.1%', reviewPassRate: '—', contribution: '评分准确度 +8%', trend: 'stable' as const },
-    { id: 'R-003', name: '经营闭环规则', category: '基础' as const, trigger: '收款→付款→工资/税费/缴费形成闭环', scope: '关系识别', status: '启用' as const, priority: 'P1', owner: '李雪婷', updatedAt: '2026-03-22', dataSources: ['对公流水', '代发工资', '税费缴纳'], actionChain: '经营真实性加分', hitRate: '22.1%', hitCount: 375, falsePositiveRate: '2.6%', reviewPassRate: '—', contribution: '真实经营 +15%', trend: 'up' as const },
-    { id: 'R-005', name: '集中度规则', category: '基础' as const, trigger: '最大对手占比 ≤ 55%', scope: '准入 + 贷中', status: '启用' as const, priority: 'P1', owner: '王敏', updatedAt: '2026-04-01', dataSources: ['对公流水', '发票数据'], actionChain: '降额 → 贷中监控', hitRate: '6.1%', hitCount: 104, falsePositiveRate: '8.2%', reviewPassRate: '72%', contribution: '减少坏账 0.3%', trend: 'up' as const },
-    { id: 'R-006', name: '快进快出排除', category: '排除' as const, trigger: '3 日内进出差 < 5%', scope: '风险排除', status: '启用' as const, priority: 'P0', owner: '陈立', updatedAt: '2026-03-28', dataSources: ['对公流水'], actionChain: '候选降级 → 标记异常', hitRate: '3.8%', hitCount: 65, falsePositiveRate: '6.1%', reviewPassRate: '23%', contribution: '拦截空转 52 户', trend: 'stable' as const },
-    { id: 'R-008', name: '断票规则', category: '准入' as const, trigger: '连续未开票 ≥ 2 个月', scope: '准入', status: '启用' as const, priority: 'P1', owner: '王敏', updatedAt: '2026-03-10', dataSources: ['税票数据'], actionChain: '自动拒件', hitRate: '4.2%', hitCount: 71, falsePositiveRate: '4.2%', reviewPassRate: '33%', contribution: '减少人工 68 件', trend: 'stable' as const },
-    { id: 'R-009', name: '脱核补审规则', category: '准入' as const, trigger: '未获得链主直接确权', scope: '准入', status: '启用' as const, priority: 'P1', owner: '王敏', updatedAt: '2026-04-05', dataSources: ['对公流水', '物流数据', '回款归集'], actionChain: '进入人工补审 → 调取证据包', hitRate: '12.6%', hitCount: 214, falsePositiveRate: '11.2%', reviewPassRate: '76%', contribution: '补审通过 163 户', trend: 'up' as const },
-    { id: 'R-010', name: '回款周期规则', category: '贷中' as const, trigger: '回款周期拉长 > 40%', scope: '贷中', status: '启用' as const, priority: 'P1', owner: '陈立', updatedAt: '2026-04-03', dataSources: ['对公流水', '回款流水'], actionChain: '临时收缩额度 → 生成复核', hitRate: '3.5%', hitCount: 59, falsePositiveRate: '15.3%', reviewPassRate: '62%', contribution: '提前预警 14 户', trend: 'up' as const },
-    { id: 'R-012', name: '资金外流规则', category: '贷中' as const, trigger: '连续 3 周净流出', scope: '贷中', status: '灰度' as const, priority: 'P2', owner: '陈立', updatedAt: '2026-04-08', dataSources: ['对公流水'], actionChain: '生成排查任务 → 人工复核', hitRate: '—', hitCount: 0, falsePositiveRate: '—', reviewPassRate: '—', contribution: '灰度验证中', trend: 'stable' as const },
-  ];
-
-  const CATEGORY_STYLES: Record<string, string> = {
-    '基础': 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]',
-    '排除': 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
-    '增强': 'bg-[#F0FDF4] text-[#047857] border-[#A7F3D0]',
-    '准入': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
-    '贷中': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
-  };
-
-  // ─── Product matching logic ────────────────────────────────────────────────
-  const recommendedProduct = PRODUCTS.find((p) =>
-    currentSample.productType.includes(p.name) ||
-    (currentSample.productType.includes('运费') && p.name === '运费贷') ||
-    (currentSample.productType.includes('订单') && p.name === '订单微贷'),
-  ) ?? PRODUCTS[2];
-
-  const alternativeProducts = PRODUCTS.filter((p) => p.id !== recommendedProduct.id).slice(0, 2);
-
-  const matchReasons = [
-    `年度销售规模 ${currentSample.annualSales}，匹配产品额度区间 ${recommendedProduct.limit}`,
-    `角色为"${currentSample.roleInChain}"，适用"${recommendedProduct.segment}"客群`,
-    `关系强度 ${currentSample.relationStrength}%，真实性得分 ${currentSample.authenticityScore}%`,
-    `证据覆盖 ${currentSample.evidenceCoverage}%，命中规则包: ${recommendedProduct.rulePackage}`,
-  ];
-
-  const noMatchReasons = alternativeProducts.map((p) => ({
-    product: p.name,
-    reason: p.name === '信用快贷' ? '非行内存量客户，不满足公私联动前提' :
-      p.name === '数据贷' ? `税票流水评分不足，连续开票 ${currentSample.invoiceContinuityMonths} 月低于标准阈值` :
-      p.name === '运费贷' ? '业务模式非物流服务履约，运单频次不适用' :
-      `产品类型"${p.name}"与"${currentSample.roleInChain}"不匹配`,
-  }));
+  const handleApprove = () => { if (isAtManualReview && active) advanceStage(); };
 
   const renderContent = () => {
     switch (activeModule) {
-      // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 2: 审批流程
-      // ═══════════════════════════════════════════════════════════════════════
-      case 'flow':
-        return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between text-[11px] text-[#94A3B8]">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-[#0F172A]">审批流程</span>
-                <span>当前样本:</span>
-                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-              </div>
-              <Badge className={isPastApproval ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[10px]' : isAtManualReview ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA] text-[10px]' : 'bg-[#EFF6FF] text-[#1890FF] border-[#BFDBFE] text-[10px]'}>{isPastApproval ? '已通过' : isAtManualReview ? '补审中' : '流程中'}</Badge>
-            </div>
-            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
-              {['线索识别', '预授信评估', '产品匹配', '三流交叉验证', '人工补审', '审批结论'].map((step, i) => {
-                const stageMap: Record<string, number> = { identified: 0, pre_credit: 1, manual_review: 4, approved: 5, risk_alert: 5, recovery: 5 };
-                const currentIdx = stageMap[currentSample.stage] ?? 0;
-                const done = i < currentIdx;
-                const isCurrent = i === currentIdx;
-                return (
-                  <React.Fragment key={step}>
-                    {i > 0 && <div className={`flex-1 h-px ${done ? 'bg-[#16A34A]' : 'bg-[#E2E8F0]'}`} />}
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] shrink-0 ${done ? 'bg-[#ECFDF3] text-[#047857]' : isCurrent ? 'bg-[#EFF6FF] text-[#2563EB] ring-1 ring-[#2563EB]/30' : 'bg-[#F8FAFC] text-[#94A3B8]'}`}>
-                      {done ? <CheckCircle size={12} /> : <div className={`w-3 h-3 rounded-full border-2 ${isCurrent ? 'border-[#2563EB] bg-[#2563EB]' : 'border-[#CBD5E1]'}`} />}
-                      <span className="font-medium">{step}</span>
-                    </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[
-                { node: '产品匹配', desc: `推荐产品: ${recommendedProduct.name}`, detail: `额度 ${currentSample.recommendedLimit}，期限 ${recommendedProduct.term}`, status: currentSample.stage !== 'identified' ? '已完成' : '待执行' },
-                { node: '三流交叉验证', desc: `订单 ${currentSample.orderCount90d} 笔 / 发票 ${currentSample.invoiceContinuityMonths} 月 / 回款 ${currentSample.avgReceivableCycle}`, detail: `覆盖率 ${currentSample.evidenceCoverage}%`, status: currentSample.evidenceCoverage > 70 ? '已完成' : '进行中' },
-                { node: '人工补审', desc: currentSample.reviewReason, detail: `置信度 ${currentSample.authenticityScore}%`, status: isPastApproval ? '已完成' : isAtManualReview ? '进行中' : '待执行' },
-              ].map(n => (
-                <div key={n.node} className="rounded-lg border border-[#E2E8F0] bg-white p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-[#0F172A]">{n.node}</span>
-                    <Badge className={`text-[9px] border ${n.status === '已完成' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : n.status === '进行中' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]'}`}>{n.status}</Badge>
-                  </div>
-                  <div className="text-[11px] text-[#64748B] leading-4">{n.desc}</div>
-                  <div className="text-[10px] text-[#94A3B8]">{n.detail}</div>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-[12px] text-[#2563EB]">
-              <span className="font-medium">AI 建议: </span>{currentSample.aiSummary}
-            </div>
-            {active && <ActionBar />}
-          </div>
-        );
 
-      // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 3: 审批摘要 (NEW)
-      // ═══════════════════════════════════════════════════════════════════════
-      case 'summary':
-        return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between text-[11px] text-[#94A3B8]">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-[#0F172A]">审批摘要</span>
-                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-              </div>
-              <Badge className="bg-[#EFF6FF] text-[#1890FF] border-[#BFDBFE] text-[10px]">自动生成</Badge>
-            </div>
-            <div className="rounded-lg border border-[#E2E8F0] bg-white p-5 space-y-4">
-              <div className="text-[14px] font-semibold text-[#0F172A]">{currentSample.shortName} — 审批依据摘要</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="text-[11px] font-medium text-[#64748B]">企业信息</div>
-                  {[
-                    { k: '企业全称', v: currentSample.companyName },
-                    { k: '产业链角色', v: currentSample.roleInChain },
-                    { k: '年销售额', v: currentSample.annualSales },
-                    { k: '关系强度', v: `${currentSample.relationStrength}%` },
-                    { k: '真实性评分', v: `${currentSample.authenticityScore}%` },
-                  ].map(r => (
-                    <div key={r.k} className="flex items-center justify-between text-[12px]">
-                      <span className="text-[#94A3B8]">{r.k}</span>
-                      <span className="text-[#0F172A] font-medium">{r.v}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  <div className="text-[11px] font-medium text-[#64748B]">授信决策</div>
-                  {[
-                    { k: '推荐产品', v: recommendedProduct.name },
-                    { k: '推荐额度', v: currentSample.recommendedLimit },
-                    { k: '审批状态', v: currentSample.approvalStatus },
-                    { k: '风险状态', v: currentSample.riskStatus },
-                    { k: '证据覆盖', v: `${currentSample.evidenceCoverage}%` },
-                  ].map(r => (
-                    <div key={r.k} className="flex items-center justify-between text-[12px]">
-                      <span className="text-[#94A3B8]">{r.k}</span>
-                      <span className="text-[#0F172A] font-medium">{r.v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="border-t border-[#F1F5F9] pt-3 space-y-2">
-                <div className="text-[11px] font-medium text-[#64748B]">经营证据</div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {[
-                    { k: '近90天订单', v: `${currentSample.orderCount90d} 笔 / ${currentSample.orderAmount90d}` },
-                    { k: '发票连续', v: `${currentSample.invoiceContinuityMonths} 个月` },
-                    { k: '平均回款周期', v: currentSample.avgReceivableCycle },
-                    { k: '物流', v: currentSample.logisticsStatus },
-                  ].map(r => (
-                    <div key={r.k} className="rounded border border-[#E2E8F0] px-3 py-2">
-                      <div className="text-[10px] text-[#94A3B8]">{r.k}</div>
-                      <div className="text-[12px] font-medium text-[#0F172A] mt-0.5">{r.v}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {currentSample.riskFlags.length > 0 && (
-                <div className="border-t border-[#F1F5F9] pt-3 space-y-2">
-                  <div className="text-[11px] font-medium text-[#DC2626]">风险标记</div>
-                  <div className="flex flex-wrap gap-1">
-                    {currentSample.riskFlags.map(f => (
-                      <Badge key={f} className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">{f}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="border-t border-[#F1F5F9] pt-3">
-                <div className="text-[11px] font-medium text-[#64748B] mb-1">AI 综合判断</div>
-                <div className="rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-4 py-3 text-[12px] text-[#2563EB] leading-5">{currentSample.aiSummary}</div>
-              </div>
-            </div>
-            {active && <ActionBar />}
-          </div>
-        );
-
-      // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 1: 产品匹配 (DEFAULT)
-      // ═══════════════════════════════════════════════════════════════════════
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 1: 产品匹配 (DEFAULT)
+         基于公私联动验证结果，卡片式产品推荐
+         ════════════════════════════════════════════════════════════════════ */
       case 'matching':
       default:
         return (
           <div className="space-y-4">
-            {active && <SceneHero question="为什么匹配这个产品、为什么能通过补审" />}
-
-            <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-2.5 flex items-center gap-2 text-[12px]">
-              <Zap size={14} className="text-[#2563EB] shrink-0" />
-              <span className="text-[#2563EB] font-medium">产品匹配</span>
-              <span className="text-[#64748B]">·</span>
-              <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-              <span className="text-[#64748B]">· 为什么这个客户适合这个产品</span>
+            {/* Context bar */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-[12px]">
+                <Zap size={14} className="text-[#2563EB]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">产品匹配</span>
+                <span className="text-[#94A3B8]">·</span>
+                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
+              </div>
+              <div className="flex items-center gap-2">
+                <ConfidenceDots label="企" value={currentSample.relationStrength} />
+                <ConfidenceDots label="人" value={currentSample.authenticityScore} />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[0.35fr_0.65fr] gap-4">
-              {/* Left: Sample list */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white">
-                <div className="px-4 py-3 border-b border-[#E2E8F0]">
-                  <span className="text-sm font-semibold text-[#0F172A]">候选样本</span>
-                </div>
-                <div className="divide-y divide-[#F1F5F9]">
-                  {SAMPLES.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => selectSample(s.id)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${s.id === selectedSampleId ? 'bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]'}`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-medium ${s.id === selectedSampleId ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>{s.shortName}</span>
-                          <Badge className={`text-[9px] border ${s.segmentTag.startsWith('A') ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : s.segmentTag.startsWith('B') ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : s.segmentTag.startsWith('D') ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'}`}>
-                            {s.segmentTag}
-                          </Badge>
+            {/* Filter bar */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
+                <Filter size={12} />
+                <span>筛选:</span>
+              </div>
+              <select className="h-7 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-2 text-[11px] text-[#334155]" value={productTypeFilter} onChange={e => setProductTypeFilter(e.target.value)}>
+                <option value="all">全部产品</option>
+                {PRODUCT_CATALOG.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+              </select>
+              <select className="h-7 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-2 text-[11px] text-[#334155]" value={riskFilter} onChange={e => setRiskFilter(e.target.value)}>
+                <option value="all">全部风险</option>
+                <option value="低风险">低风险</option>
+                <option value="中风险">中风险</option>
+              </select>
+              <div className="flex-1" />
+              <span className="text-[10px] text-[#94A3B8]">共 {filteredProducts.length} 款产品</span>
+            </div>
+
+            {/* Product cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredProducts.map(product => {
+                const isRecommended = product.id === matchedProduct.id;
+                const Icon = product.icon;
+                return (
+                  <div key={product.id} className={cn(
+                    'rounded-xl border bg-white overflow-hidden transition-shadow hover:shadow-md',
+                    isRecommended ? 'border-[#2563EB] ring-1 ring-[#2563EB]/20' : 'border-[#E2E8F0]'
+                  )}>
+                    {/* Card header */}
+                    <div className={cn('px-5 py-3 flex items-center justify-between', isRecommended ? 'bg-[#EFF6FF]' : 'bg-[#F8FAFC]')}>
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', isRecommended ? 'bg-[#2563EB] text-white' : 'bg-[#E2E8F0] text-[#64748B]')}>
+                          <Icon size={16} />
                         </div>
-                        <div className="text-[10px] text-[#94A3B8] mt-0.5">{s.roleInChain}</div>
+                        <div>
+                          <div className="text-[14px] font-semibold text-[#0F172A]">{product.name}</div>
+                          <div className="text-[10px] text-[#94A3B8]">{product.target}</div>
+                        </div>
                       </div>
-                      <ChevronRight size={12} className="text-[#CBD5E1] shrink-0" />
+                      <div className="flex items-center gap-1.5">
+                        {isRecommended && <Badge className="bg-[#2563EB] text-white text-[9px]">最佳匹配</Badge>}
+                        <Badge className={cn('text-[9px] border', RISK_LEVEL_STYLES[product.riskLevel])}>{product.riskLevel}</Badge>
+                      </div>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="px-5 py-4 space-y-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div><div className="text-[10px] text-[#94A3B8]">额度</div><div className="text-sm font-bold text-[#0F172A]">{product.limit}</div></div>
+                        <div><div className="text-[10px] text-[#94A3B8]">年化利率</div><div className="text-sm font-bold text-[#0F172A]">{product.rate}</div></div>
+                        <div><div className="text-[10px] text-[#94A3B8]">期限</div><div className="text-sm font-bold text-[#0F172A]">{product.term}</div></div>
+                      </div>
+
+                      {/* Match tags */}
+                      <div>
+                        <div className="text-[10px] text-[#94A3B8] mb-1.5">匹配理由</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {product.tags.map(tag => (
+                            <span key={tag} className={cn(
+                              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium border',
+                              isRecommended ? 'bg-[#E8F3FF] text-[#1677FF] border-[#B3D4FF]' : 'bg-[#F1F5F9] text-[#475569] border-[#E2E8F0]'
+                            )}>
+                              🏷️ {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Risk warning */}
+                      {isRecommended && riskWarnings.length > 0 && (
+                        <div className="text-[11px] text-[#94A3B8] leading-4 flex items-start gap-1.5">
+                          <Info size={12} className="shrink-0 mt-0.5 text-[#CBD5E1]" />
+                          <span>{riskWarnings.join('；')}</span>
+                        </div>
+                      )}
+
+                      {/* Not matched reason */}
+                      {!isRecommended && (
+                        <div className="text-[11px] text-[#94A3B8] leading-4 flex items-start gap-1.5">
+                          <CircleAlert size={12} className="shrink-0 mt-0.5 text-[#CBD5E1]" />
+                          <span>
+                            {product.name === '公私联动贷' ? '当前企业非行内存量客户，公私联动前置条件不满足' :
+                             product.name === '税易贷' ? `连续开票 ${currentSample.invoiceContinuityMonths} 月，税票评分未达标` :
+                             product.name === '运费贷' ? '业务模式非物流服务履约，运单频次条件不适用' :
+                             `当前客户"${currentSample.roleInChain}"与产品适用客群不匹配`}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button
+                          size="sm"
+                          className={cn('h-8 text-[11px] gap-1.5', isRecommended ? 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white' : 'bg-white border border-[#E2E8F0] text-[#334155] hover:bg-[#F8FAFC]')}
+                          onClick={() => isRecommended && onModuleChange('flow')}
+                        >
+                          {isRecommended ? <><CheckCircle2 size={12} /> 选择此产品</> : '选择此产品'}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 text-[11px] text-[#64748B] gap-1">
+                          <Eye size={12} /> 查看详情
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* AI recommendation strip */}
+            <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 flex items-start gap-2.5 text-[12px]">
+              <Sparkles size={14} className="text-[#2563EB] shrink-0 mt-0.5" />
+              <div>
+                <span className="font-medium text-[#2563EB]">AI 推荐: </span>
+                <span className="text-[#334155]">基于{currentSample.shortName}的公私联动验证结果（企业置信度 {currentSample.relationStrength}%、个人置信度 {currentSample.authenticityScore}%），</span>
+                <span className="font-medium text-[#0F172A]">推荐"{matchedProduct.name}"，建议额度 {currentSample.recommendedLimit}。</span>
+              </div>
+            </div>
+
+            {active && <ActionBar />}
+          </div>
+        );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 2: 预审与推单
+         本系统终点 = 预审通过 → 推送信贷系统，不越权做最终审批/放款
+         ════════════════════════════════════════════════════════════════════ */
+      case 'flow': {
+        const flowNodes = [
+          {
+            step: '客户经理提交预审',
+            desc: `${currentSample.shortName} 提交产品匹配与预审申请`,
+            operator: '张三经理',
+            time: '10分钟前',
+            done: true,
+            rejected: false,
+          },
+          {
+            step: '系统自动核验',
+            desc: `公私联动验证通过 · 双维置信度: 企${currentSample.relationStrength}% 人${currentSample.authenticityScore}%`,
+            operator: '系统',
+            time: '8分钟前',
+            done: true,
+            rejected: false,
+          },
+          {
+            step: '风控预审',
+            desc: isPastApproval ? '风控预审通过，预审结论已生成' : isAtManualReview ? '待风控预审，需人工确认补审证据' : '待前置流程完成',
+            operator: isPastApproval ? '风控系统' : '待分配',
+            time: isPastApproval ? '5分钟前' : '—',
+            done: isPastApproval,
+            rejected: false,
+          },
+          {
+            step: '预审通过，已推送信贷系统',
+            desc: isPastApproval ? `预审通过 · ${matchedProduct.name} · 建议额度 ${currentSample.recommendedLimit} · 已推送统一信贷系统建档` : '待预审完成后自动推送',
+            operator: isPastApproval ? '系统自动推送' : '—',
+            time: isPastApproval ? '3分钟前' : '—',
+            done: isPastApproval,
+            rejected: false,
+          },
+        ];
+
+        return (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-[12px]">
+                <Route size={14} className="text-[#2563EB]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">预审与推单</span>
+                <span className="text-[#94A3B8]">·</span>
+                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
+              </div>
+              <Badge className={isPastApproval ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[10px]' : isAtManualReview ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA] text-[10px]' : 'bg-[#EFF6FF] text-[#1890FF] border-[#BFDBFE] text-[10px]'}>{isPastApproval ? '已推送信贷系统' : isAtManualReview ? '待风控预审' : '流程中'}</Badge>
+            </div>
+
+            {/* Credit system status feedback */}
+            {isPastApproval ? (
+              <div className="rounded-lg border border-[#A7F3D0] bg-[#ECFDF3] px-4 py-3 flex items-center gap-3 text-[12px]">
+                <CheckCircle size={16} className="text-[#047857] shrink-0" />
+                <div>
+                  <span className="font-semibold text-[#047857]">信贷系统已受理</span>
+                  <span className="text-[#334155] ml-2">编号: LOAN{new Date().getFullYear()}{String(new Date().getMonth() + 1).padStart(2, '0')}{String(new Date().getDate()).padStart(2, '0')}01 · 等待正式建档放款（由统一信贷系统完成）</span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 flex items-center gap-3 text-[12px]">
+                <Clock size={14} className="text-[#94A3B8] shrink-0" />
+                <span className="text-[#94A3B8]">预审通过后，系统将自动推送至统一信贷系统，由信贷系统完成正式建档与放款。本系统不执行审批放款操作。</span>
+              </div>
+            )}
+
+            {/* Timeline nodes */}
+            <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
+              <div className="relative">
+                {flowNodes.map((node, i) => {
+                  const isLast = i === flowNodes.length - 1;
+                  const isCurrent = !node.done && (i === 0 || flowNodes[i - 1].done);
+                  return (
+                    <div key={node.step} className="flex gap-4">
+                      {/* Timeline spine */}
+                      <div className="flex flex-col items-center">
+                        <div className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors',
+                          node.done ? 'bg-[#ECFDF3] border-[#16A34A] text-[#16A34A]' :
+                          node.rejected ? 'bg-[#FEF2F2] border-[#DC2626] text-[#DC2626]' :
+                          isCurrent ? 'bg-[#EFF6FF] border-[#2563EB] text-[#2563EB] ring-4 ring-[#2563EB]/10' :
+                          'bg-[#F8FAFC] border-[#E2E8F0] text-[#CBD5E1]'
+                        )}>
+                          {node.done ? <CheckCircle size={16} /> : node.rejected ? <XCircle size={16} /> : <span className="text-[11px] font-bold">{i + 1}</span>}
+                        </div>
+                        {!isLast && <div className={cn('w-0.5 flex-1 my-1', node.done ? 'bg-[#16A34A]' : 'bg-[#E2E8F0]')} />}
+                      </div>
+                      {/* Node content */}
+                      <div className={cn('pb-6', isLast && 'pb-0')}>
+                        <div className="flex items-center gap-2">
+                          <span className={cn('text-[13px] font-semibold', node.done ? 'text-[#0F172A]' : isCurrent ? 'text-[#2563EB]' : 'text-[#94A3B8]')}>{node.step}</span>
+                          {isCurrent && <Badge className="bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE] text-[9px]">当前节点</Badge>}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#64748B] leading-4">{node.desc}</div>
+                        <div className="mt-1 flex items-center gap-3 text-[10px] text-[#94A3B8]">
+                          <span className="flex items-center gap-1"><User size={10} />{node.operator}</span>
+                          <span className="flex items-center gap-1"><Clock size={10} />{node.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Inline approval summary */}
+            <SectionShell title="预审摘要" subtitle="基于候选资产池验证结果自动生成">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {/* Enterprise dimension */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#FAFBFF] p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-[#2563EB] text-white flex items-center justify-center"><CreditCard size={12} /></div>
+                    <span className="text-[12px] font-semibold text-[#0F172A]">企业维度</span>
+                  </div>
+                  {[
+                    { k: '行业', v: `${currentSample.chainName}（${currentSample.roleInChain}）` },
+                    { k: '营收', v: currentSample.annualSales },
+                    { k: '对公关系', v: currentSample.accountFlowStatus },
+                  ].map(r => (
+                    <div key={r.k} className="flex items-center justify-between text-[12px]">
+                      <span className="text-[#94A3B8]">{r.k}</span>
+                      <span className="text-[#0F172A] font-medium">{r.v}</span>
+                    </div>
+                  ))}
+                  <div className="pt-1 border-t border-[#F1F5F9]">
+                    <div className="text-[10px] text-[#94A3B8] mb-1">企业置信度</div>
+                    <ConfidenceDots label="企" value={currentSample.relationStrength} />
+                  </div>
+                </div>
+                {/* Personal dimension */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#FAFBFF] p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-[#7C3AED] text-white flex items-center justify-center"><User size={12} /></div>
+                    <span className="text-[12px] font-semibold text-[#0F172A]">个人维度</span>
+                  </div>
+                  {[
+                    { k: '法人', v: '法人代表（信息来源: 行内数据）' },
+                    { k: '本行关系', v: '按揭客户（月供稳定，无逾期）' },
+                    { k: '公私联动', v: currentSample.authenticityScore >= 80 ? '已通过交叉验证' : '验证数据不充分' },
+                  ].map(r => (
+                    <div key={r.k} className="flex items-center justify-between text-[12px]">
+                      <span className="text-[#94A3B8]">{r.k}</span>
+                      <span className="text-[#0F172A] font-medium">{r.v}</span>
+                    </div>
+                  ))}
+                  <div className="pt-1 border-t border-[#F1F5F9]">
+                    <div className="text-[10px] text-[#94A3B8] mb-1">个人置信度</div>
+                    <ConfidenceDots label="人" value={currentSample.authenticityScore} />
+                  </div>
+                </div>
+              </div>
+              {/* Product match reason */}
+              <div className="mt-4 rounded-lg border border-[#D6E4FF] bg-[#EFF6FF] p-4 space-y-2">
+                <div className="text-[12px] font-semibold text-[#0F172A]">匹配产品: {matchedProduct.name}（额度 {currentSample.recommendedLimit}，年化 {matchedProduct.rate}）</div>
+                <div className="text-[11px] text-[#2563EB] leading-4">
+                  理由: 公私联动验证通过 · 企业置信度 {currentSample.relationStrength}% · 个人置信度 {currentSample.authenticityScore}% · {matchedProduct.tags.join(' + ')}
+                </div>
+              </div>
+              {/* Actions */}
+              <div className="mt-4 flex items-center gap-3">
+                <Button size="sm" className="h-8 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[11px] gap-1.5" onClick={handleApprove} disabled={!isAtManualReview}>
+                  <CheckCircle2 size={12} /> 确认摘要
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 text-[#64748B]">
+                  <Pencil size={12} /> 修改摘要
+                </Button>
+                <span className="text-[10px] text-[#94A3B8]">修改内容将标注"修改记录"</span>
+              </div>
+            </SectionShell>
+
+            {active && <ActionBar />}
+          </div>
+        );
+      }
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 3: 审批摘要
+         自动生成企业/个人/产品三维审批依据
+         ════════════════════════════════════════════════════════════════════ */
+      case 'summary':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-[12px]">
+                <FileCheck2 size={14} className="text-[#2563EB]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">审批摘要</span>
+                <span className="text-[#94A3B8]">·</span>
+                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
+              </div>
+              <Badge className="bg-[#EFF6FF] text-[#1890FF] border-[#BFDBFE] text-[10px]">自动生成</Badge>
+            </div>
+
+            <div className="rounded-xl border border-[#E2E8F0] bg-white overflow-hidden">
+              {/* Title area */}
+              <div className="px-6 py-4 bg-gradient-to-r from-[#F8FAFC] to-white border-b border-[#E2E8F0]">
+                <div className="text-[16px] font-bold text-[#0F172A]">{currentSample.companyName}</div>
+                <div className="mt-1 text-[11px] text-[#64748B]">{currentSample.chainName} · {currentSample.roleInChain} · 审批摘要自动生成</div>
+              </div>
+
+              <div className="p-6 space-y-5">
+                {/* Section 1: Enterprise */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0F172A]">
+                    <span className="w-5 h-5 rounded bg-[#2563EB] text-white flex items-center justify-center text-[10px] font-bold">1</span>
+                    企业维度
+                  </div>
+                  <div className="ml-7 grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { k: '行业', v: `${currentSample.chainName}（${currentSample.roleInChain}）` },
+                      { k: '营收', v: `${currentSample.annualSales}（税局开票）` },
+                      { k: '对公流水', v: currentSample.accountFlowStatus },
+                      { k: '关系强度', v: `${currentSample.relationStrength}%` },
+                      { k: '证据覆盖', v: `${currentSample.evidenceCoverage}%` },
+                      { k: '集中度', v: currentSample.maxCustomerConcentration },
+                    ].map(r => (
+                      <div key={r.k} className="rounded-md border border-[#F1F5F9] bg-[#F8FAFC] px-3 py-2">
+                        <div className="text-[10px] text-[#94A3B8]">{r.k}</div>
+                        <div className="mt-0.5 text-[12px] font-medium text-[#0F172A]">{r.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="ml-7"><ConfidenceDots label="企" value={currentSample.relationStrength} /></div>
+                </div>
+
+                {/* Section 2: Personal */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0F172A]">
+                    <span className="w-5 h-5 rounded bg-[#7C3AED] text-white flex items-center justify-center text-[10px] font-bold">2</span>
+                    个人维度
+                  </div>
+                  <div className="ml-7 grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { k: '法人', v: '法人代表' },
+                      { k: '本行关系', v: '按揭客户（月供稳定，无逾期）' },
+                      { k: '公私联动', v: currentSample.authenticityScore >= 80 ? '已通过（法人按揭 + 企业代发）' : '数据待补全' },
+                    ].map(r => (
+                      <div key={r.k} className="rounded-md border border-[#F1F5F9] bg-[#F8FAFC] px-3 py-2">
+                        <div className="text-[10px] text-[#94A3B8]">{r.k}</div>
+                        <div className="mt-0.5 text-[12px] font-medium text-[#0F172A]">{r.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="ml-7"><ConfidenceDots label="人" value={currentSample.authenticityScore} /></div>
+                </div>
+
+                {/* Section 3: Product match */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0F172A]">
+                    <span className="w-5 h-5 rounded bg-[#047857] text-white flex items-center justify-center text-[10px] font-bold">3</span>
+                    匹配产品
+                  </div>
+                  <div className="ml-7 rounded-lg border border-[#D6E4FF] bg-[#EFF6FF] p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[14px] font-bold text-[#0F172A]">{matchedProduct.name}</div>
+                      <div className="text-[14px] font-bold text-[#2563EB]">额度 {currentSample.recommendedLimit}</div>
+                    </div>
+                    <div className="mt-2 text-[11px] text-[#334155] leading-5">
+                      年化 {matchedProduct.rate} · 期限 {matchedProduct.term} · 理由: {matchedProduct.tags.join(' + ')}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {matchedProduct.tags.map(tag => (
+                        <span key={tag} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 bg-[#E8F3FF] text-[#1677FF] border border-[#B3D4FF] text-[10px] font-medium">
+                          🏷️ {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Risk flags */}
+                {currentSample.riskFlags.length > 0 && (
+                  <div className="border-t border-[#F1F5F9] pt-4 space-y-2">
+                    <div className="text-[11px] font-medium text-[#DC2626] flex items-center gap-1.5"><AlertTriangle size={12} /> 风险标记</div>
+                    <div className="flex flex-wrap gap-1.5 ml-5">
+                      {currentSample.riskFlags.map(f => <Badge key={f} className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">{f}</Badge>)}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI judgment */}
+                <div className="border-t border-[#F1F5F9] pt-4">
+                  <div className="text-[11px] font-medium text-[#64748B] mb-2 flex items-center gap-1.5"><Sparkles size={12} className="text-[#2563EB]" /> AI 综合判断</div>
+                  <div className="rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-4 py-3 text-[12px] text-[#2563EB] leading-5">{currentSample.aiSummary}</div>
+                </div>
+              </div>
+
+              {/* Action footer */}
+              <div className="px-6 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center gap-3">
+                <Button size="sm" className="h-9 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[12px] gap-1.5 px-5" onClick={handleApprove} disabled={!isAtManualReview}>
+                  <CheckCircle2 size={14} /> 确认摘要，提交审批
+                </Button>
+                <Button variant="outline" size="sm" className="h-9 text-[12px] gap-1.5 text-[#64748B]">
+                  <Pencil size={14} /> 修改摘要
+                </Button>
+                <span className="text-[10px] text-[#94A3B8]">修改后将自动标注"修改记录"</span>
+              </div>
+            </div>
+
+            {active && <ActionBar />}
+          </div>
+        );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 4: 补审作业
+         处理需要补充资料的企业（法人缺失、征信异常）
+         ════════════════════════════════════════════════════════════════════ */
+      case 'review': {
+        const reviewSamples = SAMPLES.map(s => {
+          const reasons: string[] = [];
+          if (s.riskFlags.length > 0) reasons.push(...s.riskFlags);
+          if (s.evidenceCoverage < 70) reasons.push('证据覆盖不足');
+          if (s.authenticityScore < 60) reasons.push('法人身份待验证');
+          if (s.reviewReason) reasons.push(s.reviewReason.slice(0, 30));
+          const primaryReason = reasons[0] || '待补审';
+          const category = primaryReason.includes('身份') ? '法人身份缺失' :
+                           primaryReason.includes('征信') ? '征信异常' :
+                           primaryReason.includes('证据') || primaryReason.includes('覆盖') ? '信息不完整' :
+                           '需人工核实';
+          return { ...s, reasons, primaryReason, category, updatedAgo: s.stage === 'manual_review' ? '2小时前' : s.stage === 'identified' ? '1天前' : '3天前' };
+        });
+
+        const filteredReviews = reviewSamples.filter(s => {
+          if (reviewFilter !== 'all' && s.category !== reviewFilter) return false;
+          return true;
+        });
+
+        const categoryCount = (cat: string) => reviewSamples.filter(s => s.category === cat).length;
+
+        return (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-[12px]">
+                <ShieldCheck size={14} className="text-[#C2410C]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">补审作业</span>
+                <span className="text-[#94A3B8]">· 共 {reviewSamples.length} 户待处理</span>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-[#64748B] gap-1"><Search size={10} /> 搜索</Button>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[200px_1fr] gap-4">
+              {/* Left: filter sidebar */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-3 h-fit">
+                <div className="text-[11px] font-semibold text-[#0F172A]">补审原因</div>
+                <div className="space-y-1">
+                  {[
+                    { value: 'all', label: '全部', count: reviewSamples.length },
+                    { value: '法人身份缺失', label: '法人身份缺失', count: categoryCount('法人身份缺失') },
+                    { value: '征信异常', label: '征信异常', count: categoryCount('征信异常') },
+                    { value: '信息不完整', label: '信息不完整', count: categoryCount('信息不完整') },
+                    { value: '需人工核实', label: '需人工核实', count: categoryCount('需人工核实') },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setReviewFilter(opt.value)}
+                      className={cn(
+                        'w-full flex items-center justify-between rounded-md px-2.5 py-2 text-[11px] transition-colors',
+                        reviewFilter === opt.value ? 'bg-[#EFF6FF] text-[#2563EB] font-medium' : 'text-[#64748B] hover:bg-[#F8FAFC]'
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      <span className="text-[10px] bg-[#F1F5F9] rounded-full px-1.5 py-0.5">{opt.count}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-[#F1F5F9] pt-3 space-y-1">
+                  <div className="text-[11px] font-semibold text-[#0F172A]">更新时间</div>
+                  {['all', '近7天', '近30天'].map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setReviewTimeFilter(opt)}
+                      className={cn(
+                        'w-full text-left rounded-md px-2.5 py-2 text-[11px] transition-colors',
+                        reviewTimeFilter === opt ? 'bg-[#EFF6FF] text-[#2563EB] font-medium' : 'text-[#64748B] hover:bg-[#F8FAFC]'
+                      )}
+                    >
+                      {opt === 'all' ? '全部' : opt}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Right: Matching result */}
-              <div className="space-y-4">
-                {/* Recommended product */}
-                <div className="rounded-lg border border-[#D6E4FF] bg-white overflow-hidden">
-                  <div className="px-5 py-3 bg-[#FAFBFF] border-b border-[#D6E4FF] flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-[#2563EB]" />
-                      <span className="text-sm font-semibold text-[#0F172A]">推荐产品</span>
-                    </div>
-                    <Badge className="bg-[#2563EB] text-white text-[10px]">最佳匹配</Badge>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-lg font-bold text-[#0F172A]">{recommendedProduct.name}</div>
-                        <div className="mt-0.5 text-[11px] text-[#64748B]">{recommendedProduct.target}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-[#94A3B8]">建议额度</div>
-                        <div className="text-xl font-bold text-[#2563EB]">{currentSample.recommendedLimit}</div>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-4 gap-3">
-                      {[
-                        { label: '额度区间', value: recommendedProduct.limit },
-                        { label: '定价', value: recommendedProduct.rate },
-                        { label: '期限', value: recommendedProduct.term },
-                        { label: '状态', value: recommendedProduct.status },
-                      ].map((f) => (
-                        <div key={f.label} className="rounded-md bg-[#F8FAFC] border border-[#F1F5F9] px-2.5 py-2">
-                          <div className="text-[10px] text-[#94A3B8]">{f.label}</div>
-                          <div className="mt-0.5 text-xs font-medium text-[#0F172A]">{f.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              {/* Right: list */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+                {/* Table header */}
+                <div className="grid grid-cols-[1fr_140px_100px_120px] gap-0 px-4 py-2.5 border-b border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-medium text-[#94A3B8] uppercase tracking-wider">
+                  <div>企业简称</div><div>补审原因</div><div>更新时间</div><div>操作</div>
                 </div>
-
-                {/* Match reasons */}
-                <PanelCard title="匹配依据">
-                  <div className="space-y-2">
-                    {matchReasons.map((r, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs leading-5">
-                        <CheckCircle2 size={14} className="text-[#16A34A] shrink-0 mt-0.5" />
-                        <span className="text-[#334155]">{r}</span>
-                      </div>
-                    ))}
-                  </div>
-                </PanelCard>
-
-                {/* Rule hits for this sample */}
-                <PanelCard title={`${currentSample.shortName} 规则命中`}>
-                  <div className="space-y-1.5">
-                    {sampleRuleHits.map((rule) => (
-                      <div key={rule.id} className="flex items-center justify-between rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2">
-                        <div>
-                          <span className="text-xs font-medium text-[#334155]">{rule.name}</span>
-                          <span className="ml-2 text-[11px] text-[#64748B]">{rule.reason}</span>
-                        </div>
-                        <Badge className={rule.result === 'pass' ? 'bg-[#ECFDF3] text-[#047857] border border-[#A7F3D0] text-[10px]' : rule.result === 'warn' ? 'bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA] text-[10px]' : 'bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA] text-[10px]'}>
-                          {rule.result === 'pass' ? '通过' : rule.result === 'warn' ? '关注' : '补审'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </PanelCard>
-
-                {/* Why NOT other products */}
-                <PanelCard title="不推荐其他产品的原因">
-                  <div className="space-y-2">
-                    {noMatchReasons.map((nm) => (
-                      <div key={nm.product} className="flex items-start gap-2 rounded-md border border-[#E2E8F0] bg-white px-3 py-2.5">
-                        <CircleAlert size={14} className="text-[#94A3B8] shrink-0 mt-0.5" />
-                        <div>
-                          <span className="text-xs font-medium text-[#0F172A]">{nm.product}</span>
-                          <span className="ml-1.5 text-[11px] text-[#64748B]">— {nm.reason}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </PanelCard>
-
-                <AiNote action={currentSample.agentHints.suggestedAction}>
-                  {currentSample.aiSummary}
-                </AiNote>
-              </div>
-            </div>
-
-            {active && <ActionBar />}
-          </div>
-        );
-
-      // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 4: 补审作业 (merged workflow + conclusion)
-      // ═══════════════════════════════════════════════════════════════════════
-      case 'review':
-        return (
-          <div className="space-y-4">
-            {active && <SceneHero question="为什么匹配这个产品、为什么能通过补审" />}
-
-            {/* 补审流程条 */}
-            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
-              {['提交补审', '证据核验', '规则复核', '人工判断（增强审批）', '审批结论'].map((step, i) => {
-                const currentIdx = isPastApproval ? 4 : isAtManualReview ? 3 : 1;
-                const done = i < currentIdx;
-                const isCurrent = i === currentIdx;
-                return (
-                  <React.Fragment key={step}>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${done ? 'bg-[#ECFDF3] text-[#047857]' : isCurrent ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]' : 'text-[#94A3B8]'}`}>
-                      <span className={`w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold ${done ? 'bg-[#047857] text-white' : isCurrent ? 'bg-[#2563EB] text-white' : 'bg-[#E2E8F0] text-[#94A3B8]'}`}>{done ? '✓' : i + 1}</span>
-                      {step}
-                    </div>
-                    {i < 4 && <div className={`flex-1 h-px ${i < currentIdx ? 'bg-[#047857]' : 'bg-[#E2E8F0]'}`} />}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-2.5 flex items-center gap-2 text-[12px]">
-              <FileCheck2 size={14} className="text-[#2563EB] shrink-0" />
-              <span className="text-[#2563EB] font-medium">补审作业</span>
-              <span className="text-[#64748B]">·</span>
-              <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-              <span className="text-[#64748B]">· 状态: {isPastApproval ? '已批准' : isAtManualReview ? '补审中' : currentSample.approvalStatus}</span>
-            </div>
-
-            {/* ── UPPER: Flow verification ── */}
-            <SectionShell title="证据交叉验证" subtitle={`${currentSample.shortName} · 三流验证 · 证据等级: ${evidenceGrade} (${currentSample.evidenceCoverage}%)`}>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {verificationFlows.map((flow, index) => (
-                  <button
-                    key={flow.id}
-                    onClick={() => setSelectedFlowId(flow.id)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${flow.id === selectedFlowId ? 'bg-[#1890FF] text-white' : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'}`}
-                  >
-                    证据链 {index + 1}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                {[
-                  { icon: <PackageCheck size={16} className="text-[#1890FF]" />, title: '订单流', badge: '源头证据', color: 'border-[#D7E8FF]', fields: [['订单编号', selectedFlow.order.code], ['采购方', selectedFlow.order.counterpart], ['订单金额', selectedFlow.order.amount], ['日期', `2026-${selectedFlow.order.date}`]] },
-                  { icon: <Route size={16} className="text-[#047857]" />, title: '物流轨迹', badge: '履约证据', color: 'border-[#CCF5DE]', fields: [['运单编号', selectedFlow.logistics.code], ['状态', selectedFlow.logistics.status], ['路线', selectedFlow.logistics.route], ['日期', `2026-${selectedFlow.logistics.date}`]] },
-                  { icon: <Wallet size={16} className="text-[#C2410C]" />, title: '回款流水', badge: '资金证据', color: 'border-[#FDE7C2]', fields: [['流水号', selectedFlow.settlement.code], ['金额', selectedFlow.settlement.amount], ['周期', selectedFlow.settlement.cycle], ['日期', `2026-${selectedFlow.settlement.date}`]] },
-                ].map((col) => (
-                  <div key={col.title} className={`rounded-xl border ${col.color} bg-white p-4`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">{col.icon}<span className="text-sm font-semibold text-[#0F172A]">{col.title}</span></div>
-                      <Badge className="bg-[#F8FAFC] text-[#475569] border border-[#E2E8F0] text-[9px]">{col.badge}</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {col.fields.map(([label, val]) => (
-                        <div key={label}>
-                          <div className="text-[10px] text-[#94A3B8]">{label}</div>
-                          <div className="mt-0.5 text-xs font-medium text-[#334155]">{val}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] p-3 flex items-start gap-2">
-                <CircleDot size={12} className="text-[#94A3B8] shrink-0 mt-1" />
-                <span className="text-[11px] text-[#64748B] leading-5">
-                  <span className="font-medium text-[#334155]">脱核逻辑：</span>
-                  链主"{currentSample.mainChainPath[0]}"未直接确权，桥接节点"{currentSample.keyCounterparty}"证据覆盖 {currentSample.evidenceCoverage}%，{currentSample.evidenceCoverage >= 80 ? '足以证明真实交易背景' : '仍需补充更多证据'}。
-                </span>
-              </div>
-            </SectionShell>
-
-            {/* Rule hits + Approval action */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-4">
-              <PanelCard title="规则命中">
-                <div className="space-y-2">
-                  {sampleRuleHits.map((rule) => (
-                    <div key={rule.id} className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-[13px] font-semibold text-[#0F172A]">{rule.name}</span>
-                        <Badge className={rule.result === 'pass' ? 'bg-[#ECFDF3] text-[#047857] border border-[#A7F3D0]' : rule.result === 'warn' ? 'bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA]' : 'bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]'}>
-                          {rule.result === 'pass' ? '通过' : rule.result === 'warn' ? '关注' : '补审'}
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-[11px] text-[#64748B]">{rule.reason}</p>
-                    </div>
-                  ))}
-                </div>
-              </PanelCard>
-
-              <div className="space-y-4">
-                {/* Approval card */}
-                <div className="rounded-xl bg-gradient-to-br from-[#1E40AF] via-[#2563EB] to-[#3B82F6] p-5 text-white relative overflow-hidden">
-                  <div className="text-xs text-white/60 font-medium uppercase tracking-wider">审批方案</div>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold tracking-tight">{currentSample.recommendedLimit}</span>
-                    <span className="ml-1.5 text-sm text-white/50">{currentSample.productType}</span>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {[
-                      ['关系强度', `${currentSample.relationStrength}%`],
-                      ['审批状态', currentSample.approvalStatus],
-                      ['置信度', `${currentSample.agentHints.confidence}%`],
-                      ['当前额度', currentSample.currentLimit],
-                    ].map(([label, val]) => (
-                      <div key={label}>
-                        <div className="text-[10px] text-white/50">{label}</div>
-                        <div className="mt-0.5 text-sm font-medium text-white/90">{val}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 rounded-lg bg-white/10 border border-white/15 px-3 py-2">
-                    <div className="text-[10px] text-white/50 mb-1">脱核链贷口径</div>
-                    <div className="text-[11px] text-white/80 leading-4">未取得链主直接确权，依据替代性证据进行增强审批。强证据支持「建议通过」，但不等于取消补审。</div>
-                  </div>
-                  {active && isAtManualReview && (
-                    <Button className="mt-3 w-full bg-white text-[#2563EB] hover:bg-white/90 font-semibold" onClick={handleApprove}>
-                      建议通过，提交复核
-                    </Button>
-                  )}
-                  {isPastApproval && (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/15 border border-white/20 px-3 py-2">
-                      <CheckCircle2 size={14} className="text-[#4ADE80]" />
-                      <span className="text-xs text-white/90">增强审批已通过</span>
-                    </div>
-                  )}
-                </div>
-
-                <AiNote action={currentSample.agentHints.suggestedAction}>
-                  {currentSample.aiSummary}
-                </AiNote>
-              </div>
-            </div>
-
-            {/* ── LOWER: Conclusion deposit ── */}
-            <SectionShell title="审批结论沉淀" subtitle={`${currentSample.shortName} · ${currentSample.roleInChain}`}>
-              <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.35fr] gap-4">
-                <div className="space-y-3">
-                  <PanelCard title="证据摘要">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {[
-                        { label: '90天订单', value: `${currentSample.orderCount90d} 笔 / ${currentSample.orderAmount90d}` },
-                        { label: '连续开票', value: `${currentSample.invoiceContinuityMonths} 月` },
-                        { label: '物流状态', value: currentSample.logisticsStatus },
-                        { label: '资金流水', value: currentSample.accountFlowStatus },
-                        { label: '集中度', value: currentSample.maxCustomerConcentration },
-                        { label: '证据覆盖', value: `${currentSample.evidenceCoverage}%` },
-                      ].map((m) => (
-                        <div key={m.label} className="rounded-md bg-[#F8FAFC] border border-[#F1F5F9] px-2.5 py-2">
-                          <div className="text-[10px] text-[#94A3B8]">{m.label}</div>
-                          <div className="mt-0.5 text-xs font-semibold text-[#0F172A]">{m.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </PanelCard>
-
-                  <PanelCard title="风险提示">
-                    <p className="text-[12px] text-[#334155] leading-5">{currentSample.reviewReason}</p>
-                    {currentSample.riskFlags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {currentSample.riskFlags.map((f) => (
-                          <Badge key={f} className="bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] text-[10px]">{f}</Badge>
+                {/* Rows */}
+                {filteredReviews.map(s => (
+                  <div key={s.id} className="grid grid-cols-[1fr_140px_100px_120px] gap-0 px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 items-center hover:bg-[#FAFBFF] transition-colors">
+                    <div>
+                      <div className="text-[12px] font-medium text-[#0F172A]">{s.shortName}</div>
+                      <div className="mt-0.5 text-[10px] text-[#94A3B8]">{s.roleInChain}</div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {s.reasons.slice(0, 2).map(r => (
+                          <span key={r} className="bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5] rounded px-1.5 py-0.5 text-[9px]">{r.slice(0, 16)}</span>
                         ))}
                       </div>
-                    )}
-                  </PanelCard>
-
-                  <PanelCard title="审批建议（增强审批）">
-                    <div className="rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 mb-2">
-                      <p className="text-[11px] text-[#92400E] leading-4">本样本未取得链主直接确权，审批结论基于替代性证据增强判断，不等于系统自动放款。</p>
                     </div>
-                    <div className="rounded-md border border-[#D6E4FF] bg-[#EFF6FF] px-3 py-2.5">
-                      <p className="text-xs text-[#0F172A] leading-5">{currentSample.aiSummary}</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Badge className="bg-white text-[#2563EB] border border-[#BFDBFE] text-[10px]">额度: {currentSample.recommendedLimit}</Badge>
-                        <Badge className="bg-white text-[#047857] border border-[#A7F3D0] text-[10px]">产品: {currentSample.productType}</Badge>
-                      </div>
+                    <div>
+                      <Badge className={cn('text-[9px] border',
+                        s.category === '法人身份缺失' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]' :
+                        s.category === '征信异常' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' :
+                        'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'
+                      )}>
+                        {s.category}
+                      </Badge>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {[
-                        { label: '建议通过', tone: 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]', active: currentSample.segmentTag === 'A可授信' },
-                        { label: '建议通过但降额', tone: 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]', active: currentSample.approvalStatus === '已降额' },
-                        { label: '建议补充材料', tone: 'bg-[#FFFBEB] text-[#92400E] border-[#FDE68A]', active: currentSample.segmentTag === 'C待观察' },
-                        { label: '建议退回', tone: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]', active: false },
-                      ].map(opt => (
-                        <div key={opt.label} className={`text-center rounded-md border px-2 py-1.5 text-[11px] font-medium ${opt.active ? opt.tone : 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]'}`}>
-                          {opt.label}
-                        </div>
-                      ))}
+                    <div className="text-[11px] text-[#94A3B8]">{s.updatedAgo}</div>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#2563EB] border-[#BFDBFE]">
+                        <Upload size={10} /> 补充资料
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]">
+                        <ArrowRight size={10} /> 重新提交
+                      </Button>
                     </div>
-                  </PanelCard>
-                </div>
-
-                <div className="space-y-3">
-                  <ConfidenceCard
-                    score={currentSample.authenticityScore}
-                    label="综合真实性评分"
-                    breakdowns={[
-                      { name: '关系强度', value: currentSample.relationStrength },
-                      { name: '证据覆盖', value: currentSample.evidenceCoverage },
-                      { name: '真实性', value: currentSample.authenticityScore },
-                    ]}
-                  />
-                  <AiJudgmentBlock
-                    judgment={currentSample.aiSummary}
-                    basis={[
-                      `关系强度 ${currentSample.relationStrength}%`,
-                      `证据覆盖 ${currentSample.evidenceCoverage}%`,
-                      `真实性评分 ${currentSample.authenticityScore}%`,
-                      currentSample.reviewReason,
-                    ]}
-                    confidence={currentSample.agentHints.confidence}
-                    action={currentSample.nextAction}
-                  />
-                </div>
+                  </div>
+                ))}
+                {filteredReviews.length === 0 && (
+                  <div className="text-center py-10 text-[#94A3B8] text-xs">无匹配结果</div>
+                )}
               </div>
-            </SectionShell>
+            </div>
+
+            {/* Tip strip */}
+            <div className="rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-4 py-2.5 text-[11px] text-[#92400E] flex items-center gap-2">
+              <Info size={12} className="shrink-0" />
+              补充资料后，企业将重新进入审批流程；点击"补充资料"可跳转至外勤录入流补充法人身份等信息。
+            </div>
 
             {active && <ActionBar />}
           </div>
         );
-
+      }
     }
   };
 

@@ -18,7 +18,7 @@
 | 产品与审批 | 为什么匹配这个产品、为什么能通过 | 产品配置、审批规则、产品匹配、补审作业 |
 | 风险监控 | 出现了什么风险、该怎么处置 | 风险预警、监控指标、处置动作、规则效果 |
 | 贷后经营 | 恢复、观察还是继续经营 | 贷后总览、客户分层、恢复作业、增收动作 |
-| 合作方管理 | 场景如何接入、如何复制落地 | 接入总览、数据来源、银行模板、实施路径 |
+| 数据与接入 | 规则配置、数据接入、智能工具 | 标准/长尾规则、产品配置、审批规则、智能尽调工具、数据源管理 |
 
 ## 设计原则
 
@@ -82,7 +82,7 @@ src/
 │       ├── ProductApprovalScene.tsx # 产品与审批
 │       ├── RiskMonitorScene.tsx  # 风险监控
 │       ├── PostLoanScene.tsx     # 贷后经营
-│       └── PartnerManagementScene.tsx # 合作方管理
+│       └── PartnerManagementScene.tsx # 数据与接入
 ├── demo/
 │   ├── DemoContext.tsx           # 全局演示状态管理
 │   ├── DemoComponents.tsx        # 演示通用组件（SceneHero, ActionBar 等）
