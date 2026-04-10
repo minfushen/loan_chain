@@ -5,6 +5,7 @@ import {
   ChartNetwork,
   DatabaseZap,
   FileCheck2,
+  Settings2,
 } from 'lucide-react';
 import { Scene } from './types';
 
@@ -22,12 +23,14 @@ export const SCENES: Scene[] = [
     title: '候选资产池',
     icon: Building2,
     modules: [
-      { id: 'internal', title: '候选资产池' },
       { id: 'feed', title: '智能推荐流' },
+      { id: 'filter-flow', title: '条件筛选流' },
+      { id: 'field-flow', title: '外勤录入流' },
+      { id: 'list', title: '候选资产列表' },
+      { id: 'pre-credit', title: '预授信池' },
+      { id: 'review-queue', title: '补审队列' },
       { id: 'graph', title: '关系图谱' },
       { id: 'linked', title: '公私联动验证' },
-      { id: 'standard', title: '标准小微规则' },
-      { id: 'long-tail', title: '长尾场景规则' },
     ],
   },
   {
@@ -35,9 +38,9 @@ export const SCENES: Scene[] = [
     title: '产品与审批',
     icon: FileCheck2,
     modules: [
-      { id: 'config', title: '产品配置' },
-      { id: 'rules', title: '审批规则' },
       { id: 'matching', title: '产品匹配' },
+      { id: 'flow', title: '审批流程' },
+      { id: 'summary', title: '审批摘要' },
       { id: 'review', title: '补审作业' },
     ],
   },
@@ -46,10 +49,10 @@ export const SCENES: Scene[] = [
     title: '授信资产池',
     icon: DatabaseZap,
     modules: [
+      { id: 'activated', title: '在营资产列表' },
+      { id: 'risk-assets', title: '风险资产' },
+      { id: 'repayment', title: '还款管理' },
       { id: 'pipeline', title: '转化看板' },
-      { id: 'pre-credit', title: '预授信池' },
-      { id: 'review', title: '补审队列' },
-      { id: 'activated', title: '在营资产' },
     ],
   },
   {
@@ -77,12 +80,12 @@ export const SCENES: Scene[] = [
   {
     id: 'partner-management',
     title: '数据与接入',
-    icon: DatabaseZap,
+    icon: Settings2,
     modules: [
-      { id: 'workbench', title: '接入工作台' },
-      { id: 'sources', title: '数据源配置' },
-      { id: 'capability-map', title: '能力映射' },
-      { id: 'gaps', title: '推进与缺口' },
+      { id: 'standard', title: '标准小微规则' },
+      { id: 'long-tail', title: '长尾场景规则' },
+      { id: 'product-config', title: '产品配置' },
+      { id: 'approval-rules', title: '审批规则' },
     ],
   },
 ];

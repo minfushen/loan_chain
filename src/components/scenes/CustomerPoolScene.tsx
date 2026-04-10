@@ -837,114 +837,251 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
     fieldSub: '今日跑楼 15',
   };
 
+  const renderCandidateTable = () => {
+    if (detailCandidate) return <EnterpriseDetail candidate={detailCandidate} onBack={() => setDetailCandidate(null)} />;
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { type: 'system' as SourceType, icon: <Bot size={16} className="text-[#1677FF]" />, title: '系统推荐', main: `新增 ${stats.systemNew}`, sub: stats.systemSub, highlight: true },
+            { type: 'filter' as SourceType, icon: <Search size={16} className="text-[#1677FF]" />, title: '条件筛选', main: `命中 ${stats.filter + 120}`, sub: stats.filterSub, highlight: false },
+            { type: 'field' as SourceType, icon: <UserPlus size={16} className="text-[#1677FF]" />, title: '外勤录入', main: `录入 ${stats.field + 23}`, sub: stats.fieldSub, highlight: false },
+          ].map(card => (
+            <button key={card.type} onClick={() => { setSourceFilter(prev => prev === card.type ? 'all' : card.type); setPage(1); }} className={cn('rounded-xl border bg-white p-4 text-left transition-all hover:shadow-md', sourceFilter === card.type ? 'border-[#1677FF] ring-1 ring-[#1677FF]/20' : 'border-[#E5E6EB]')}>
+              <div className="flex items-center gap-2 mb-2">{card.icon}<span className="text-[13px] font-semibold text-[#1D2129]">{card.title}</span>{card.highlight && <span className="w-2 h-2 rounded-full bg-[#F53F3F]" />}</div>
+              <div className="text-[18px] font-bold text-[#1D2129]">{card.main}</div>
+              <div className="text-[11px] text-[#86909C] mt-0.5">{card.sub}</div>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E6EB] bg-white px-4 py-2.5 shadow-inner">
+          <div className="flex items-center gap-2">
+            <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">来源: 全部</option><option value="system">系统推荐</option><option value="filter">条件筛选</option><option value="field">外勤录入</option></select>
+            <select value={stageFilter} onChange={e => { setStageFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">阶段: 全部</option><option value="identified">已识别</option><option value="pre_credit">预授信</option><option value="manual_review">补审</option><option value="approved">已批准</option><option value="vetoed">一票否决</option></select>
+            <div className="relative"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#C9CDD4]" size={13} /><Input placeholder="搜索企业名称..." className="pl-8 h-8 w-48 text-[12px] bg-white border-[#E5E6EB]" /></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 text-[12px] text-[#4E5969] border-[#E5E6EB] gap-1" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={12} />高级筛选</Button>
+            <Button variant="outline" size="sm" className="h-8 text-[12px] text-[#1677FF] border-[#BEDAFF] gap-1" onClick={() => setImportOpen(true)}><Upload size={12} />导入名单</Button>
+          </div>
+        </div>
+        <div className="rounded-xl border border-[#E5E6EB] bg-white overflow-hidden">
+          <Table>
+            <TableHeader><TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA]"><TableHead className="text-[11px] font-medium text-[#86909C] h-9 pl-4 w-8">□</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">企业简称</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">来源标签</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">阶段</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9">双维置信度</TableHead><TableHead className="text-[11px] font-medium text-[#86909C] h-9 pr-4 text-right">更新</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {paged.map(c => {
+                const isLocked = c.locked;
+                return (
+                  <TableRow key={c.id} className={cn('cursor-pointer transition-colors group', isLocked ? 'text-[#A9AEB8]' : 'hover:bg-[#F7F8FA]', c.sampleId === selectedSampleId && 'bg-[#E8F3FF] hover:bg-[#E8F3FF]')} onClick={() => { if (c.sampleId) selectSample(c.sampleId); setDetailCandidate(c); }}>
+                    <TableCell className="pl-4 py-2.5"><input type="checkbox" className="w-3.5 h-3.5 rounded border-[#C9CDD4]" /></TableCell>
+                    <TableCell className="py-2.5">
+                      <div className="flex items-center gap-2"><span className={cn('text-[13px] font-medium', isLocked ? 'text-[#A9AEB8]' : 'text-[#1D2129]')}>{c.shortName}</span>{c.stageUpgraded && c.stageUpgradeFrom && <StageUpgradeBadge from={c.stageUpgradeFrom} to={STAGE_STYLES[c.stage].label} />}</div>
+                      <div className="text-[11px] text-[#86909C] mt-0.5 max-w-[240px] line-clamp-2 group-hover:line-clamp-none" title={c.matchReason}>↳ {c.matchReason}</div>
+                    </TableCell>
+                    <TableCell className="py-2.5"><div className="flex flex-wrap gap-1">{c.sources.map(s => <SourceTag key={s.label} type={s.type} label={s.label} />)}</div></TableCell>
+                    <TableCell className="py-2.5"><StageBadge stage={c.stage} /></TableCell>
+                    <TableCell className="py-2.5"><div className="space-y-0.5"><ConfidenceDots score={c.bizScore} label="企" /><ConfidenceDots score={c.personScore} label="人" showHint /></div></TableCell>
+                    <TableCell className="py-2.5 pr-4 text-right"><div className={cn('text-[11px]', isLocked ? 'text-[#C9CDD4]' : 'text-[#86909C]')}>{c.updatedAgo}</div>{isLocked && <div className="mt-1" title={c.lockReason}><Button variant="ghost" size="sm" className="h-5 text-[9px] px-1.5 text-[#A9AEB8] cursor-not-allowed" disabled>推进</Button></div>}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between text-[12px] text-[#86909C]">
+          <span>共 {filtered.length + 238} 条</span>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft size={14} /></Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (<Button key={p} variant={p === page ? 'default' : 'ghost'} size="sm" className={cn('h-7 w-7 p-0 text-[12px]', p === page && 'bg-[#1677FF] text-white')} onClick={() => setPage(p)}>{p}</Button>))}
+            {totalPages > 5 && <span>...</span>}
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight size={14} /></Button>
+          </div>
+        </div>
+        <FilterDrawer open={filterOpen} onClose={() => setFilterOpen(false)} />
+        <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeModule) {
       case 'feed':
+      default:
         return <SmartFeedFlow />;
 
-      case 'graph':
-        return (<div className="space-y-4">{active && <SceneHero question="谁该进入资产池、依据是什么" />}<RelationGraph />{active && <ActionBar />}</div>);
-
-      case 'internal':
-      default:
-        if (detailCandidate) return <EnterpriseDetail candidate={detailCandidate} onBack={() => setDetailCandidate(null)} />;
+      case 'filter-flow':
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { type: 'system' as SourceType, icon: <Bot size={16} className="text-[#1677FF]" />, title: '系统推荐', main: `新增 ${stats.systemNew}`, sub: stats.systemSub, highlight: true },
-                { type: 'filter' as SourceType, icon: <Search size={16} className="text-[#1677FF]" />, title: '条件筛选', main: `命中 ${stats.filter + 120}`, sub: stats.filterSub, highlight: false },
-                { type: 'field' as SourceType, icon: <UserPlus size={16} className="text-[#1677FF]" />, title: '外勤录入', main: `录入 ${stats.field + 23}`, sub: stats.fieldSub, highlight: false },
-              ].map(card => (
-                <button key={card.type} onClick={() => { setSourceFilter(prev => prev === card.type ? 'all' : card.type); setPage(1); }} className={cn('rounded-xl border bg-white p-4 text-left transition-all hover:shadow-md', sourceFilter === card.type ? 'border-[#1677FF] ring-1 ring-[#1677FF]/20' : 'border-[#E5E6EB]')}>
-                  <div className="flex items-center gap-2 mb-2">{card.icon}<span className="text-[13px] font-semibold text-[#1D2129]">{card.title}</span>{card.highlight && <span className="w-2 h-2 rounded-full bg-[#F53F3F]" />}</div>
-                  <div className="text-[18px] font-bold text-[#1D2129]">{card.main}</div>
-                  <div className="text-[11px] text-[#86909C] mt-0.5">{card.sub}</div>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E6EB] bg-white px-4 py-2.5 shadow-inner">
-              <div className="flex items-center gap-2">
-                <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">来源: 全部</option><option value="system">系统推荐</option><option value="filter">条件筛选</option><option value="field">外勤录入</option></select>
-                <select value={stageFilter} onChange={e => { setStageFilter(e.target.value as any); setPage(1); }} className="h-8 rounded border border-[#E5E6EB] px-2 text-[12px] text-[#1D2129] bg-white"><option value="all">阶段: 全部</option><option value="identified">已识别</option><option value="pre_credit">预授信</option><option value="manual_review">补审</option><option value="approved">已批准</option><option value="vetoed">一票否决</option></select>
-                <div className="relative"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#C9CDD4]" size={13} /><Input placeholder="搜索企业名称..." className="pl-8 h-8 w-48 text-[12px] bg-white border-[#E5E6EB]" /></div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-8 text-[12px] text-[#4E5969] border-[#E5E6EB] gap-1" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={12} />高级筛选</Button>
-                <Button variant="outline" size="sm" className="h-8 text-[12px] text-[#1677FF] border-[#BEDAFF] gap-1" onClick={() => setImportOpen(true)}><Upload size={12} />导入名单</Button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[#E5E6EB] bg-white overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA]">
-                    <TableHead className="text-[11px] font-medium text-[#86909C] h-9 pl-4 w-8">□</TableHead>
-                    <TableHead className="text-[11px] font-medium text-[#86909C] h-9">企业简称</TableHead>
-                    <TableHead className="text-[11px] font-medium text-[#86909C] h-9">来源标签</TableHead>
-                    <TableHead className="text-[11px] font-medium text-[#86909C] h-9">阶段</TableHead>
-                    <TableHead className="text-[11px] font-medium text-[#86909C] h-9">双维置信度</TableHead>
-                    <TableHead className="text-[11px] font-medium text-[#86909C] h-9 pr-4 text-right">更新</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paged.map(c => {
-                    const isLocked = c.locked;
-                    return (
-                      <TableRow key={c.id} className={cn('cursor-pointer transition-colors group', isLocked ? 'text-[#A9AEB8]' : 'hover:bg-[#F7F8FA]', c.sampleId === selectedSampleId && 'bg-[#E8F3FF] hover:bg-[#E8F3FF]')} onClick={() => { if (c.sampleId) selectSample(c.sampleId); setDetailCandidate(c); }}>
-                        <TableCell className="pl-4 py-2.5"><input type="checkbox" className="w-3.5 h-3.5 rounded border-[#C9CDD4]" /></TableCell>
-                        <TableCell className="py-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className={cn('text-[13px] font-medium', isLocked ? 'text-[#A9AEB8]' : 'text-[#1D2129]')}>{c.shortName}</span>
-                            {c.stageUpgraded && c.stageUpgradeFrom && (
-                              <StageUpgradeBadge from={c.stageUpgradeFrom} to={STAGE_STYLES[c.stage].label} />
-                            )}
-                          </div>
-                          <div className="text-[11px] text-[#86909C] mt-0.5 max-w-[240px] line-clamp-2 group-hover:line-clamp-none" title={c.matchReason}>↳ {c.matchReason}</div>
-                        </TableCell>
-                        <TableCell className="py-2.5"><div className="flex flex-wrap gap-1">{c.sources.map(s => <SourceTag key={s.label} type={s.type} label={s.label} />)}</div></TableCell>
-                        <TableCell className="py-2.5"><StageBadge stage={c.stage} /></TableCell>
-                        <TableCell className="py-2.5">
-                          <div className="space-y-0.5">
-                            <ConfidenceDots score={c.bizScore} label="企" />
-                            <ConfidenceDots score={c.personScore} label="人" showHint />
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2.5 pr-4 text-right">
-                          <div className={cn('text-[11px]', isLocked ? 'text-[#C9CDD4]' : 'text-[#86909C]')}>{c.updatedAgo}</div>
-                          {isLocked && <div className="mt-1" title={c.lockReason}><Button variant="ghost" size="sm" className="h-5 text-[9px] px-1.5 text-[#A9AEB8] cursor-not-allowed" disabled>推进</Button></div>}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex items-center justify-between text-[12px] text-[#86909C]">
-              <span>共 {filtered.length + 238} 条</span>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft size={14} /></Button>
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
-                  <Button key={p} variant={p === page ? 'default' : 'ghost'} size="sm" className={cn('h-7 w-7 p-0 text-[12px]', p === page && 'bg-[#1677FF] text-white')} onClick={() => setPage(p)}>{p}</Button>
+            <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
+              <div className="flex items-center gap-2"><Filter size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">条件筛选流</span><span className="text-[10px] text-[#86909C]">基于规则主动筛选候选线索</span></div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { name: '储能方案摸排', count: 50, rule: '注册资本≥500万 + 成立≥5年 + 储能行业', status: '运行中' },
+                  { name: '新能源供应商筛选', count: 38, rule: '新能源产业链 + 对公流水活跃 + 交易对手匹配', status: '运行中' },
+                  { name: '化工辅料供应链', count: 22, rule: '化工行业 + 上游供应商 + 关系强度≥60', status: '暂停' },
+                ].map(s => (
+                  <div key={s.name} className="rounded-xl border border-[#E5E6EB] bg-white p-4 hover:shadow-md transition-all cursor-pointer">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[13px] font-semibold text-[#1D2129]">{s.name}</span>
+                      <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', s.status === '运行中' ? 'bg-[#E8FFEA] text-[#00B42A]' : 'bg-[#F2F3F5] text-[#86909C]')}>{s.status}</span>
+                    </div>
+                    <div className="text-[20px] font-bold text-[#1D2129] mb-1">命中 {s.count}</div>
+                    <div className="text-[11px] text-[#86909C]">{s.rule}</div>
+                  </div>
                 ))}
-                {totalPages > 5 && <span>...</span>}
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight size={14} /></Button>
+              </div>
+              <div className="pt-3 border-t border-[#F2F3F5]">
+                <div className="text-[12px] font-medium text-[#1D2129] mb-2">最近命中线索</div>
+                <div className="space-y-2">
+                  {CANDIDATES.filter(c => c.sources.some(s => s.type === 'filter')).slice(0, 5).map(c => (
+                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-[#F2F3F5] px-3 py-2 hover:bg-[#F7F8FA] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[12px] font-medium text-[#1D2129]">{c.shortName}</span>
+                        <div className="flex gap-1">{c.sources.filter(s => s.type === 'filter').map(s => <SourceTag key={s.label} type={s.type} label={s.label} />)}</div>
+                        <StageBadge stage={c.stage} />
+                      </div>
+                      <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          </div>
+        );
 
-            <FilterDrawer open={filterOpen} onClose={() => setFilterOpen(false)} />
+      case 'field-flow':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><UserPlus size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">外勤录入流</span><span className="text-[10px] text-[#86909C]">跑楼成果沉淀与融合</span></div>
+                <Button size="sm" className="h-8 text-[12px] bg-[#1677FF] hover:bg-[#0E5FC2] gap-1" onClick={() => setImportOpen(true)}><Upload size={12} />导入外勤名单</Button>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { label: '今日跑楼', value: '15', color: '#1677FF' },
+                  { label: '本周新增', value: '42', color: '#00B42A' },
+                  { label: '融合提升', value: '8', color: '#FF7D00' },
+                  { label: '待补全', value: '11', color: '#86909C' },
+                ].map(m => (
+                  <div key={m.label} className="rounded-lg border border-[#E5E6EB] p-3 text-center">
+                    <div className="text-[20px] font-bold" style={{ color: m.color }}>{m.value}</div>
+                    <div className="text-[11px] text-[#86909C]">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-3 border-t border-[#F2F3F5]">
+                <div className="text-[12px] font-medium text-[#1D2129] mb-2">最近外勤录入</div>
+                <div className="space-y-2">
+                  {CANDIDATES.filter(c => c.sources.some(s => s.type === 'field')).slice(0, 5).map(c => (
+                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-[#F2F3F5] px-3 py-2 hover:bg-[#F7F8FA] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[12px] font-medium text-[#1D2129]">{c.shortName}</span>
+                        <StageBadge stage={c.stage} />
+                        {c.stageUpgraded && c.stageUpgradeFrom && <StageUpgradeBadge from={c.stageUpgradeFrom} to={STAGE_STYLES[c.stage].label} />}
+                        {c.locked && <span className="text-[9px] text-[#F53F3F]">⚠ {c.lockReason}</span>}
+                      </div>
+                      <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
             <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
           </div>
         );
 
-      case 'linked':
-      case 'standard':
-      case 'long-tail':
+      case 'list':
+        return renderCandidateTable();
+
+      case 'pre-credit': {
+        const preCreditList = CANDIDATES.filter(c => c.stage === 'pre_credit');
         return (
-          <div className="rounded-xl border border-[#E5E6EB] bg-white p-8 text-center text-[#86909C] text-[13px]">
-            该模块内容保持不变，请在左侧导航选择「候选资产池」「智能推荐流」或「关系图谱」查看重构后的页面。
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><ShieldCheck size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">预授信池</span><Badge className="text-[10px] bg-[#E8F3FF] text-[#1677FF] border-[#BEDAFF]">{preCreditList.length} 户</Badge></div>
+              </div>
+              <div className="text-[12px] text-[#4E5969] leading-5">系统已通过置信度评分、关系强度、经营证据等维度初筛，以下企业具备基础授信条件，等待进入产品匹配或补审流程。</div>
+              <div className="space-y-2">
+                {preCreditList.map(c => (
+                  <div key={c.id} className="flex items-center justify-between rounded-xl border border-[#E5E6EB] px-4 py-3 hover:shadow-md transition-all cursor-pointer" onClick={() => setDetailCandidate(c)}>
+                    <div className="flex items-center gap-4">
+                      <div><div className="text-[13px] font-semibold text-[#1D2129]">{c.shortName}</div><div className="text-[11px] text-[#86909C] mt-0.5">{c.fullName}</div></div>
+                      <div className="flex gap-1">{c.sources.map(s => <SourceTag key={s.label} type={s.type} label={s.label} />)}</div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="space-y-0.5"><ConfidenceDots score={c.bizScore} label="企" /><ConfidenceDots score={c.personScore} label="人" showHint /></div>
+                      <Button size="sm" className="h-7 text-[11px] bg-[#1677FF] hover:bg-[#0E5FC2]">进入匹配</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case 'review-queue': {
+        const reviewList = CANDIDATES.filter(c => c.stage === 'manual_review');
+        return (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><FileText size={15} className="text-[#722ED1]" /><span className="text-[14px] font-semibold text-[#1D2129]">补审队列</span><Badge className="text-[10px] bg-[#F3E8FF] text-[#722ED1] border-[#D3ADF7]">{reviewList.length} 户待审</Badge></div>
+              </div>
+              <div className="text-[12px] text-[#4E5969] leading-5">以下企业存在异动矛盾、证据不完整或规则命中需人工核验等情况，需由审批人完成补审判断。</div>
+              <div className="space-y-2">
+                {reviewList.length > 0 ? reviewList.map(c => (
+                  <div key={c.id} className="flex items-center justify-between rounded-xl border border-[#722ED1]/20 bg-[#F3E8FF]/20 px-4 py-3 hover:shadow-md transition-all cursor-pointer" onClick={() => setDetailCandidate(c)}>
+                    <div className="flex items-center gap-4">
+                      <div><div className="text-[13px] font-semibold text-[#1D2129]">{c.shortName}</div><div className="text-[11px] text-[#86909C] mt-0.5">↳ {c.matchReason}</div></div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="space-y-0.5"><ConfidenceDots score={c.bizScore} label="企" /><ConfidenceDots score={c.personScore} label="人" showHint /></div>
+                      <Button size="sm" className="h-7 text-[11px] bg-[#722ED1] hover:bg-[#531DAB] text-white">进入补审</Button>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-[12px] text-[#86909C]">当前无待补审企业</div>
+                )}
+                {CANDIDATES.filter(c => c.stage === 'identified' && c.locked).map(c => (
+                  <div key={c.id} className="flex items-center justify-between rounded-xl border border-[#E5E6EB] px-4 py-3 opacity-50">
+                    <div className="flex items-center gap-4">
+                      <div><div className="text-[13px] font-medium text-[#A9AEB8]">{c.shortName}</div><div className="text-[11px] text-[#C9CDD4] mt-0.5">↳ {c.lockReason}</div></div>
+                    </div>
+                    <StageBadge stage="identified" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case 'graph':
+        return (<div className="space-y-4">{active && <SceneHero question="谁该进入资产池、依据是什么" />}<RelationGraph />{active && <ActionBar />}</div>);
+
+      case 'linked':
+        return (
+          <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
+            <div className="flex items-center gap-2"><Link2 size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">公私联动验证</span></div>
+            <div className="text-[12px] text-[#4E5969] leading-5">将企业对公信息与法人个人信息交叉验证，发现以私带公切入点和经营真实性信号。</div>
+            <div className="grid grid-cols-2 gap-4">
+              {CANDIDATES.filter(c => c.bizScore >= 4 && c.personScore >= 3).slice(0, 4).map(c => (
+                <div key={c.id} className="rounded-xl border border-[#E5E6EB] p-4 hover:shadow-md transition-all cursor-pointer" onClick={() => setDetailCandidate(c)}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[13px] font-semibold text-[#1D2129]">{c.shortName}</span>
+                    <StageBadge stage={c.stage} />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-1 space-y-1"><div className="text-[10px] text-[#86909C]">企业维度</div><ConfidenceDots score={c.bizScore} label="企" /></div>
+                    <div className="flex-1 space-y-1"><div className="text-[10px] text-[#86909C]">法人维度</div><ConfidenceDots score={c.personScore} label="人" showHint /></div>
+                  </div>
+                  {c.bizScore >= 4 && c.personScore >= 4 && <div className="mt-2 flex items-center gap-1 text-[10px] text-[#00B42A]"><CheckCircle2 size={10} />公私联动验证通过</div>}
+                </div>
+              ))}
+            </div>
           </div>
         );
     }

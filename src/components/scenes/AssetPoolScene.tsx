@@ -52,205 +52,9 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
 
   const renderContent = () => {
     switch (activeModule) {
-      // ─── 预授信池 ────────────────────────────────────────────
-      case 'pre-credit':
-        return (
-          <div className="space-y-4">
-            {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
-
-            <PageHeader
-              title="预授信池"
-              subtitle="数据口径: 近 30 天 · 最后更新: 2026-04-09 08:15"
-              right={
-                <>
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#64748B] gap-1 px-2"><Search size={10} /> 搜索</Button>
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#64748B] gap-1 px-2"><Filter size={10} /> 筛选</Button>
-                </>
-              }
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <MetricCard label="池内总量" value="3,260 户" detail="本周新增 86 户" tone="blue" />
-              <MetricCard label="推荐额度中位数" value="95万" detail="P25: 50万 · P75: 165万" tone="green" />
-              <MetricCard label="待触达" value="1,420 户" detail="尚未进入产品匹配" tone="amber" />
-              <MetricCard label="已转化" value="1,120 户" detail="累计转化率 34.4%" tone="green" />
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
-              <WorkbenchPanel title="推荐额度分布">
-                <DistributionBarChart
-                  data={[
-                    { name: '<50万', value: 860, color: CHART_COLORS.sky },
-                    { name: '50-100万', value: 1080, color: CHART_COLORS.blue },
-                    { name: '100-200万', value: 920, color: CHART_COLORS.violet },
-                    { name: '>200万', value: 400, color: CHART_COLORS.emerald },
-                  ]}
-                  height={180}
-                />
-              </WorkbenchPanel>
-
-              <WorkbenchPanel title="产品匹配分布">
-                <div className="space-y-2">
-                  {[
-                    { product: '订单微贷', count: '1,240', pct: 38, color: 'bg-[#2563EB]' },
-                    { product: '税票流水贷', count: '980', pct: 30, color: 'bg-[#7C3AED]' },
-                    { product: '经营信用贷', count: '660', pct: 20, color: 'bg-[#047857]' },
-                    { product: '场景专项贷', count: '380', pct: 12, color: 'bg-[#C2410C]' },
-                  ].map((p) => (
-                    <div key={p.product} className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${p.color}`} />
-                        <span className="text-xs font-medium text-[#0F172A]">{p.product}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] text-[#64748B]">{p.count} 户</span>
-                        <span className="text-xs font-semibold text-[#0F172A]">{p.pct}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </WorkbenchPanel>
-            </div>
-
-            {active && isPastPreCredit && (
-              <InsightStrip tone="info">
-                当前样本 — <strong>{currentSample.shortName}</strong> {currentSample.approvalStatus}，额度 {currentSample.currentLimit} · {currentSample.productType}
-                {isPastApproval && isCurrentApproved && ' · 已批准'}
-              </InsightStrip>
-            )}
-
-            <WorkbenchPanel
-              title="预授信候选客户"
-              badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">仅含已识别且尚未进入补审/在营客户</Badge>}
-            >
-              <div className="space-y-2">
-                {SAMPLES.filter(s => ['identified', 'pre_credit'].includes(s.stage)).map((s) => {
-                  const priority = s.uiState.priority === 'high' ? '高' : s.uiState.priority === 'medium' ? '中' : '低';
-                  return (
-                    <EntitySummaryCard
-                      key={s.id}
-                      name={s.companyName}
-                      role={s.chainName}
-                      state={s.stage === 'pre_credit' ? 'info' as const : 'watch' as const}
-                      stateLabel={s.stage === 'pre_credit' ? '已预授信' : '已识别'}
-                      keyValue={s.recommendedLimit}
-                      icon={Building2}
-                      onClick={() => selectSample(s.id)}
-                      selected={s.id === selectedSampleId}
-                    >
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="text-[11px] text-[#64748B] flex items-center gap-1">
-                          <Eye size={10} className="text-[#94A3B8]" />
-                          入池原因: {s.aiSummary.slice(0, 24)}…
-                        </div>
-                        <div className="flex gap-1">
-                          <Badge className="bg-[#F1F5F9] text-[#475569] border-transparent text-[10px]">优先级: {priority}</Badge>
-                          <Badge className="bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE] text-[10px]">{s.nextAction}</Badge>
-                        </div>
-                      </div>
-                    </EntitySummaryCard>
-                  );
-                })}
-                {SAMPLES.filter(s => ['identified', 'pre_credit'].includes(s.stage)).length === 0 && (
-                  <div className="text-center py-8 text-[#94A3B8] text-xs">当前无处于预授信阶段的客户</div>
-                )}
-              </div>
-            </WorkbenchPanel>
-
-            {active && <ActionBar />}
-          </div>
-        );
-
-      // ─── 补审队列 ────────────────────────────────────────────
-      case 'review':
-        return (
-          <div className="space-y-4">
-            {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
-
-            <PageHeader
-              title="补审队列"
-              subtitle={`待处理: 68 户 · 本周完成: 24 户`}
-              right={<Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#64748B] gap-1 px-2"><Filter size={10} /> 按优先级</Button>}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <MetricCard label="待补审" value="68 户" detail="高优 18 · 普通 32 · 待补材料 18" tone="amber" />
-              <MetricCard label="本周通过" value="24 户" detail="通过率 77.4%" tone="green" />
-              <MetricCard label="本周退回" value="7 户" detail="主要原因: 材料不足" tone="red" />
-              <MetricCard label="平均处理时长" value="1.8 天" detail="较上周 -0.3 天" tone="blue" />
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
-              <WorkbenchPanel title="补审原因分布">
-                <div className="space-y-3">
-                  <FlowRow label="脱核场景 · 未获链主确权" value="28 户 (41%)" percentage={41} />
-                  <FlowRow label="集中度超阈值 · 需人工判断" value="14 户 (21%)" percentage={21} />
-                  <FlowRow label="回款路径不完整 · 待补材料" value="12 户 (18%)" percentage={18} />
-                  <FlowRow label="经营年限不足 · 灰度验证" value="8 户 (12%)" percentage={12} />
-                  <FlowRow label="其他规则触发" value="6 户 (8%)" percentage={8} />
-                </div>
-              </WorkbenchPanel>
-
-              <WorkbenchPanel title="待办动作">
-                <div className="space-y-2">
-                  {[
-                    { action: '查看证据链并确认', source: '审批岗', priority: '高优', sla: '18 户' },
-                    { action: '补充经营材料后复审', source: '客户经理', priority: '待补', sla: '18 户' },
-                    { action: '人工判断集中度风险', source: '审批岗', priority: '普通', sla: '14 户' },
-                    { action: '灰度样本跟踪观察', source: '系统', priority: '低', sla: '8 户' },
-                    { action: '退回后补充再提交', source: '客户经理', priority: '回流', sla: '10 户' },
-                  ].map((a) => (
-                    <ActionQueueCard key={a.action} action={a.action} source={a.source} priority={a.priority} sla={a.sla} />
-                  ))}
-                </div>
-              </WorkbenchPanel>
-            </div>
-
-            {active && isPastPreCredit && (
-              <InsightStrip tone={isPastApproval ? 'normal' : 'watch'}>
-                当前样本 — <strong>{currentSample.shortName}</strong> · {isPastApproval && isCurrentApproved ? '补审已通过' : currentSample.approvalStatus}
-              </InsightStrip>
-            )}
-
-            <WorkbenchPanel
-              title="补审样本列表"
-              badge={<Badge className="bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA] text-[10px]">仅含需人工判断客户</Badge>}
-              actions={
-                <div className="flex gap-1">
-                  {['高优先级', '普通', '待补材料'].map((g) => (
-                    <Badge key={g} className="bg-[#F1F5F9] text-[#475569] border-transparent text-[10px] cursor-pointer hover:bg-[#E2E8F0]">{g}</Badge>
-                  ))}
-                </div>
-              }
-            >
-              <div className="space-y-2">
-                {SAMPLES.filter(s => s.stage === 'manual_review').length > 0 ? (
-                  SAMPLES.filter(s => s.stage === 'manual_review').map((s) => (
-                    <EntitySummaryCard key={s.id} name={s.companyName} role={s.chainName} state="watch" stateLabel="待补审" keyValue={s.recommendedLimit} icon={Building2} onClick={() => selectSample(s.id)} selected={s.id === selectedSampleId}>
-                      <div className="mt-2 text-[11px] text-[#64748B] flex items-center gap-1">
-                        <FileCheck2 size={10} className="text-[#94A3B8]" />
-                        补审原因: {s.reviewReason.slice(0, 30)}…
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        <Badge className="bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA] text-[10px]">未获链主确权</Badge>
-                        {s.riskFlags.length > 0 && s.riskFlags.map(f => (
-                          <Badge key={f} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">{f}</Badge>
-                        ))}
-                      </div>
-                    </EntitySummaryCard>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-[#94A3B8] text-xs">当前无处于补审阶段的客户</div>
-                )}
-              </div>
-            </WorkbenchPanel>
-
-            {active && <ActionBar />}
-          </div>
-        );
-
-      // ─── 在营资产 ────────────────────────────────────────────
+      // ─── 在营资产列表 (default) ────────────────────────────────
       case 'activated':
+      default:
         return (
           <div className="space-y-4">
             {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
@@ -349,8 +153,76 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
           </div>
         );
 
-      // ─── 转化看板 (default) ──────────────────────────────────
-      default:
+      // ─── 风险资产 ────────────────────────────────────────────
+      case 'risk-assets':
+        return (
+          <div className="space-y-4">
+            <PageHeader title="风险资产" subtitle="展示逾期、降额、预警中的在营企业" right={<Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#64748B] gap-1 px-2"><Search size={10} /> 搜索</Button>} />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <MetricCard label="逾期客户" value="12 户" detail="逾期金额 ¥286万" tone="red" />
+              <MetricCard label="已降额" value="62 户" detail="降额总量 ¥1,840万" tone="amber" />
+              <MetricCard label="预警观察" value="38 户" detail="关注回款与经营波动" tone="amber" />
+              <MetricCard label="恢复中" value="28 户" detail="恢复至90%后30天观察" tone="slate" />
+            </div>
+            <WorkbenchPanel title="风险资产列表">
+              <div className="space-y-2">
+                {SAMPLES.filter(s => ['risk_alert', 'recovery'].includes(s.stage) || s.riskFlags.length > 0).map((s) => (
+                  <EntitySummaryCard key={s.id} name={s.companyName} role={s.chainName} state={s.riskStatus === '中度预警' ? 'alert' as const : 'watch' as const} stateLabel={s.riskStatus} keyValue={s.currentLimit} icon={Building2} onClick={() => selectSample(s.id)} selected={s.id === selectedSampleId}>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {s.riskFlags.map(f => (<Badge key={f} className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[10px]">{f}</Badge>))}
+                    </div>
+                  </EntitySummaryCard>
+                ))}
+                {SAMPLES.filter(s => ['risk_alert', 'recovery'].includes(s.stage) || s.riskFlags.length > 0).length === 0 && (
+                  <div className="text-center py-8 text-[#94A3B8] text-xs">当前无风险资产</div>
+                )}
+              </div>
+            </WorkbenchPanel>
+            {active && <ActionBar />}
+          </div>
+        );
+
+      // ─── 还款管理 ────────────────────────────────────────────
+      case 'repayment':
+        return (
+          <div className="space-y-4">
+            <PageHeader title="还款管理" subtitle="管理还款计划、到期提醒与还款记录" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <MetricCard label="本月到期" value="86 户" detail="到期金额 ¥3,240万" tone="blue" />
+              <MetricCard label="已正常还款" value="72 户" detail="还款率 83.7%" tone="green" />
+              <MetricCard label="即将到期 (7天内)" value="18 户" detail="金额 ¥680万" tone="amber" />
+              <MetricCard label="逾期未还" value="8 户" detail="金额 ¥286万" tone="red" />
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
+              <WorkbenchPanel title="还款日历">
+                <div className="space-y-3">
+                  {[
+                    { date: '2026-04-15', count: 12, amount: '¥580万', status: '即将到期' },
+                    { date: '2026-04-20', count: 8, amount: '¥320万', status: '即将到期' },
+                    { date: '2026-04-25', count: 15, amount: '¥860万', status: '计划中' },
+                    { date: '2026-04-30', count: 22, amount: '¥1,140万', status: '计划中' },
+                  ].map(r => (
+                    <div key={r.date} className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
+                      <div className="flex items-center gap-3"><span className="text-[11px] font-mono text-[#64748B]">{r.date}</span><span className="text-xs font-medium text-[#0F172A]">{r.count} 户</span></div>
+                      <div className="flex items-center gap-3"><span className="text-xs font-semibold text-[#0F172A]">{r.amount}</span><Badge className={`text-[9px] border ${r.status === '即将到期' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'}`}>{r.status}</Badge></div>
+                    </div>
+                  ))}
+                </div>
+              </WorkbenchPanel>
+              <WorkbenchPanel title="还款待办">
+                <div className="space-y-2">
+                  <ActionQueueCard action="催收提醒 · 逾期未还客户" source="客户经理" sla="8 户" priority="高优" />
+                  <ActionQueueCard action="到期提醒 · 7天内到期" source="系统" sla="18 户" priority="普通" />
+                  <ActionQueueCard action="续贷审批 · 即将到期优质客户" source="审批岗" sla="12 户" priority="普通" />
+                </div>
+              </WorkbenchPanel>
+            </div>
+            {active && <ActionBar />}
+          </div>
+        );
+
+      // ─── 转化看板 ──────────────────────────────────────────────
+      case 'pipeline':
         return (
           <div className="space-y-4">
             {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}

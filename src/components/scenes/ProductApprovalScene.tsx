@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowRightLeft,
+  CheckCircle,
   CheckCircle2,
   CircleAlert,
   FileCheck2,
@@ -130,159 +131,146 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
   const renderContent = () => {
     switch (activeModule) {
       // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 1: 产品配置
+      // PAGE 2: 审批流程
       // ═══════════════════════════════════════════════════════════════════════
-      case 'config':
+      case 'flow':
         return (
           <div className="space-y-4">
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between text-[11px] text-[#94A3B8]">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-[#0F172A]">产品配置台</span>
-                <span>配置口径: 全量产品</span>
-                <span>最后更新: 2026-04-06</span>
-                <span>负责人: 产品策略组</span>
+                <span className="text-sm font-semibold text-[#0F172A]">审批流程</span>
+                <span>当前样本:</span>
+                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
               </div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-[#ECFDF3] text-[#047857] border border-[#A7F3D0] text-[10px]">已上线 {PRODUCTS.filter((p) => p.status === '已上线').length}</Badge>
-                <Badge className="bg-[#EFF6FF] text-[#1890FF] border border-[#BFDBFE] text-[10px]">试运行 {PRODUCTS.filter((p) => p.status === '试运行').length}</Badge>
-              </div>
+              <Badge className={isPastApproval ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[10px]' : isAtManualReview ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA] text-[10px]' : 'bg-[#EFF6FF] text-[#1890FF] border-[#BFDBFE] text-[10px]'}>{isPastApproval ? '已通过' : isAtManualReview ? '补审中' : '流程中'}</Badge>
             </div>
+            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
+              {['线索识别', '预授信评估', '产品匹配', '三流交叉验证', '人工补审', '审批结论'].map((step, i) => {
+                const stageMap: Record<string, number> = { identified: 0, pre_credit: 1, manual_review: 4, approved: 5, risk_alert: 5, recovery: 5 };
+                const currentIdx = stageMap[currentSample.stage] ?? 0;
+                const done = i < currentIdx;
+                const isCurrent = i === currentIdx;
+                return (
+                  <React.Fragment key={step}>
+                    {i > 0 && <div className={`flex-1 h-px ${done ? 'bg-[#16A34A]' : 'bg-[#E2E8F0]'}`} />}
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] shrink-0 ${done ? 'bg-[#ECFDF3] text-[#047857]' : isCurrent ? 'bg-[#EFF6FF] text-[#2563EB] ring-1 ring-[#2563EB]/30' : 'bg-[#F8FAFC] text-[#94A3B8]'}`}>
+                      {done ? <CheckCircle size={12} /> : <div className={`w-3 h-3 rounded-full border-2 ${isCurrent ? 'border-[#2563EB] bg-[#2563EB]' : 'border-[#CBD5E1]'}`} />}
+                      <span className="font-medium">{step}</span>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { node: '产品匹配', desc: `推荐产品: ${recommendedProduct.name}`, detail: `额度 ${currentSample.recommendedLimit}，期限 ${recommendedProduct.term}`, status: currentSample.stage !== 'identified' ? '已完成' : '待执行' },
+                { node: '三流交叉验证', desc: `订单 ${currentSample.orderCount90d} 笔 / 发票 ${currentSample.invoiceContinuityMonths} 月 / 回款 ${currentSample.avgReceivableCycle}`, detail: `覆盖率 ${currentSample.evidenceCoverage}%`, status: currentSample.evidenceCoverage > 70 ? '已完成' : '进行中' },
+                { node: '人工补审', desc: currentSample.reviewReason, detail: `置信度 ${currentSample.authenticityScore}%`, status: isPastApproval ? '已完成' : isAtManualReview ? '进行中' : '待执行' },
+              ].map(n => (
+                <div key={n.node} className="rounded-lg border border-[#E2E8F0] bg-white p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-semibold text-[#0F172A]">{n.node}</span>
+                    <Badge className={`text-[9px] border ${n.status === '已完成' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : n.status === '进行中' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]'}`}>{n.status}</Badge>
+                  </div>
+                  <div className="text-[11px] text-[#64748B] leading-4">{n.desc}</div>
+                  <div className="text-[10px] text-[#94A3B8]">{n.detail}</div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-[12px] text-[#2563EB]">
+              <span className="font-medium">AI 建议: </span>{currentSample.aiSummary}
+            </div>
+            {active && <ActionBar />}
+          </div>
+        );
 
-            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
-              {/* Table header */}
-              <div className="grid grid-cols-[60px_1fr_1fr_100px_100px_80px_1fr_80px] gap-0 px-4 py-2.5 border-b border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-medium text-[#94A3B8] uppercase tracking-wider">
-                <div>编号</div><div>产品名称</div><div>适用客群</div><div>额度区间</div><div>定价</div><div>期限</div><div>绑定规则包</div><div>状态</div>
+      // ═══════════════════════════════════════════════════════════════════════
+      // PAGE 3: 审批摘要 (NEW)
+      // ═══════════════════════════════════════════════════════════════════════
+      case 'summary':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between text-[11px] text-[#94A3B8]">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-semibold text-[#0F172A]">审批摘要</span>
+                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
               </div>
-              {/* Table body */}
-              {PRODUCTS.map((p) => (
-                <div key={p.id} className="grid grid-cols-[60px_1fr_1fr_100px_100px_80px_1fr_80px] gap-0 px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 items-center hover:bg-[#FAFBFF] transition-colors">
-                  <span className="text-[11px] text-[#94A3B8] font-mono">{p.id}</span>
-                  <span className="text-[13px] font-medium text-[#0F172A]">{p.name}</span>
-                  <span className="text-[11px] text-[#64748B]">{p.target}</span>
-                  <span className="text-[11px] text-[#334155] font-medium">{p.limit}</span>
-                  <span className="text-[11px] text-[#334155]">{p.rate}</span>
-                  <span className="text-[11px] text-[#334155]">{p.term}</span>
+              <Badge className="bg-[#EFF6FF] text-[#1890FF] border-[#BFDBFE] text-[10px]">自动生成</Badge>
+            </div>
+            <div className="rounded-lg border border-[#E2E8F0] bg-white p-5 space-y-4">
+              <div className="text-[14px] font-semibold text-[#0F172A]">{currentSample.shortName} — 审批依据摘要</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="text-[11px] font-medium text-[#64748B]">企业信息</div>
+                  {[
+                    { k: '企业全称', v: currentSample.companyName },
+                    { k: '产业链角色', v: currentSample.roleInChain },
+                    { k: '年销售额', v: currentSample.annualSales },
+                    { k: '关系强度', v: `${currentSample.relationStrength}%` },
+                    { k: '真实性评分', v: `${currentSample.authenticityScore}%` },
+                  ].map(r => (
+                    <div key={r.k} className="flex items-center justify-between text-[12px]">
+                      <span className="text-[#94A3B8]">{r.k}</span>
+                      <span className="text-[#0F172A] font-medium">{r.v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  <div className="text-[11px] font-medium text-[#64748B]">授信决策</div>
+                  {[
+                    { k: '推荐产品', v: recommendedProduct.name },
+                    { k: '推荐额度', v: currentSample.recommendedLimit },
+                    { k: '审批状态', v: currentSample.approvalStatus },
+                    { k: '风险状态', v: currentSample.riskStatus },
+                    { k: '证据覆盖', v: `${currentSample.evidenceCoverage}%` },
+                  ].map(r => (
+                    <div key={r.k} className="flex items-center justify-between text-[12px]">
+                      <span className="text-[#94A3B8]">{r.k}</span>
+                      <span className="text-[#0F172A] font-medium">{r.v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-[#F1F5F9] pt-3 space-y-2">
+                <div className="text-[11px] font-medium text-[#64748B]">经营证据</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { k: '近90天订单', v: `${currentSample.orderCount90d} 笔 / ${currentSample.orderAmount90d}` },
+                    { k: '发票连续', v: `${currentSample.invoiceContinuityMonths} 个月` },
+                    { k: '平均回款周期', v: currentSample.avgReceivableCycle },
+                    { k: '物流', v: currentSample.logisticsStatus },
+                  ].map(r => (
+                    <div key={r.k} className="rounded border border-[#E2E8F0] px-3 py-2">
+                      <div className="text-[10px] text-[#94A3B8]">{r.k}</div>
+                      <div className="text-[12px] font-medium text-[#0F172A] mt-0.5">{r.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {currentSample.riskFlags.length > 0 && (
+                <div className="border-t border-[#F1F5F9] pt-3 space-y-2">
+                  <div className="text-[11px] font-medium text-[#DC2626]">风险标记</div>
                   <div className="flex flex-wrap gap-1">
-                    {p.rulePackage.split(' + ').map((r) => (
-                      <span key={r} className="bg-[#F1F5F9] border border-[#E2E8F0] rounded px-1.5 py-0.5 text-[10px] text-[#475569]">{r}</span>
+                    {currentSample.riskFlags.map(f => (
+                      <Badge key={f} className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">{f}</Badge>
                     ))}
                   </div>
-                  <Badge className={`text-[9px] border w-fit ${p.status === '已上线' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]'}`}>{p.status}</Badge>
                 </div>
-              ))}
+              )}
+              <div className="border-t border-[#F1F5F9] pt-3">
+                <div className="text-[11px] font-medium text-[#64748B] mb-1">AI 综合判断</div>
+                <div className="rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-4 py-3 text-[12px] text-[#2563EB] leading-5">{currentSample.aiSummary}</div>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              {[
-                { label: '已上线产品', value: PRODUCTS.filter((p) => p.status === '已上线').length.toString(), desc: '正式运营中' },
-                { label: '试运行产品', value: PRODUCTS.filter((p) => p.status === '试运行').length.toString(), desc: '灰度验证中' },
-                { label: '绑定规则包', value: '4 套', desc: '覆盖全场景' },
-                { label: '适用客群覆盖', value: '4 类', desc: '存量 + 标准 + 长尾' },
-              ].map((m) => (
-                <div key={m.label} className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
-                  <div className="text-[10px] text-[#94A3B8]">{m.label}</div>
-                  <div className="mt-0.5 text-xl font-bold text-[#0F172A]">{m.value}</div>
-                  <div className="mt-0.5 text-[10px] text-[#64748B]">{m.desc}</div>
-                </div>
-              ))}
-            </div>
-
             {active && <ActionBar />}
           </div>
         );
 
       // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 2: 审批规则
-      // ═══════════════════════════════════════════════════════════════════════
-      case 'rules':
-        return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between text-[11px] text-[#94A3B8]">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-[#0F172A]">审批规则台</span>
-                <span>数据口径: 近 30 天</span>
-                <span>最后更新: 2026-04-08</span>
-                <span>负责人: 风控策略组</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#64748B] gap-1 px-2"><Search size={10} /> 搜索规则</Button>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] text-[#64748B] gap-1 px-2"><Filter size={10} /> 筛选</Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {[
-                { label: '规则总数', value: `${RULES_DATA.length}`, detail: `启用 ${RULES_DATA.filter((r) => r.status === '启用').length} · 灰度 ${RULES_DATA.filter((r) => r.status === '灰度').length}`, color: 'text-[#0F172A]' },
-                { label: '近 30 天命中', value: `${RULES_DATA.reduce((sum, r) => sum + r.hitCount, 0).toLocaleString()}`, detail: '日均 80 件', color: 'text-[#2563EB]' },
-                { label: '拦截/降级', value: '179', detail: '占命中 7.5%', color: 'text-[#DC2626]' },
-                { label: '进入补审', value: '318', detail: '通过率 72%', color: 'text-[#C2410C]' },
-                { label: '平均误伤率', value: '5.5%', detail: '目标 < 8%', color: 'text-[#047857]' },
-              ].map((s) => (
-                <div key={s.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3">
-                  <div className="text-[10px] text-[#94A3B8]">{s.label}</div>
-                  <div className={`mt-0.5 text-xl font-bold ${s.color}`}>{s.value}</div>
-                  <div className="mt-0.5 text-[10px] text-[#64748B]">{s.detail}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              {RULES_DATA.map((rule) => (
-                <div key={rule.id} className="rounded-lg border border-[#E5E7EB] bg-white overflow-hidden">
-                  <div className="px-4 py-2.5 flex items-center gap-2 border-b border-[#F1F5F9]">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${rule.status === '启用' ? 'bg-[#16A34A]' : rule.status === '灰度' ? 'bg-[#F59E0B]' : 'bg-[#CBD5E1]'}`} />
-                    <span className="text-[11px] text-[#94A3B8] font-mono">{rule.id}</span>
-                    <span className="text-[13px] font-semibold text-[#0F172A]">{rule.name}</span>
-                    <Badge className={`text-[9px] border ${CATEGORY_STYLES[rule.category] ?? 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'}`}>{rule.category}</Badge>
-                    <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[9px]">{rule.scope}</Badge>
-                    <span className="text-[10px] text-[#94A3B8]">{rule.priority}</span>
-                    <div className="flex-1" />
-                    <span className="text-[10px] text-[#94A3B8]">{rule.owner} · {rule.updatedAt}</span>
-                  </div>
-                  <div className="px-4 py-2 bg-[#FAFBFC] border-b border-[#F1F5F9]">
-                    <div className="flex items-center gap-2 text-[11px]">
-                      <span className="text-[#94A3B8] shrink-0">触发:</span>
-                      <span className="text-[#334155]">{rule.trigger}</span>
-                      <span className="text-[#94A3B8] mx-1">→</span>
-                      <span className="font-medium text-[#0F172A]">{rule.actionChain}</span>
-                    </div>
-                  </div>
-                  <div className="px-4 py-2.5">
-                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 text-center">
-                      {[
-                        { label: '命中率', value: rule.hitRate },
-                        { label: '命中数', value: rule.hitCount || '—' },
-                        { label: '误伤率', value: rule.falsePositiveRate, isRisk: rule.falsePositiveRate !== '—' && parseFloat(rule.falsePositiveRate) > 10 },
-                        { label: '复核通过率', value: rule.reviewPassRate },
-                        { label: '贡献', value: rule.contribution },
-                      ].map((m) => (
-                        <div key={m.label}>
-                          <div className="text-[10px] text-[#94A3B8]">{m.label}</div>
-                          <div className={`mt-0.5 text-sm font-semibold ${m.isRisk ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{m.value}</div>
-                        </div>
-                      ))}
-                      <div>
-                        <div className="text-[10px] text-[#94A3B8]">数据来源</div>
-                        <div className="mt-0.5 flex flex-wrap gap-1 justify-center">
-                          {rule.dataSources.map((ds) => (
-                            <span key={ds} className="bg-[#F1F5F9] border border-[#E2E8F0] rounded px-1.5 py-0.5 text-[9px] text-[#475569]">{ds}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {active && <ActionBar />}
-          </div>
-        );
-
-      // ═══════════════════════════════════════════════════════════════════════
-      // PAGE 3: 产品匹配 (NEW)
+      // PAGE 1: 产品匹配 (DEFAULT)
       // ═══════════════════════════════════════════════════════════════════════
       case 'matching':
+      default:
         return (
           <div className="space-y-4">
             {active && <SceneHero question="为什么匹配这个产品、为什么能通过补审" />}
@@ -646,8 +634,6 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
           </div>
         );
 
-      default:
-        return null;
     }
   };
 
