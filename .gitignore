@@ -1,11 +1,33 @@
-!.env.example
-*.log
-.DS_Store
+# env
 .env*
-.git.bak-*
+!.env.example
+
+# logs
+*.log
+
+# dependencies
+node_modules/
+.pnpm-store/
+.npm/
+
+# build output
+dist/
 build/
 coverage/
-dist
-dist/
-node_modules
-node_modules/
+*.tsbuildinfo
+
+# system files
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
+
+# temp / backup
+.git.bak-*
+*.tmp
+*.temp
+
+# vite cache
+.vite/
