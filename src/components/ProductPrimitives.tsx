@@ -1,9 +1,10 @@
 import React from 'react';
-import { LucideIcon, ChevronDown, Building2 } from 'lucide-react';
+import { LucideIcon, ChevronDown, Building2, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { SAMPLES, type ChainLoanSample } from '../demo/chainLoan/data';
+import { SAMPLES, CHAIN_LOAN_STAGE_LABELS, type ChainLoanSample, type DemoStage } from '../demo/chainLoan/data';
 
 type BaseProps = React.HTMLAttributes<HTMLDivElement>;
 
@@ -856,6 +857,169 @@ export function TimelineInsightCard({
             <div className="w-1.5 h-1.5 rounded-full bg-[#2563EB] mt-1.5 shrink-0" />
             <p className="text-[11px] text-[#334155] leading-5">{insight}</p>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   UNIFIED WORKBENCH INFRASTRUCTURE (v2)
+   ──────────────────────────────────────────────────────────────── */
+
+const PIPELINE_STAGES: DemoStage[] = [
+  'ecosystem', 'identified', 'pre_credit', 'manual_review', 'approved', 'risk_alert', 'post_loan_recovery',
+];
+
+/**
+ * StageStrip — compact horizontal pipeline showing the 7 business stages.
+ * Highlights current sample's position. Replaces DemoStepper.
+ */
+export function StageStrip({ currentStage }: { currentStage: DemoStage }) {
+  const currentIdx = PIPELINE_STAGES.indexOf(currentStage);
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 overflow-x-auto">
+      {PIPELINE_STAGES.map((s, i) => {
+        const isCurrent = s === currentStage;
+        const isDone = i < currentIdx;
+        return (
+          <React.Fragment key={s}>
+            {i > 0 && <div className={cn('w-4 h-px shrink-0', isDone ? 'bg-[#16A34A]' : isCurrent ? 'bg-[#2563EB]' : 'bg-[#E2E8F0]')} />}
+            <div className={cn(
+              'flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors',
+              isCurrent ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]' : isDone ? 'text-[#16A34A]' : 'text-[#94A3B8]',
+            )}>
+              <div className={cn('w-1.5 h-1.5 rounded-full', isCurrent ? 'bg-[#2563EB]' : isDone ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')} />
+              {CHAIN_LOAN_STAGE_LABELS[s]}
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * SampleHero — compact sample context bar. Shows: who + stage + status + core fields.
+ * Replaces CaseSummaryCard. Every scene should use this at the top.
+ */
+export function SampleHero({
+  sample,
+  stageLabel,
+  riskLabel,
+  riskState,
+  limit,
+  switcher,
+}: {
+  sample: ChainLoanSample;
+  stageLabel: string;
+  riskLabel: string;
+  riskState: StateName;
+  limit: string;
+  switcher?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-[#D6E4FF] bg-[#FAFBFF] px-4 py-3 flex flex-col md:flex-row md:items-center gap-3">
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D6E4FF] bg-white text-[#2563EB] shrink-0">
+          <Building2 size={15} />
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-[#0F172A] truncate">{sample.shortName}</div>
+          <div className="text-[10px] text-[#94A3B8]">{sample.roleInChain}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 text-right shrink-0 flex-wrap">
+        <div>
+          <div className="text-[10px] text-[#94A3B8]">阶段</div>
+          <div className="text-xs font-semibold text-[#0F172A]">{stageLabel}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-[#94A3B8]">额度</div>
+          <div className="text-xs font-semibold text-[#0F172A]">{limit}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-[#94A3B8]">风险</div>
+          <StatusPill state={riskState} label={riskLabel} />
+        </div>
+        <div>
+          <div className="text-[10px] text-[#94A3B8]">下一步</div>
+          <div className="text-xs font-medium text-[#2563EB]">{sample.nextAction}</div>
+        </div>
+      </div>
+      {switcher && <div className="shrink-0">{switcher}</div>}
+    </div>
+  );
+}
+
+/**
+ * SceneQuestion — a one-line banner stating the core question this page answers.
+ */
+export function SceneQuestion({ question }: { question: string }) {
+  return (
+    <div className="flex items-center gap-2 text-[12px] text-[#64748B]">
+      <div className="w-1 h-4 rounded-full bg-[#2563EB]" />
+      <span className="font-medium">本页核心问题：</span>
+      <span>{question}</span>
+    </div>
+  );
+}
+
+/**
+ * AiJudgmentBlock — standardized three-part AI output.
+ * Every scene should use this as the unified AI section.
+ * judgment: one sentence
+ * basis: 2-4 bullet points
+ * action: label + optional callback
+ */
+export function AiJudgmentBlock({
+  judgment,
+  basis,
+  action,
+  onAction,
+  confidence,
+}: {
+  judgment: string;
+  basis: string[];
+  action?: string;
+  onAction?: () => void;
+  confidence?: number;
+}) {
+  const tone = !confidence ? 'blue' as const : confidence >= 80 ? 'green' as const : confidence >= 60 ? 'amber' as const : 'red' as const;
+  return (
+    <div className="rounded-lg border border-[#D6E4FF] bg-[#FAFBFF] p-4 space-y-2.5">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center w-5 h-5 rounded bg-[#2563EB] shrink-0">
+          <Sparkles size={10} className="text-white" />
+        </div>
+        <span className="text-[10px] font-semibold text-[#2563EB] uppercase tracking-wider">AI 判断</span>
+        {confidence != null && <AiTag confidence={confidence} tone={tone} />}
+      </div>
+      <div className="text-[13px] font-medium text-[#0F172A] leading-6">{judgment}</div>
+      {basis.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-[10px] text-[#94A3B8] font-medium">判断依据</div>
+          <ul className="space-y-0.5">
+            {basis.map((b, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[12px] text-[#475569] leading-5">
+                <div className="w-1 h-1 rounded-full bg-[#94A3B8] mt-2 shrink-0" />
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {action && (
+        <div className="pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px] gap-1 border-[#BFDBFE] text-[#2563EB] hover:bg-[#EFF6FF]"
+            onClick={onAction}
+          >
+            {action}
+            <ArrowRight size={10} />
+          </Button>
         </div>
       )}
     </div>

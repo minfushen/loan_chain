@@ -33,14 +33,14 @@ import {
   MiniTrend,
   InsightStrip,
   TimelineRail,
-  AiBar,
   AiNote,
+  AiJudgmentBlock,
   STATE_COLORS,
   type StateName,
 } from '../ProductPrimitives';
 import { useDemo } from '../../demo/DemoContext';
-import { DemoStepper, CaseSummaryCard, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
-import { SAMPLE_HENGYUAN, SAMPLE_CHIYUAN, SAMPLE_RUIXIN, SAMPLE_RUIFENG, SAMPLES } from '../../demo/chainLoan/data';
+import { SceneHero, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
+import { SAMPLE_YUTONG, SAMPLE_CHIYUAN, SAMPLE_RUIXIN, SAMPLE_RUIFENG, SAMPLES } from '../../demo/chainLoan/data';
 import { SelectedSampleSummary, SampleSwitcher, PanelCard, InsightCard } from '../ProductPrimitives';
 
 interface PostLoanSceneProps {
@@ -51,11 +51,10 @@ interface PostLoanSceneProps {
 export default function PostLoanScene({ activeModule, onModuleChange }: PostLoanSceneProps) {
   const scene = SCENES.find((item) => item.id === 'post-loan')!;
   const { active, recoveryComplete, completeRecovery, riskSimulated, stage, currentSample, selectSample, selectedSampleId } = useDemo();
-  const isHengyuan = currentSample.id === SAMPLE_HENGYUAN.id;
 
   const isPostRisk = riskSimulated || stage === 'risk_alert' || stage === 'post_loan_recovery';
   const recoveryProgress = recoveryComplete ? 100 : isPostRisk ? 72 : 0;
-  const currentLimit = recoveryComplete ? currentSample.recommendedLimit : isPostRisk ? currentSample.currentLimit : currentSample.currentLimit;
+  const currentLimit = recoveryComplete ? currentSample.recommendedLimit : currentSample.currentLimit;
 
   const currentState: StateName = recoveryComplete ? 'recovery' : isPostRisk ? 'risk' : 'normal';
   const currentStateLabel = recoveryComplete ? '恢复观察' : isPostRisk ? '风险收缩' : '正常经营';
@@ -68,7 +67,7 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
       case 'layers': {
         const layers = [
           { name: '健康层', count: 680, pct: '60.7%', state: 'normal' as StateName, definition: '近 3 月回款稳定 & 无预警 & 经营流水持续', strategy: '续贷提额', sample: [
-            { name: SAMPLE_HENGYUAN.companyName, chain: SAMPLE_HENGYUAN.chainName, limit: SAMPLE_HENGYUAN.currentLimit },
+            { name: SAMPLE_YUTONG.companyName, chain: SAMPLE_YUTONG.chainName, limit: SAMPLE_YUTONG.currentLimit },
             { name: SAMPLE_CHIYUAN.companyName, chain: SAMPLE_CHIYUAN.chainName, limit: SAMPLE_CHIYUAN.currentLimit },
           ]},
           { name: '成长层', count: 220, pct: '19.6%', state: 'normal' as StateName, definition: '交易增长 > 20% & 结算频次上升', strategy: '交叉销售', sample: [
@@ -83,8 +82,7 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
         ];
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前应恢复、观察还是继续经营" />}
 
             <PageHeader
               title="客户分层管理"
@@ -175,8 +173,7 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
       case 'revenue':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前应恢复、观察还是继续经营" />}
 
             <PageHeader
               title="增收动作"
@@ -264,8 +261,7 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
       case 'playbook':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前应恢复、观察还是继续经营" />}
 
             <PageHeader
               title="经营策略模板库"
@@ -358,14 +354,13 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
       default:
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前应恢复、观察还是继续经营" />}
 
             {/* 贷后经营流程条 */}
             <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
-              {['持续监控', '风险识别', '额度收缩', '恢复经营', '续贷评估'].map((step, i) => {
-                const done = i === 0 ? true : i === 1 ? isPostRisk : i === 2 ? isPostRisk : i === 3 ? (recoveryComplete && isHengyuan) : false;
-                const isActive = !isPostRisk ? i === 0 : (recoveryComplete && isHengyuan) ? i === 4 : isPostRisk && !recoveryComplete ? i === 2 : false;
+              {['持续监控', '风险识别', '额度收缩', '恢复观察（30天）', '续贷评估'].map((step, i) => {
+                const done = i === 0 ? true : i === 1 ? isPostRisk : i === 2 ? isPostRisk : i === 3 ? recoveryComplete : false;
+                const isActive = !isPostRisk ? i === 0 : recoveryComplete ? i === 4 : isPostRisk && !recoveryComplete ? i === 2 : false;
                 return (
                   <React.Fragment key={step}>
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${done ? 'bg-[#ECFDF3] text-[#047857]' : isActive ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]' : 'text-[#94A3B8]'}`}>
@@ -378,7 +373,10 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
               })}
             </div>
 
-            <SelectedSampleSummary sample={currentSample} />
+            <div className="flex items-center justify-between">
+              <SelectedSampleSummary sample={currentSample} />
+              <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
+            </div>
 
             {!isPostRisk ? (
               <>
@@ -389,20 +387,20 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <MetricCard label="当前主体" value={currentSample.shortName} detail="在贷正常监控中" icon={Building2} tone="slate" />
-                  <MetricCard label="当前额度" value={currentLimit} detail="授信额度正常 · 未触发收缩" icon={Wallet} tone="green" />
-                  <MetricCard label="经营状态" value="正常" detail="回款稳定 · 物流连续 · 无预警" icon={Activity} tone="green" />
-                  <MetricCard label="当前阶段" value={currentPhase} detail="等待风险事件触发后进入恢复" icon={Clock3} tone="slate" />
+                  <MetricCard label="当前主体" value={currentSample.shortName} detail={`${currentSample.roleInChain} · ${currentSample.chainName}`} icon={Building2} tone="slate" />
+                  <MetricCard label="当前额度" value={currentLimit} detail={`授信额度正常 · ${currentSample.productType}`} icon={Wallet} tone="green" />
+                  <MetricCard label="经营状态" value={currentSample.riskStatus} detail={`${currentSample.logisticsStatus} · ${currentSample.riskFlags.length === 0 ? '无预警' : currentSample.riskFlags.join('、')}`} icon={Activity} tone={currentSample.riskStatus === '正常' ? 'green' : 'amber'} />
+                  <MetricCard label="当前阶段" value={currentPhase} detail={currentSample.nextAction} icon={Clock3} tone="slate" />
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
-                  <WorkbenchPanel title="经营健康看板">
+                  <WorkbenchPanel title={`经营健康看板 · ${currentSample.shortName}`}>
                     <div className="space-y-2">
                       {[
-                        { label: '回款周期', value: '34 天', trend: '-2 天', good: true, bar: 68 },
-                        { label: '物流履约', value: '连续签收正常', trend: '12 月稳定', good: true, bar: 95 },
-                        { label: '对公账户活跃', value: '月均净流入 ¥12.6万', trend: '+8.2%', good: true, bar: 80 },
-                        { label: '预警状态', value: '未触发任何规则', trend: '安全', good: true, bar: 100 },
+                        { label: '回款周期', value: currentSample.avgReceivableCycle, trend: parseInt(currentSample.avgReceivableCycle) <= 35 ? '正常' : '偏长', good: parseInt(currentSample.avgReceivableCycle) <= 35, bar: Math.max(20, 100 - parseInt(currentSample.avgReceivableCycle)) },
+                        { label: '物流履约', value: currentSample.logisticsStatus, trend: currentSample.logisticsStatus.includes('正常') || currentSample.logisticsStatus.includes('稳定') ? '稳定' : '波动', good: !currentSample.logisticsStatus.includes('延迟'), bar: currentSample.logisticsStatus.includes('正常') || currentSample.logisticsStatus.includes('稳定') ? 95 : 55 },
+                        { label: '对公账户活跃', value: currentSample.accountFlowStatus, trend: currentSample.accountFlowStatus.includes('流入') ? '健康' : '需关注', good: currentSample.accountFlowStatus.includes('流入') || currentSample.accountFlowStatus.includes('稳定'), bar: currentSample.accountFlowStatus.includes('流入') || currentSample.accountFlowStatus.includes('稳定') ? 80 : 40 },
+                        { label: '预警状态', value: currentSample.riskFlags.length === 0 ? '未触发任何规则' : `${currentSample.riskFlags.length} 条命中`, trend: currentSample.riskFlags.length === 0 ? '安全' : '关注', good: currentSample.riskFlags.length === 0, bar: currentSample.riskFlags.length === 0 ? 100 : Math.max(20, 100 - currentSample.riskFlags.length * 25) },
                       ].map((m) => (
                         <div key={m.label} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
                           <div className="flex items-center justify-between mb-1.5">
@@ -450,11 +448,13 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
                   </div>
                 </div>
 
-                <AiBar
-                  conclusion="经营稳定，建议维持监控频率"
-                  confidence={94}
-                  metrics={[{ label: '来源', value: '恢复经营 Agent' }]}
-                  action="Q3 评估提额"
+                <AiJudgmentBlock
+                  judgment={`${currentSample.shortName}${currentSample.riskFlags.length === 0 ? '经营稳定，建议维持监控频率' : `存在 ${currentSample.riskFlags.length} 项关注，建议加密监控`}`}
+                  basis={currentSample.riskFlags.length === 0
+                    ? ['各项经营指标正常', '物流履约稳定', '回款周期在合理范围']
+                    : currentSample.riskFlags.map(f => `风险信号：${f}`)}
+                  confidence={currentSample.agentHints.confidence}
+                  action={currentSample.riskFlags.length === 0 ? 'Q3 评估提额' : currentSample.agentHints.suggestedAction}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -509,13 +509,13 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
                   right={<StatusPill state={currentState} label={currentStateLabel} />}
                 />
 
-                {riskSimulated && isHengyuan && <RiskEventPanel />}
+                {riskSimulated && <RiskEventPanel />}
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <MetricCard label="当前主体" value={currentSample.shortName} detail="风险后恢复经营对象" icon={Building2} tone="slate" />
-                  <MetricCard label="当前额度" value={currentLimit} detail={recoveryComplete ? '已恢复至原额度 90%' : '风险触发后临时收缩'} icon={Wallet} tone={recoveryComplete ? 'green' : 'amber'} />
-                  <MetricCard label="经营状态" value={recoveryComplete ? '恢复观察' : '风险收缩'} detail={recoveryComplete ? '观察期 · 指标恢复中' : '回款异常 · 额度已调降'} icon={recoveryComplete ? ShieldCheck : ShieldAlert} tone={recoveryComplete ? 'green' : 'red'} />
-                  <MetricCard label="当前阶段" value={currentPhase} detail={recoveryComplete ? '30 天观察期已满足' : '等待恢复条件满足'} icon={Clock3} tone="slate" />
+                  <MetricCard label="当前额度" value={recoveryComplete ? `${Math.round(parseInt(currentSample.recommendedLimit) * 0.9)}万` : currentLimit} detail={recoveryComplete ? `恢复至原额度 90%（原 ${currentSample.recommendedLimit}），30天观察期` : '风险触发后额度收缩'} icon={Wallet} tone={recoveryComplete ? 'green' : 'amber'} />
+                  <MetricCard label="经营状态" value={recoveryComplete ? '恢复观察中' : '风险收缩'} detail={recoveryComplete ? '30天观察期内，尚未回归正常经营' : '回款异常 · 额度已调降'} icon={recoveryComplete ? ShieldCheck : ShieldAlert} tone={recoveryComplete ? 'amber' : 'red'} />
+                  <MetricCard label="当前阶段" value={currentPhase} detail={recoveryComplete ? '恢复观察中 · 观察期满后方可评估全额恢复' : '等待恢复条件满足'} icon={Clock3} tone="slate" />
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-4">
@@ -527,7 +527,7 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
                           信用修复进度
                         </CardTitle>
                         {active && !recoveryComplete && (
-                          <Button className="bg-[#16A34A] hover:bg-[#15803D]" onClick={completeRecovery}>恢复经营</Button>
+                          <Button className="bg-[#16A34A] hover:bg-[#15803D]" onClick={completeRecovery}>进入恢复观察</Button>
                         )}
                         {active && recoveryComplete && (
                           <StatusPill state="normal" label="演示完成" />
@@ -548,36 +548,47 @@ export default function PostLoanScene({ activeModule, onModuleChange }: PostLoan
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {[
-                          ['补充 2 笔真实订单', recoveryComplete ? '已完成' : '待补充'],
-                          ['回款归集满 7 天', recoveryComplete ? '已完成' : '进行中'],
-                          ['物流签收恢复正常', recoveryComplete ? '已完成' : '已恢复 11 车次'],
-                        ].map(([title, value]) => (
-                          <div key={title} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3">
-                            <div className="text-[10px] text-[#94A3B8]">{title}</div>
-                            <div className={`mt-1.5 text-sm font-semibold ${recoveryComplete ? 'text-[#16A34A]' : 'text-[#0F172A]'}`}>{value}</div>
-                          </div>
-                        ))}
+                      <div className="space-y-3">
+                        <div className="text-[10px] text-[#94A3B8] uppercase tracking-wider">恢复评估三维度</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {[
+                            { dim: '经营信号是否修复', items: ['补充 2 笔真实订单', '回款归集满 7 天'], status: recoveryComplete ? '已修复' : '修复中' },
+                            { dim: '敞口是否恢复', items: [`恢复至原额度 90%（${Math.round(parseInt(currentSample.recommendedLimit) * 0.9)}万）`, '30天观察期'], status: recoveryComplete ? '已恢复（观察中）' : '待恢复' },
+                            { dim: '是否回归正常经营', items: ['物流签收恢复正常', '无新增风险信号'], status: recoveryComplete ? '观察期内' : '待确认' },
+                          ].map((d) => (
+                            <div key={d.dim} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+                              <div className="text-[11px] font-medium text-[#0F172A] mb-2">{d.dim}</div>
+                              {d.items.map(item => (
+                                <div key={item} className="flex items-center gap-1.5 text-[10px] text-[#64748B] mb-1">
+                                  <div className={`w-1.5 h-1.5 rounded-full ${recoveryComplete ? 'bg-[#16A34A]' : 'bg-[#F59E0B]'}`} />
+                                  {item}
+                                </div>
+                              ))}
+                              <div className={`mt-2 text-xs font-semibold ${recoveryComplete ? 'text-[#16A34A]' : 'text-[#C2410C]'}`}>{d.status}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
                       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
                         <div className="text-sm font-semibold text-[#0F172A] mb-3">从预警到恢复的时间轴</div>
                         <TimelineRail items={[
-                          { date: '2026-05-12', title: '触发风险预警', desc: `${currentSample.riskFlags.length > 0 ? currentSample.riskFlags.slice(0, 2).join(' + ') : '经营波动'} · 额度临时收缩至 ${currentSample.currentLimit}`, icon: ShieldAlert, done: true },
-                          { date: '2026-05-18', title: '补充经营材料', desc: '客户补传新订单与运输回单 · 人工复核继续观察', icon: ShieldCheck, done: true },
-                          { date: '2026-05-29', title: '恢复经营', desc: currentSample.aiSummary, icon: Sparkles, done: recoveryComplete },
+                          { date: '2026-05-12', title: '触发风险预警', desc: `${currentSample.riskFlags.length > 0 ? currentSample.riskFlags.slice(0, 2).join(' + ') : '经营波动'} · 额度收缩至 ${currentSample.currentLimit}`, icon: ShieldAlert, done: true },
+                          { date: '2026-05-18', title: '补充经营材料', desc: '客户补传新订单与运输回单 · 人工复核后进入恢复观察', icon: ShieldCheck, done: true },
+                          { date: '2026-05-29', title: recoveryComplete ? '进入恢复观察（30天）' : '等待恢复条件', desc: recoveryComplete ? `恢复至原额度 90%（${Math.round(parseInt(currentSample.recommendedLimit) * 0.9)}万），观察期满后评估全额恢复` : '恢复条件尚未全部满足', icon: Sparkles, done: recoveryComplete },
                         ]} />
                       </div>
                     </CardContent>
                   </Card>
 
                   <div className="space-y-4">
-                    <AiBar
-                      conclusion={recoveryComplete ? `恢复条件已满足，建议恢复至 ${currentSample.recommendedLimit}` : `恢复进度 ${recoveryProgress}%，仍需观察`}
+                    <AiJudgmentBlock
+                      judgment={recoveryComplete ? `恢复条件已满足，额度恢复至原额度 90%（${Math.round(parseInt(currentSample.recommendedLimit) * 0.9)}万），进入 30 天观察期` : `恢复进度 ${recoveryProgress}%，仍需观察`}
+                      basis={recoveryComplete
+                        ? ['回款周期恢复正常', '物流签收恢复稳定', '账户流水净流入']
+                        : ['部分恢复条件尚未满足', '需持续观察经营数据', '分阶段恢复 + 观察期策略']}
                       confidence={recoveryComplete ? 91 : currentSample.agentHints.confidence}
-                      metrics={[{ label: '条件', value: recoveryComplete ? '3/3' : '2/3' }]}
-                      action={recoveryComplete ? '进入常规监控' : currentSample.agentHints.suggestedAction}
+                      action={recoveryComplete ? '观察期满后评估全额恢复' : currentSample.agentHints.suggestedAction}
                     />
                     <WorkbenchPanel title="恢复信号">
                       <div className="space-y-2">

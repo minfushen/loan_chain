@@ -30,10 +30,11 @@ import {
   InsightStrip,
   AiNote,
   SelectedSampleSummary,
+  AiJudgmentBlock,
 } from '../ProductPrimitives';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
-import { DemoStepper, CaseSummaryCard, ActionBar } from '../../demo/DemoComponents';
-import { SAMPLES, SAMPLE_HENGYUAN, SAMPLE_CHIYUAN, SAMPLE_JIALI, SAMPLE_RUIXIN, SAMPLE_RUIFENG } from '../../demo/chainLoan/data';
+import { SceneHero, ActionBar } from '../../demo/DemoComponents';
+import { SAMPLES, SAMPLE_YUTONG, SAMPLE_CHIYUAN, SAMPLE_JIALI, SAMPLE_RUIXIN, SAMPLE_RUIFENG } from '../../demo/chainLoan/data';
 
 interface AssetPoolSceneProps {
   activeModule: string;
@@ -43,7 +44,7 @@ interface AssetPoolSceneProps {
 export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPoolSceneProps) {
   const scene = SCENES.find((item) => item.id === 'asset-pool')!;
   const { active, stage, stageIndex, riskSimulated, recoveryComplete, currentSample, selectSample, selectedSampleId } = useDemo();
-  const isHengyuan = currentSample.id === SAMPLE_HENGYUAN.id;
+  const isCurrentApproved = currentSample.stage === 'approved' || currentSample.stage === 'risk_alert' || currentSample.stage === 'recovery';
 
   const isPastPreCredit = stageIndex >= STAGE_ORDER.indexOf('pre_credit');
   const isPastApproval = stageIndex >= STAGE_ORDER.indexOf('approved');
@@ -54,8 +55,7 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
       case 'pre-credit':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
 
             <PageHeader
               title="预授信池"
@@ -111,25 +111,24 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
             {active && isPastPreCredit && (
               <InsightStrip tone="info">
                 当前样本 — <strong>{currentSample.shortName}</strong> {currentSample.approvalStatus}，额度 {currentSample.currentLimit} · {currentSample.productType}
-                {isPastApproval && isHengyuan && ' · 已批准'}
+                {isPastApproval && isCurrentApproved && ' · 已批准'}
               </InsightStrip>
             )}
 
             <WorkbenchPanel
               title="预授信候选客户"
-              badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">TOP 5 · 按触达优先级</Badge>}
+              badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">仅含已识别且尚未进入补审/在营客户</Badge>}
             >
               <div className="space-y-2">
-                {SAMPLES.map((s) => {
-                  const state = s.uiState.badgeTone === 'blue' ? 'info' as const : s.uiState.badgeTone === 'green' ? 'normal' as const : s.uiState.badgeTone === 'amber' ? 'watch' as const : s.uiState.badgeTone === 'red' ? 'risk' as const : 'info' as const;
+                {SAMPLES.filter(s => ['identified', 'pre_credit'].includes(s.stage)).map((s) => {
                   const priority = s.uiState.priority === 'high' ? '高' : s.uiState.priority === 'medium' ? '中' : '低';
                   return (
                     <EntitySummaryCard
                       key={s.id}
                       name={s.companyName}
                       role={s.chainName}
-                      state={state}
-                      stateLabel={s.approvalStatus}
+                      state={s.stage === 'pre_credit' ? 'info' as const : 'watch' as const}
+                      stateLabel={s.stage === 'pre_credit' ? '已预授信' : '已识别'}
                       keyValue={s.recommendedLimit}
                       icon={Building2}
                       onClick={() => selectSample(s.id)}
@@ -138,7 +137,7 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
                       <div className="mt-2 flex items-center justify-between">
                         <div className="text-[11px] text-[#64748B] flex items-center gap-1">
                           <Eye size={10} className="text-[#94A3B8]" />
-                          {s.aiSummary.slice(0, 20)}…
+                          入池原因: {s.aiSummary.slice(0, 24)}…
                         </div>
                         <div className="flex gap-1">
                           <Badge className="bg-[#F1F5F9] text-[#475569] border-transparent text-[10px]">优先级: {priority}</Badge>
@@ -148,6 +147,9 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
                     </EntitySummaryCard>
                   );
                 })}
+                {SAMPLES.filter(s => ['identified', 'pre_credit'].includes(s.stage)).length === 0 && (
+                  <div className="text-center py-8 text-[#94A3B8] text-xs">当前无处于预授信阶段的客户</div>
+                )}
               </div>
             </WorkbenchPanel>
 
@@ -159,8 +161,7 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
       case 'review':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
 
             <PageHeader
               title="补审队列"
@@ -203,12 +204,13 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
 
             {active && isPastPreCredit && (
               <InsightStrip tone={isPastApproval ? 'normal' : 'watch'}>
-                当前样本 — <strong>{currentSample.shortName}</strong> · {isPastApproval && isHengyuan ? '补审已通过' : currentSample.approvalStatus}
+                当前样本 — <strong>{currentSample.shortName}</strong> · {isPastApproval && isCurrentApproved ? '补审已通过' : currentSample.approvalStatus}
               </InsightStrip>
             )}
 
             <WorkbenchPanel
               title="补审样本列表"
+              badge={<Badge className="bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA] text-[10px]">仅含需人工判断客户</Badge>}
               actions={
                 <div className="flex gap-1">
                   {['高优先级', '普通', '待补材料'].map((g) => (
@@ -218,20 +220,24 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
               }
             >
               <div className="space-y-2">
-                {([
-                  { sample: SAMPLE_HENGYUAN, status: isPastApproval && isHengyuan ? '已通过' : '高优待审', state: (isPastApproval && isHengyuan ? 'normal' : 'watch') as 'normal' | 'watch' },
-                  { sample: SAMPLE_RUIXIN, status: '高优待审', state: 'watch' as const },
-                  { sample: SAMPLE_JIALI, status: '待补材料', state: 'muted' as const },
-                  { sample: SAMPLE_CHIYUAN, status: '产品匹配', state: 'info' as const },
-                  { sample: SAMPLE_RUIFENG, status: '恢复中', state: 'risk' as const },
-                ]).map((c) => (
-                  <EntitySummaryCard key={c.sample.id} name={c.sample.companyName} role={c.sample.chainName} state={c.state} stateLabel={c.status} keyValue={c.sample.recommendedLimit} icon={Building2} onClick={() => selectSample(c.sample.id)} selected={c.sample.id === selectedSampleId}>
-                    <div className="mt-2 text-[11px] text-[#64748B] flex items-center gap-1">
-                      <FileCheck2 size={10} className="text-[#94A3B8]" />
-                      {c.sample.reviewReason.slice(0, 18)}…
-                    </div>
-                  </EntitySummaryCard>
-                ))}
+                {SAMPLES.filter(s => s.stage === 'manual_review').length > 0 ? (
+                  SAMPLES.filter(s => s.stage === 'manual_review').map((s) => (
+                    <EntitySummaryCard key={s.id} name={s.companyName} role={s.chainName} state="watch" stateLabel="待补审" keyValue={s.recommendedLimit} icon={Building2} onClick={() => selectSample(s.id)} selected={s.id === selectedSampleId}>
+                      <div className="mt-2 text-[11px] text-[#64748B] flex items-center gap-1">
+                        <FileCheck2 size={10} className="text-[#94A3B8]" />
+                        补审原因: {s.reviewReason.slice(0, 30)}…
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <Badge className="bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA] text-[10px]">未获链主确权</Badge>
+                        {s.riskFlags.length > 0 && s.riskFlags.map(f => (
+                          <Badge key={f} className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">{f}</Badge>
+                        ))}
+                      </div>
+                    </EntitySummaryCard>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-[#94A3B8] text-xs">当前无处于补审阶段的客户</div>
+                )}
               </div>
             </WorkbenchPanel>
 
@@ -243,8 +249,7 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
       case 'activated':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
 
             <PageHeader
               title="在营资产"
@@ -255,8 +260,8 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <MetricCard label="正常经营" value="892 户" detail="占比 79.6% · 经营健康" tone="green" />
               <MetricCard label="观察中" value="138 户" detail="占比 12.3% · 波动待稳" tone="amber" />
-              <MetricCard label="已收缩" value="62 户" detail="占比 5.5% · 额度已调降" tone="red" />
-              <MetricCard label="待恢复" value="28 户" detail="占比 2.5% · 恢复条件待满足" tone="slate" />
+              <MetricCard label="已降额" value="62 户" detail="占比 5.5% · 额度已调降" tone="red" />
+              <MetricCard label="恢复中" value="28 户" detail="占比 2.5% · 恢复至90%后30天观察" tone="slate" />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.8fr] gap-4">
@@ -309,9 +314,9 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
             </div>
 
             {active && isPastApproval && (
-              <InsightStrip tone={(riskSimulated && isHengyuan) ? 'risk' : 'normal'}>
+              <InsightStrip tone={riskSimulated ? 'risk' : 'normal'}>
                 当前样本 — <strong>{currentSample.shortName}</strong> ·
-                在营额度: {(riskSimulated && isHengyuan) ? (recoveryComplete ? '108万 (已恢复 90%)' : '96万 (已收缩 20%)') : currentSample.currentLimit}
+                在营额度: {riskSimulated ? (recoveryComplete ? `${Math.round(parseInt(currentSample.recommendedLimit) * 0.9)}万 (已恢复 90%)` : `${currentSample.currentLimit} (已收缩)`) : currentSample.currentLimit}
                 {riskSimulated ? (recoveryComplete ? ' · 恢复观察中' : ' · 风险收缩中') : ' · 正常经营'}
               </InsightStrip>
             )}
@@ -319,18 +324,20 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
             
 
             <WorkbenchPanel
-              title="在营客户样本"
-              badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">按额度排序 · TOP 5</Badge>}
+              title="在营客户"
+              badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">仅含已审批通过客户</Badge>}
             >
               <div className="space-y-2">
-                {([
-                  { sample: SAMPLE_RUIXIN, status: SAMPLE_RUIXIN.approvalStatus, state: 'watch' as const, limit: SAMPLE_RUIXIN.currentLimit },
-                  { sample: SAMPLE_HENGYUAN, status: (riskSimulated && isHengyuan) ? '已收缩' : '正常经营', state: ((riskSimulated && isHengyuan) ? 'risk' : 'normal') as 'risk' | 'normal', limit: (riskSimulated && isHengyuan) ? '96万' : SAMPLE_HENGYUAN.currentLimit },
-                  { sample: SAMPLE_CHIYUAN, status: '正常经营', state: 'normal' as const, limit: SAMPLE_CHIYUAN.currentLimit },
-                  { sample: SAMPLE_RUIFENG, status: SAMPLE_RUIFENG.approvalStatus, state: 'risk' as const, limit: SAMPLE_RUIFENG.currentLimit },
-                ]).map((c) => (
-                  <EntitySummaryCard key={c.sample.id} name={c.sample.companyName} role={c.sample.chainName} state={c.state} stateLabel={c.status} keyValue={c.limit} icon={Building2} onClick={() => selectSample(c.sample.id)} selected={c.sample.id === selectedSampleId} />
-                ))}
+                {SAMPLES.filter(s => ['approved', 'risk_alert', 'recovery'].includes(s.stage)).map((s) => {
+                  const state = s.riskStatus === '中度预警' ? 'risk' as const : s.riskStatus === '观察' ? 'watch' as const : s.approvalStatus === '恢复中' ? 'recovery' as const : 'normal' as const;
+                  const statusLabel = s.riskStatus === '中度预警' ? '预警触发' : s.approvalStatus === '恢复中' ? '恢复观察中' : s.approvalStatus === '已降额' ? '观察中' : '正常经营';
+                  return (
+                    <EntitySummaryCard key={s.id} name={s.companyName} role={s.chainName} state={state} stateLabel={statusLabel} keyValue={s.currentLimit} icon={Building2} onClick={() => selectSample(s.id)} selected={s.id === selectedSampleId} />
+                  );
+                })}
+                {SAMPLES.filter(s => ['approved', 'risk_alert', 'recovery'].includes(s.stage)).length === 0 && (
+                  <div className="text-center py-8 text-[#94A3B8] text-xs">当前无已审批客户</div>
+                )}
               </div>
             </WorkbenchPanel>
 
@@ -342,8 +349,7 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
       default:
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前客户在哪个池子、下一步去哪" />}
 
             {/* 资产流程条 */}
             <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
@@ -432,7 +438,7 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: AssetPo
               <WorkbenchPanel title="本周新增样本" icon={Sparkles}>
                 <div className="space-y-2">
                   {[
-                    { name: SAMPLE_HENGYUAN.shortName, source: '内部数据识别', limit: SAMPLE_HENGYUAN.recommendedLimit },
+                    { name: SAMPLE_YUTONG.shortName, source: '内部数据识别', limit: SAMPLE_YUTONG.recommendedLimit },
                     { name: SAMPLE_CHIYUAN.shortName, source: '物流服务识别', limit: SAMPLE_CHIYUAN.recommendedLimit },
                     { name: SAMPLE_RUIXIN.shortName, source: '税票流水筛选', limit: SAMPLE_RUIXIN.recommendedLimit },
                   ].map((s) => (

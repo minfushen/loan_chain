@@ -32,9 +32,10 @@ import {
   AiNote,
   SampleSwitcher,
   SelectedSampleSummary,
+  AiJudgmentBlock,
 } from '../ProductPrimitives';
 import { useDemo } from '../../demo/DemoContext';
-import { DemoStepper, CaseSummaryCard, ActionBar } from '../../demo/DemoComponents';
+import { SceneHero, ActionBar } from '../../demo/DemoComponents';
 
 
 interface PartnerManagementSceneProps {
@@ -57,8 +58,7 @@ export default function PartnerManagementScene({ activeModule, onModuleChange }:
       case 'sources':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="场景如何接入、如何复制落地" />}
 
             <PageHeader
               title="数据接入台"
@@ -153,8 +153,7 @@ export default function PartnerManagementScene({ activeModule, onModuleChange }:
       case 'templates':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="场景如何接入、如何复制落地" />}
 
             <PageHeader
               title="银行模板适配台"
@@ -232,8 +231,7 @@ export default function PartnerManagementScene({ activeModule, onModuleChange }:
       case 'delivery':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="场景如何接入、如何复制落地" />}
 
             <PageHeader
               title="交付推进台"
@@ -381,8 +379,7 @@ export default function PartnerManagementScene({ activeModule, onModuleChange }:
       default:
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="场景如何接入、如何复制落地" />}
 
             {/* 合作接入流程条 */}
             <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">

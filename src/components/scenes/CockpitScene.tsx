@@ -11,16 +11,17 @@ import {
   Search,
   Users,
   ShieldAlert,
-  TrendingUp,
   FileCheck2,
   Activity,
   Eye,
-  Zap,
   BarChart3,
   Handshake,
   ChevronRight,
+  Clock,
+  History,
+  PlusCircle,
 } from 'lucide-react';
-import { SampleSwitcher, StatusPill } from '../ProductPrimitives';
+import { SampleSwitcher, StatusPill, SceneQuestion } from '../ProductPrimitives';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { ActionBar } from '../../demo/DemoComponents';
 import { CHAIN_LOAN_STAGE_LABELS, SAMPLES } from '../../demo/chainLoan/data';
@@ -31,15 +32,24 @@ interface CockpitSceneProps {
   onModuleChange: (id: string) => void;
 }
 
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 6) return '夜深了';
+  if (h < 12) return '早安';
+  if (h < 14) return '午安';
+  if (h < 18) return '下午好';
+  return '晚上好';
+}
+
 export default function CockpitScene({ activeModule, onModuleChange }: CockpitSceneProps) {
   const scene = SCENES.find((item) => item.id === 'cockpit')!;
   const { active, stageIndex, riskSimulated, recoveryComplete, navigate, currentSample, selectSample, selectedSampleId } = useDemo();
 
-  const approvedCount = SAMPLES.filter((s) => s.stage === 'approved' || s.stage === 'recovery').length;
-  const preCreditCount = SAMPLES.filter((s) => s.stage === 'pre_credit' || s.stage === 'identified').length;
   const reviewCount = SAMPLES.filter((s) => s.stage === 'manual_review').length;
   const riskCount = SAMPLES.filter((s) => s.riskFlags.length >= 2).length;
   const recoveryCount = SAMPLES.filter((s) => s.stage === 'recovery').length;
+  const followUpCount = SAMPLES.filter((s) => s.segmentTag === 'C待观察' || s.stage === 'pre_credit').length;
+  const aiSuggestionCount = SAMPLES.filter((s) => s.agentHints.confidence > 0).length;
 
   const currentStageLabel = active ? CHAIN_LOAN_STAGE_LABELS[STAGE_ORDER[stageIndex]] || '未启动' : '未启动';
 
@@ -73,7 +83,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
       { label: '查看资产池', target: 'asset-pool' as SceneId },
     ];
     if (stageIndex >= STAGE_ORDER.indexOf('manual_review')) return [
-      { label: '进入审批', target: 'product-approval' as SceneId },
+      { label: '进入补审', target: 'product-approval' as SceneId },
       { label: '查看证据', target: 'customer-pool' as SceneId },
     ];
     if (stageIndex >= STAGE_ORDER.indexOf('pre_credit')) return [{ label: '进入资产池', target: 'asset-pool' as SceneId }];
@@ -81,359 +91,265 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
     return [{ label: '进入合作方管理', target: 'partner-management' as SceneId }];
   })();
 
-  const missionTasks = [
-    { label: '裕同包装补审待批准', count: 1, source: '规则引擎', priority: 'high' as const, target: 'product-approval' as SceneId },
-    { label: '瑞泰新能源风险恢复跟进', count: 1, source: '预警引擎', priority: 'high' as const, target: 'post-loan' as SceneId },
-    { label: '新宙邦集中度复查', count: 1, source: '预警引擎', priority: 'medium' as const, target: 'risk-monitor' as SceneId },
-    { label: '中外运物流产品匹配', count: 1, source: '识别引擎', priority: 'medium' as const, target: 'asset-pool' as SceneId },
-    { label: '王子新材待观察跟进', count: 1, source: '系统', priority: 'low' as const, target: 'customer-pool' as SceneId },
-  ];
+  /* ── Tasks ── */
+  const tasks = React.useMemo(() => {
+    const high: { label: string; source: string; target: SceneId }[] = [];
+    const normal: { label: string; source: string; target: SceneId }[] = [];
+    const followUp: { label: string; source: string; target: SceneId }[] = [];
 
-  const domainEntries: { label: string; target: SceneId; icon: React.ReactNode; count: string; insight: string }[] = [
-    { label: '客群识别', target: 'customer-pool', icon: <Search size={16} />, count: '候选 126 户', insight: '高置信度 18 户' },
-    { label: '授信资产池', target: 'asset-pool', icon: <BarChart3 size={16} />, count: '在营 1,120 户', insight: '今日新增 34 户' },
-    { label: '补审作业', target: 'product-approval', icon: <FileCheck2 size={16} />, count: `待审 ${reviewCount + 1} 户`, insight: '通过率 85.7%' },
-    { label: '风险监控', target: 'risk-monitor', icon: <ShieldAlert size={16} />, count: `预警 ${riskCount} 笔`, insight: '回款类 2 笔' },
-    { label: '贷后经营', target: 'post-loan', icon: <Activity size={16} />, count: `恢复观察 ${recoveryCount} 户`, insight: '健康率 96.8%' },
-    { label: '合作方管理', target: 'partner-management', icon: <Handshake size={16} />, count: '接入 3 家', insight: '数据可用度 89%' },
-  ];
+    const reviewSamples = SAMPLES.filter(s => s.stage === 'manual_review');
+    const recoverySamples = SAMPLES.filter(s => s.stage === 'recovery');
+    const riskSamples = SAMPLES.filter(s => s.riskFlags.length >= 2);
+    const preSamples = SAMPLES.filter(s => s.stage === 'pre_credit');
+    const observeSamples = SAMPLES.filter(s => s.segmentTag === 'C待观察');
 
-  const renderContent = () => {
-    switch (activeModule) {
-      case 'mvp':
-        return (
-          <div className="space-y-4">
-            {/* ── GlobalSituationStrip ── */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-px rounded-lg border border-[#E2E8F0] bg-[#E2E8F0] overflow-hidden">
-              {[
-                { label: '在营资产', value: `${1120 + approvedCount} 户`, trend: '+8', icon: TrendingUp },
-                { label: '今日新增预授信', value: `${34 + preCreditCount}`, trend: '+6', icon: Zap },
-                { label: '待补审', value: `${reviewCount + 1}`, trend: '', icon: FileCheck2 },
-                { label: '风险预警', value: `${riskCount} 笔`, trend: riskSimulated ? '+1' : '', icon: ShieldAlert },
-                { label: '恢复观察', value: `${recoveryCount} 户`, trend: '', icon: Eye },
-                { label: 'AI 建议数', value: '7', trend: '+3', icon: Sparkles },
-              ].map((m) => (
-                <div key={m.label} className="bg-white px-3.5 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[10px] text-[#94A3B8]">
-                    <m.icon size={11} className="text-[#94A3B8]" />
-                    {m.label}
-                  </div>
-                  <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className="text-lg font-semibold text-[#0F172A] leading-none">{m.value}</span>
-                    {m.trend && (
-                      <span className={`text-[10px] font-medium ${m.trend.startsWith('+') ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>{m.trend}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+    if (reviewSamples.length > 0) high.push({ label: `${reviewSamples.map(s => s.shortName).join('、')} — 补审待批准`, source: '规则引擎', target: 'product-approval' as SceneId });
+    if (recoverySamples.length > 0) high.push({ label: `${recoverySamples.map(s => s.shortName).join('、')} — 风险恢复跟进`, source: '预警引擎', target: 'post-loan' as SceneId });
 
-            {/* ── MissionControlPanel + CurrentBattleCard ── */}
-            <div className="grid grid-cols-1 xl:grid-cols-[7fr_5fr] gap-4">
-              {/* Left: MissionControlPanel */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse" />
-                    <span className="text-sm font-semibold text-[#0F172A]">任务中心</span>
-                  </div>
-                  <Badge className="bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] text-[9px]">
-                    {missionTasks.filter((t) => t.priority === 'high').length} 项高优
-                  </Badge>
-                </div>
-                <div className="divide-y divide-[#F1F5F9]">
-                  {missionTasks.map((task) => (
-                    <button
-                      key={task.label}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#F8FAFC] transition-colors text-left"
-                      onClick={() => navigate(task.target)}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.priority === 'high' ? 'bg-[#DC2626]' : task.priority === 'medium' ? 'bg-[#F59E0B]' : 'bg-[#94A3B8]'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-[#0F172A] truncate">{task.label}</div>
-                        <div className="text-[10px] text-[#94A3B8]">{task.source}</div>
-                      </div>
-                      <Badge className={`text-[9px] border shrink-0 ${task.priority === 'high' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]' : task.priority === 'medium' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'}`}>
-                        {task.priority === 'high' ? '高优' : task.priority === 'medium' ? '中优' : '常规'}
-                      </Badge>
-                      <ChevronRight size={12} className="text-[#CBD5E1] shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
+    if (riskSamples.length > 0) normal.push({ label: `${riskSamples.map(s => s.shortName).join('、')} — 风险复查`, source: '预警引擎', target: 'risk-monitor' as SceneId });
+    if (preSamples.length > 0) normal.push({ label: `${preSamples.map(s => s.shortName).join('、')} — 产品匹配`, source: '识别引擎', target: 'asset-pool' as SceneId });
 
-              {/* Right: CurrentBattleCard */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-                  <div className="flex items-center gap-2">
-                    <Crosshair size={14} className="text-[#2563EB]" />
-                    <span className="text-sm font-semibold text-[#0F172A]">当前作战对象</span>
-                  </div>
-                  <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-                </div>
-                <div className="p-4 space-y-3.5">
-                  {/* Subject */}
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D6E4FF] bg-[#EFF6FF] text-[#2563EB]">
-                      <Building2 size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-[#0F172A] truncate">{currentSample.shortName}</div>
-                      <div className="text-[10px] text-[#94A3B8]">{currentSample.roleInChain}</div>
-                    </div>
-                  </div>
-
-                  {/* Status grid */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: '当前阶段', value: currentStageLabel },
-                      { label: '审批状态', value: currentSample.approvalStatus },
-                      { label: '风险状态', value: riskLabel, isRisk: true },
-                      { label: '拟授信额度', value: riskSimulated && !recoveryComplete ? currentSample.currentLimit : currentSample.recommendedLimit },
-                    ].map((cell) => (
-                      <div key={cell.label} className="rounded-md bg-[#F8FAFC] border border-[#F1F5F9] px-2.5 py-2">
-                        <div className="text-[10px] text-[#94A3B8]">{cell.label}</div>
-                        <div className="mt-0.5 text-xs font-semibold text-[#0F172A]">
-                          {cell.isRisk ? <StatusPill state={riskState} label={riskLabel} /> : cell.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Judgment */}
-                  <div className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2.5">
-                    <div className="text-[10px] text-[#94A3B8] mb-0.5">当前判断</div>
-                    <div className="text-xs leading-5 text-[#334155]">{judgment}</div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    {nextActions.map((a) => (
-                      <Button
-                        key={a.label}
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] gap-1 border-[#E2E8F0] text-[#334155] hover:border-[#BFDBFE] hover:text-[#2563EB]"
-                        onClick={() => navigate(a.target)}
-                      >
-                        {a.label}
-                        <ArrowRight size={10} />
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── AIInsightStrip ── */}
-            <div className="flex items-center gap-3 rounded-lg border border-[#D6E4FF] bg-[#FAFBFF] px-4 py-2.5">
-              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[#2563EB] shrink-0">
-                <Sparkles size={12} className="text-white" />
-              </div>
-              <p className="flex-1 text-xs leading-5 text-[#334155]">
-                <span className="font-medium text-[#2563EB]">今日洞察：</span>
-                补审队列中 {reviewCount + 1} 户关系强度 &gt; 80%，建议优先处理新能源链样本；{riskCount} 笔预警中回款延迟类占比最高，宁德时代下游需启动集中度复查。
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-[11px] border-[#BFDBFE] text-[#2563EB] hover:bg-[#EFF6FF] shrink-0"
-                onClick={() => navigate('customer-pool')}
-              >
-                查看详情
-              </Button>
-            </div>
-
-            {/* ── DomainEntryGrid ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {domainEntries.map((entry) => (
-                <button
-                  key={entry.label}
-                  className="flex items-start gap-3 rounded-lg border border-[#E2E8F0] bg-white p-3.5 hover:border-[#BFDBFE] hover:shadow-sm transition-all text-left group"
-                  onClick={() => navigate(entry.target)}
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] group-hover:border-[#BFDBFE] group-hover:text-[#2563EB] group-hover:bg-[#EFF6FF] transition-colors shrink-0">
-                    {entry.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{entry.label}</div>
-                    <div className="mt-0.5 text-xs text-[#64748B]">{entry.count}</div>
-                    <div className="mt-0.5 text-[11px] text-[#94A3B8]">{entry.insight}</div>
-                  </div>
-                  <ArrowRight size={14} className="text-[#CBD5E1] group-hover:text-[#2563EB] mt-0.5 shrink-0 transition-colors" />
-                </button>
-              ))}
-            </div>
-
-            {active && <ActionBar />}
-          </div>
-        );
-      default:
-        return (
-          <div className="space-y-4">
-            {/* ── GlobalSituationStrip ── */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-px rounded-lg border border-[#E2E8F0] bg-[#E2E8F0] overflow-hidden">
-              {[
-                { label: '在营资产', value: `${1120 + approvedCount} 户`, trend: '+8', icon: TrendingUp },
-                { label: '今日新增预授信', value: `${34 + preCreditCount}`, trend: '+6', icon: Zap },
-                { label: '待补审', value: `${reviewCount + 1}`, trend: '', icon: FileCheck2 },
-                { label: '风险预警', value: `${riskCount} 笔`, trend: riskSimulated ? '+1' : '', icon: ShieldAlert },
-                { label: '恢复观察', value: `${recoveryCount} 户`, trend: '', icon: Eye },
-                { label: 'AI 建议数', value: '7', trend: '+3', icon: Sparkles },
-              ].map((m) => (
-                <div key={m.label} className="bg-white px-3.5 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[10px] text-[#94A3B8]">
-                    <m.icon size={11} className="text-[#94A3B8]" />
-                    {m.label}
-                  </div>
-                  <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className="text-lg font-semibold text-[#0F172A] leading-none">{m.value}</span>
-                    {m.trend && (
-                      <span className={`text-[10px] font-medium ${m.trend.startsWith('+') ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>{m.trend}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── MissionControlPanel + CurrentBattleCard ── */}
-            <div className="grid grid-cols-1 xl:grid-cols-[7fr_5fr] gap-4">
-              {/* Left: MissionControlPanel */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse" />
-                    <span className="text-sm font-semibold text-[#0F172A]">任务中心</span>
-                  </div>
-                  <Badge className="bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] text-[9px]">
-                    {missionTasks.filter((t) => t.priority === 'high').length} 项高优
-                  </Badge>
-                </div>
-                <div className="divide-y divide-[#F1F5F9]">
-                  {missionTasks.map((task) => (
-                    <button
-                      key={task.label}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#F8FAFC] transition-colors text-left"
-                      onClick={() => navigate(task.target)}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.priority === 'high' ? 'bg-[#DC2626]' : task.priority === 'medium' ? 'bg-[#F59E0B]' : 'bg-[#94A3B8]'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-[#0F172A] truncate">{task.label}</div>
-                        <div className="text-[10px] text-[#94A3B8]">{task.source}</div>
-                      </div>
-                      <Badge className={`text-[9px] border shrink-0 ${task.priority === 'high' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]' : task.priority === 'medium' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'}`}>
-                        {task.priority === 'high' ? '高优' : task.priority === 'medium' ? '中优' : '常规'}
-                      </Badge>
-                      <ChevronRight size={12} className="text-[#CBD5E1] shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right: CurrentBattleCard */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-                  <div className="flex items-center gap-2">
-                    <Crosshair size={14} className="text-[#2563EB]" />
-                    <span className="text-sm font-semibold text-[#0F172A]">当前作战对象</span>
-                  </div>
-                  <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-                </div>
-                <div className="p-4 space-y-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D6E4FF] bg-[#EFF6FF] text-[#2563EB]">
-                      <Building2 size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-[#0F172A] truncate">{currentSample.shortName}</div>
-                      <div className="text-[10px] text-[#94A3B8]">{currentSample.roleInChain}</div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: '当前阶段', value: currentStageLabel },
-                      { label: '审批状态', value: currentSample.approvalStatus },
-                      { label: '风险状态', value: riskLabel, isRisk: true },
-                      { label: '拟授信额度', value: riskSimulated && !recoveryComplete ? currentSample.currentLimit : currentSample.recommendedLimit },
-                    ].map((cell) => (
-                      <div key={cell.label} className="rounded-md bg-[#F8FAFC] border border-[#F1F5F9] px-2.5 py-2">
-                        <div className="text-[10px] text-[#94A3B8]">{cell.label}</div>
-                        <div className="mt-0.5 text-xs font-semibold text-[#0F172A]">
-                          {cell.isRisk ? <StatusPill state={riskState} label={riskLabel} /> : cell.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2.5">
-                    <div className="text-[10px] text-[#94A3B8] mb-0.5">当前判断</div>
-                    <div className="text-xs leading-5 text-[#334155]">{judgment}</div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {nextActions.map((a) => (
-                      <Button
-                        key={a.label}
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] gap-1 border-[#E2E8F0] text-[#334155] hover:border-[#BFDBFE] hover:text-[#2563EB]"
-                        onClick={() => navigate(a.target)}
-                      >
-                        {a.label}
-                        <ArrowRight size={10} />
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── AIInsightStrip ── */}
-            <div className="flex items-center gap-3 rounded-lg border border-[#D6E4FF] bg-[#FAFBFF] px-4 py-2.5">
-              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[#2563EB] shrink-0">
-                <Sparkles size={12} className="text-white" />
-              </div>
-              <p className="flex-1 text-xs leading-5 text-[#334155]">
-                <span className="font-medium text-[#2563EB]">今日洞察：</span>
-                补审队列中 {reviewCount + 1} 户关系强度 &gt; 80%，建议优先处理新能源链样本；{riskCount} 笔预警中回款延迟类占比最高，宁德时代下游需启动集中度复查。
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-[11px] border-[#BFDBFE] text-[#2563EB] hover:bg-[#EFF6FF] shrink-0"
-                onClick={() => navigate('customer-pool')}
-              >
-                查看详情
-              </Button>
-            </div>
-
-            {/* ── DomainEntryGrid ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {domainEntries.map((entry) => (
-                <button
-                  key={entry.label}
-                  className="flex items-start gap-3 rounded-lg border border-[#E2E8F0] bg-white p-3.5 hover:border-[#BFDBFE] hover:shadow-sm transition-all text-left group"
-                  onClick={() => navigate(entry.target)}
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] group-hover:border-[#BFDBFE] group-hover:text-[#2563EB] group-hover:bg-[#EFF6FF] transition-colors shrink-0">
-                    {entry.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{entry.label}</div>
-                    <div className="mt-0.5 text-xs text-[#64748B]">{entry.count}</div>
-                    <div className="mt-0.5 text-[11px] text-[#94A3B8]">{entry.insight}</div>
-                  </div>
-                  <ArrowRight size={14} className="text-[#CBD5E1] group-hover:text-[#2563EB] mt-0.5 shrink-0 transition-colors" />
-                </button>
-              ))}
-            </div>
-
-            {active && <ActionBar />}
-          </div>
-        );
+    if (observeSamples.length > 0) followUp.push({ label: `${observeSamples.map(s => s.shortName).join('、')} — 持续观察`, source: '系统', target: 'customer-pool' as SceneId });
+    if (recoverySamples.length > 0 && !followUp.some(f => f.target === 'post-loan')) {
+      followUp.push({ label: `${recoverySamples.map(s => s.shortName).join('、')} — 30天观察期`, source: '系统', target: 'post-loan' as SceneId });
     }
-  };
+
+    return { high, normal, followUp };
+  }, []);
+
+  /* ── AI insight text ── */
+  const highStrengthReview = SAMPLES.filter(s => s.stage === 'manual_review' && s.relationStrength > 80).length;
+  const receivableRiskCount = SAMPLES.filter(s => s.riskFlags.some(f => f.includes('回款'))).length;
+
+  const highConfidenceCount = SAMPLES.filter(s => s.authenticityScore >= 80).length;
+  const activeSamples = SAMPLES.filter(s => ['approved', 'risk_alert', 'recovery'].includes(s.stage)).length;
+  const avgEvidenceCoverage = Math.round(SAMPLES.reduce((sum, s) => sum + s.evidenceCoverage, 0) / SAMPLES.length);
+
+  /* ── Domain entries (lightweight) ── */
+  const domainEntries: { label: string; target: SceneId; icon: React.ReactNode; stat: string }[] = [
+    { label: '客群识别', target: 'customer-pool', icon: <Search size={14} />, stat: `候选 ${SAMPLES.length} 户` },
+    { label: '补审作业', target: 'product-approval', icon: <FileCheck2 size={14} />, stat: `待审 ${reviewCount} 户` },
+    { label: '风险监控', target: 'risk-monitor', icon: <ShieldAlert size={14} />, stat: `预警 ${riskCount} 笔` },
+    { label: '贷后经营', target: 'post-loan', icon: <Activity size={14} />, stat: `恢复 ${recoveryCount} 户` },
+    { label: '授信资产池', target: 'asset-pool', icon: <BarChart3 size={14} />, stat: `在营 ${activeSamples} 户` },
+    { label: '合作方管理', target: 'partner-management', icon: <Handshake size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
+  ];
+
+  const TaskRow = ({ label, source, target }: { label: string; source: string; target: SceneId }) => (
+    <button
+      className="w-full flex items-center gap-3 px-3.5 py-2 hover:bg-[#F8FAFC] transition-colors text-left rounded-md"
+      onClick={() => navigate(target)}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] text-[#0F172A] truncate">{label}</div>
+        <div className="text-[10px] text-[#94A3B8] mt-0.5">{source}</div>
+      </div>
+      <ChevronRight size={12} className="text-[#CBD5E1] shrink-0" />
+    </button>
+  );
+
+  const dashboardContent = (
+    <div className="space-y-5">
+      {/* ── 1. 问候区 ── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-[#0F172A] tracking-tight">{getGreeting()}，王敏</h1>
+          <p className="mt-1 text-[13px] text-[#64748B]">这是您今日需要优先处理的业务、客户与建议。</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="ghost" size="sm" className="h-8 text-[12px] text-[#64748B] gap-1.5">
+            <History size={13} />
+            历史记录
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-[12px] gap-1.5 border-[#E2E8F0] text-[#334155]">
+            <PlusCircle size={13} />
+            新建场景
+          </Button>
+        </div>
+      </div>
+
+      <SceneQuestion question="今天最该处理什么、先看哪一户、下一步点哪里" />
+
+      {/* ── 2. 今日工作概览 ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5">
+        {[
+          { label: '待补审', value: reviewCount, color: 'text-[#DC2626]', bg: 'bg-[#FEF2F2]', icon: FileCheck2 },
+          { label: '新增预警', value: riskCount, color: 'text-[#EA580C]', bg: 'bg-[#FFF7ED]', icon: ShieldAlert },
+          { label: '恢复观察', value: recoveryCount, color: 'text-[#475569]', bg: 'bg-[#F1F5F9]', icon: Eye },
+          { label: '待跟进客户', value: followUpCount, color: 'text-[#2563EB]', bg: 'bg-[#EFF6FF]', icon: Users },
+          { label: 'AI 待确认建议', value: aiSuggestionCount, color: 'text-[#7C3AED]', bg: 'bg-[#F5F3FF]', icon: Sparkles },
+        ].map((m) => (
+          <div key={m.label} className="rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-3">
+            <div className="flex items-center gap-1.5 text-[10px] text-[#94A3B8] uppercase tracking-wider">
+              <m.icon size={11} />
+              {m.label}
+            </div>
+            <div className="mt-1.5">
+              <span className={`text-2xl font-bold leading-none ${m.value > 0 ? m.color : 'text-[#CBD5E1]'}`}>{m.value}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── 3. 今日任务区 + 4. 当前重点客户 ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-4">
+        {/* Left: Tasks */}
+        <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#F1F5F9] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock size={13} className="text-[#64748B]" />
+              <span className="text-[13px] font-semibold text-[#0F172A]">今日任务</span>
+            </div>
+            <span className="text-[10px] text-[#94A3B8]">{tasks.high.length + tasks.normal.length + tasks.followUp.length} 项待办</span>
+          </div>
+
+          <div className="divide-y divide-[#F1F5F9]">
+            {/* High priority */}
+            {tasks.high.length > 0 && (
+              <div className="px-1.5 py-1.5">
+                <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+                  <span className="text-[10px] font-semibold text-[#DC2626] uppercase tracking-wider">高优先级</span>
+                </div>
+                {tasks.high.map((t) => <TaskRow key={t.label} {...t} />)}
+              </div>
+            )}
+
+            {/* Normal */}
+            {tasks.normal.length > 0 && (
+              <div className="px-1.5 py-1.5">
+                <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                  <span className="text-[10px] font-semibold text-[#92400E] uppercase tracking-wider">普通任务</span>
+                </div>
+                {tasks.normal.map((t) => <TaskRow key={t.label} {...t} />)}
+              </div>
+            )}
+
+            {/* Follow-ups */}
+            {tasks.followUp.length > 0 && (
+              <div className="px-1.5 py-1.5">
+                <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#94A3B8]" />
+                  <span className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider">我的跟进</span>
+                </div>
+                {tasks.followUp.map((t) => <TaskRow key={t.label} {...t} />)}
+              </div>
+            )}
+
+            {tasks.high.length === 0 && tasks.normal.length === 0 && tasks.followUp.length === 0 && (
+              <div className="px-4 py-8 text-center text-[13px] text-[#94A3B8]">暂无待办任务</div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Current key customer */}
+        <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#F1F5F9] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Crosshair size={13} className="text-[#2563EB]" />
+              <span className="text-[13px] font-semibold text-[#0F172A]">当前重点客户</span>
+            </div>
+            <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
+          </div>
+
+          <div className="p-4 space-y-3">
+            {/* Identity */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D6E4FF] bg-[#EFF6FF] text-[#2563EB]">
+                <Building2 size={16} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#0F172A] truncate">{currentSample.shortName}</div>
+                <div className="text-[10px] text-[#94A3B8]">{currentSample.roleInChain}</div>
+              </div>
+            </div>
+
+            {/* Key fields */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: '当前阶段', value: currentStageLabel },
+                { label: '审批状态', value: currentSample.approvalStatus },
+                { label: '风险状态', value: riskLabel, isRisk: true },
+                { label: '拟授信额度', value: riskSimulated && !recoveryComplete ? currentSample.currentLimit : currentSample.recommendedLimit },
+              ].map((cell) => (
+                <div key={cell.label} className="rounded-md bg-[#F8FAFC] border border-[#F1F5F9] px-2.5 py-2">
+                  <div className="text-[10px] text-[#94A3B8]">{cell.label}</div>
+                  <div className="mt-0.5 text-xs font-semibold text-[#0F172A]">
+                    {cell.isRisk ? <StatusPill state={riskState} label={riskLabel} /> : cell.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Judgment */}
+            <div className="rounded-md border border-[#E2E8F0] bg-[#FAFBFF] px-3 py-2.5">
+              <div className="text-[10px] text-[#94A3B8] mb-0.5">当前判断</div>
+              <div className="text-xs leading-5 text-[#334155]">{judgment}</div>
+            </div>
+
+            {/* Quick actions */}
+            <div className="flex flex-wrap gap-2">
+              {nextActions.map((a) => (
+                <Button
+                  key={a.label}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-[11px] gap-1 border-[#E2E8F0] text-[#334155] hover:border-[#BFDBFE] hover:text-[#2563EB]"
+                  onClick={() => navigate(a.target)}
+                >
+                  {a.label}
+                  <ArrowRight size={10} />
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 5. AI 建议条 ── */}
+      <div className="flex items-center gap-3 rounded-lg border border-[#D6E4FF] bg-[#FAFBFF] px-4 py-2.5">
+        <div className="flex items-center justify-center w-5 h-5 rounded bg-[#2563EB] shrink-0">
+          <Sparkles size={10} className="text-white" />
+        </div>
+        <p className="flex-1 text-xs leading-5 text-[#334155]">
+          <span className="font-medium text-[#2563EB]">今日建议：</span>
+          {highStrengthReview > 0 ? `补审队列中 ${highStrengthReview} 户关系强度 > 80%，建议优先处理。` : ''}
+          {receivableRiskCount > 0 ? ` ${riskCount} 笔预警中回款延迟类 ${receivableRiskCount} 笔占比最高。` : ` ${SAMPLES.length} 个样本经营状态总体稳定。`}
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-[11px] text-[#2563EB] hover:bg-[#EFF6FF] shrink-0"
+          onClick={() => navigate('customer-pool')}
+        >
+          查看
+          <ArrowRight size={10} className="ml-0.5" />
+        </Button>
+      </div>
+
+      {/* ── 6. 快捷业务入口 ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+        {domainEntries.map((entry) => (
+          <button
+            key={entry.label}
+            className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2.5 hover:border-[#BFDBFE] hover:shadow-sm transition-all text-left group"
+            onClick={() => navigate(entry.target)}
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] group-hover:border-[#BFDBFE] group-hover:text-[#2563EB] group-hover:bg-[#EFF6FF] transition-colors shrink-0">
+              {entry.icon}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[12px] font-medium text-[#0F172A] group-hover:text-[#2563EB] transition-colors truncate">{entry.label}</div>
+              <div className="text-[10px] text-[#94A3B8]">{entry.stat}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {active && <ActionBar />}
+    </div>
+  );
 
   return (
     <SceneLayout
@@ -442,7 +358,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: CockpitSc
       activeModule={activeModule}
       onModuleChange={onModuleChange}
     >
-      {renderContent()}
+      {dashboardContent}
     </SceneLayout>
   );
 }

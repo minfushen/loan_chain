@@ -759,7 +759,7 @@ export function getEvidenceForSample(sample: ChainLoanSample): DemoEvidence[] {
 }
 
 // ── 演示声明 ──────────────────────────────────────
-export const DEMO_DISCLAIMER = '企业名称为公开可检索主体，业务关系与授信状态为演示化示例。';
+export const DEMO_DISCLAIMER = '企业名称为公开可检索主体，供应链关系、授信状态与风险状态为演示化示例。';
 
 // ── 演示操作文案 ──────────────────────────────────
 

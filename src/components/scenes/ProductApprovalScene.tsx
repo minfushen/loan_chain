@@ -21,10 +21,10 @@ import {
   ChevronRight,
   CircleDot,
 } from 'lucide-react';
-import { AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, InsightCard, ConfidenceCard, SectionShell } from '../ProductPrimitives';
+import { AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, InsightCard, ConfidenceCard, SectionShell, AiJudgmentBlock } from '../ProductPrimitives';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
-import { DemoStepper, CaseSummaryCard, ActionBar } from '../../demo/DemoComponents';
-import { SAMPLES, SAMPLE_HENGYUAN, getRuleHitsForSample } from '../../demo/chainLoan/data';
+import { SceneHero, ActionBar } from '../../demo/DemoComponents';
+import { SAMPLES, getRuleHitsForSample } from '../../demo/chainLoan/data';
 
 interface ProductApprovalSceneProps {
   activeModule: string;
@@ -42,24 +42,30 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
   const sampleRuleHits = getRuleHitsForSample(currentSample);
 
   const counterparty = currentSample.keyCounterparty;
+  const sender = currentSample.mainChainPath[currentSample.mainChainPath.length - 1];
+  const baseAmt = parseInt(currentSample.orderAmount90d) || 100;
+  const baseCycle = parseInt(currentSample.avgReceivableCycle) || 30;
+  const hasLogisticsIssue = currentSample.logisticsStatus.includes('延迟') || currentSample.logisticsStatus.includes('不连续');
+  const evidenceGrade = currentSample.evidenceCoverage >= 85 ? '充分' : currentSample.evidenceCoverage >= 65 ? '一般' : '不足';
+
   const verificationFlows = [
     {
       id: 'flow-1',
-      order: { code: 'ORD-2026-0312', counterpart: counterparty, amount: `${Math.round(parseInt(currentSample.orderAmount90d) * 0.5)}万`, date: '03-12' },
-      logistics: { code: 'YUN-2026-4407', status: currentSample.logisticsStatus.includes('延迟') ? '延迟签收' : '已签收', route: `${currentSample.mainChainPath[currentSample.mainChainPath.length - 1]} 发货`, date: '03-15' },
-      settlement: { code: 'SET-2026-2081', amount: `${Math.round(parseInt(currentSample.orderAmount90d) * 0.2)}万`, cycle: `T+${parseInt(currentSample.avgReceivableCycle)}`, date: '04-17' },
+      order: { code: `ORD-${currentSample.id.slice(-4)}-0312`, counterpart: counterparty, amount: `${Math.round(baseAmt * 0.5)}万`, date: '03-12' },
+      logistics: { code: `YUN-${currentSample.id.slice(-4)}-4407`, status: hasLogisticsIssue ? '延迟签收' : '已签收', route: `${sender} 发货`, date: '03-15' },
+      settlement: { code: `SET-${currentSample.id.slice(-4)}-2081`, amount: `${Math.round(baseAmt * 0.2)}万`, cycle: `T+${baseCycle}`, date: '04-17' },
     },
     {
       id: 'flow-2',
-      order: { code: 'ORD-2026-0328', counterpart: counterparty, amount: `${Math.round(parseInt(currentSample.orderAmount90d) * 0.6)}万`, date: '03-28' },
-      logistics: { code: 'YUN-2026-4519', status: '已签收', route: `${currentSample.mainChainPath[currentSample.mainChainPath.length - 1]} 发货`, date: '03-31' },
-      settlement: { code: 'SET-2026-2210', amount: `${Math.round(parseInt(currentSample.orderAmount90d) * 0.27)}万`, cycle: `T+${parseInt(currentSample.avgReceivableCycle) + 1}`, date: '05-02' },
+      order: { code: `ORD-${currentSample.id.slice(-4)}-0328`, counterpart: counterparty, amount: `${Math.round(baseAmt * 0.6)}万`, date: '03-28' },
+      logistics: { code: `YUN-${currentSample.id.slice(-4)}-4519`, status: '已签收', route: `${sender} 发货`, date: '03-31' },
+      settlement: { code: `SET-${currentSample.id.slice(-4)}-2210`, amount: `${Math.round(baseAmt * 0.27)}万`, cycle: `T+${baseCycle + 1}`, date: '05-02' },
     },
     {
       id: 'flow-3',
-      order: { code: 'ORD-2026-0408', counterpart: counterparty, amount: `${Math.round(parseInt(currentSample.orderAmount90d) * 0.72)}万`, date: '04-08' },
-      logistics: { code: 'YUN-2026-4675', status: '运输完成', route: `${currentSample.mainChainPath[currentSample.mainChainPath.length - 1]} 发货`, date: '04-11' },
-      settlement: { code: 'SET-2026-2394', amount: `${Math.round(parseInt(currentSample.orderAmount90d) * 0.37)}万`, cycle: `T+${parseInt(currentSample.avgReceivableCycle) + 2}`, date: '05-14' },
+      order: { code: `ORD-${currentSample.id.slice(-4)}-0408`, counterpart: counterparty, amount: `${Math.round(baseAmt * 0.72)}万`, date: '04-08' },
+      logistics: { code: `YUN-${currentSample.id.slice(-4)}-4675`, status: hasLogisticsIssue ? '待确认' : '运输完成', route: `${sender} 发货`, date: '04-11' },
+      settlement: { code: `SET-${currentSample.id.slice(-4)}-2394`, amount: `${Math.round(baseAmt * 0.37)}万`, cycle: `T+${baseCycle + 2}`, date: '05-14' },
     },
   ];
   const selectedFlow = verificationFlows.find((f) => f.id === selectedFlowId) ?? verificationFlows[0];
@@ -279,7 +285,7 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
       case 'matching':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
+            {active && <SceneHero question="为什么匹配这个产品、为什么能通过补审" />}
 
             <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-2.5 flex items-center gap-2 text-[12px]">
               <Zap size={14} className="text-[#2563EB] shrink-0" />
@@ -415,12 +421,11 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
       case 'review':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="为什么匹配这个产品、为什么能通过补审" />}
 
             {/* 补审流程条 */}
             <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
-              {['提交补审', '证据核验', '规则复核', '人工判断', '审批结论'].map((step, i) => {
+              {['提交补审', '证据核验', '规则复核', '人工判断（增强审批）', '审批结论'].map((step, i) => {
                 const currentIdx = isPastApproval ? 4 : isAtManualReview ? 3 : 1;
                 const done = i < currentIdx;
                 const isCurrent = i === currentIdx;
@@ -445,7 +450,7 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
             </div>
 
             {/* ── UPPER: Flow verification ── */}
-            <SectionShell title="证据交叉验证" subtitle={`${currentSample.shortName} · 三流验证`}>
+            <SectionShell title="证据交叉验证" subtitle={`${currentSample.shortName} · 三流验证 · 证据等级: ${evidenceGrade} (${currentSample.evidenceCoverage}%)`}>
               <div className="flex flex-wrap gap-2 mb-4">
                 {verificationFlows.map((flow, index) => (
                   <button
@@ -530,15 +535,19 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
                     ))}
                   </div>
 
+                  <div className="mt-3 rounded-lg bg-white/10 border border-white/15 px-3 py-2">
+                    <div className="text-[10px] text-white/50 mb-1">脱核链贷口径</div>
+                    <div className="text-[11px] text-white/80 leading-4">未取得链主直接确权，依据替代性证据进行增强审批。强证据支持「建议通过」，但不等于取消补审。</div>
+                  </div>
                   {active && isAtManualReview && (
-                    <Button className="mt-4 w-full bg-white text-[#2563EB] hover:bg-white/90 font-semibold" onClick={handleApprove}>
-                      批准授信
+                    <Button className="mt-3 w-full bg-white text-[#2563EB] hover:bg-white/90 font-semibold" onClick={handleApprove}>
+                      建议通过，提交复核
                     </Button>
                   )}
                   {isPastApproval && (
-                    <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/15 border border-white/20 px-3 py-2">
+                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/15 border border-white/20 px-3 py-2">
                       <CheckCircle2 size={14} className="text-[#4ADE80]" />
-                      <span className="text-xs text-white/90">审批已通过</span>
+                      <span className="text-xs text-white/90">增强审批已通过</span>
                     </div>
                   )}
                 </div>
@@ -582,13 +591,28 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
                     )}
                   </PanelCard>
 
-                  <PanelCard title="审批建议">
+                  <PanelCard title="审批建议（增强审批）">
+                    <div className="rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 mb-2">
+                      <p className="text-[11px] text-[#92400E] leading-4">本样本未取得链主直接确权，审批结论基于替代性证据增强判断，不等于系统自动放款。</p>
+                    </div>
                     <div className="rounded-md border border-[#D6E4FF] bg-[#EFF6FF] px-3 py-2.5">
                       <p className="text-xs text-[#0F172A] leading-5">{currentSample.aiSummary}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <Badge className="bg-white text-[#2563EB] border border-[#BFDBFE] text-[10px]">额度: {currentSample.recommendedLimit}</Badge>
                         <Badge className="bg-white text-[#047857] border border-[#A7F3D0] text-[10px]">产品: {currentSample.productType}</Badge>
                       </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {[
+                        { label: '建议通过', tone: 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]', active: currentSample.segmentTag === 'A可授信' },
+                        { label: '建议通过但降额', tone: 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]', active: currentSample.approvalStatus === '已降额' },
+                        { label: '建议补充材料', tone: 'bg-[#FFFBEB] text-[#92400E] border-[#FDE68A]', active: currentSample.segmentTag === 'C待观察' },
+                        { label: '建议退回', tone: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]', active: false },
+                      ].map(opt => (
+                        <div key={opt.label} className={`text-center rounded-md border px-2 py-1.5 text-[11px] font-medium ${opt.active ? opt.tone : 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]'}`}>
+                          {opt.label}
+                        </div>
+                      ))}
                     </div>
                   </PanelCard>
                 </div>
@@ -603,12 +627,16 @@ export default function ProductApprovalScene({ activeModule, onModuleChange }: P
                       { name: '真实性', value: currentSample.authenticityScore },
                     ]}
                   />
-                  <InsightCard
-                    title="AI 结论"
-                    conclusion={currentSample.aiSummary}
+                  <AiJudgmentBlock
+                    judgment={currentSample.aiSummary}
+                    basis={[
+                      `关系强度 ${currentSample.relationStrength}%`,
+                      `证据覆盖 ${currentSample.evidenceCoverage}%`,
+                      `真实性评分 ${currentSample.authenticityScore}%`,
+                      currentSample.reviewReason,
+                    ]}
                     confidence={currentSample.agentHints.confidence}
                     action={currentSample.nextAction}
-                    onAction={() => {}}
                   />
                 </div>
               </div>

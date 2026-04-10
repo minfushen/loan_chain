@@ -1,20 +1,106 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 硅基工作台 — 供应链金融智能作业台原型
 
-# Run and deploy your AI Studio app
+> 面向银行供应链金融场景的多样本业务作业台原型，覆盖从客群识别到贷后恢复的全链路闭环。
 
-This contains everything you need to run your app locally.
+## 定位
 
-View your app in AI Studio: https://ai.studio/apps/c0675456-5f3b-4680-9785-caacd95ed250
+这是一套**可交互的高保真原型**，用于演示"脱核链贷"场景下，银行如何在链主不确权的前提下，通过替代性证据识别、评估并授信三级供应商。
 
-## Run Locally
+**企业名称为公开可检索主体，供应链关系、授信状态与风险状态为演示化示例。**
 
-**Prerequisites:**  Node.js
+## 核心能力
 
+| 模块 | 核心问题 | 说明 |
+|------|----------|------|
+| 今日工作台 | 今天最该处理什么 | 任务优先级、重点客户、AI 建议、业务入口分发 |
+| 客群识别 | 谁该进入资产池、依据是什么 | 关系图谱、标准/长尾规则、候选池、公私联动 |
+| 授信资产池 | 客户在哪个池子、下一步去哪 | 转化看板、预授信/补审/在营/风险四池流转 |
+| 产品与审批 | 为什么匹配这个产品、为什么能通过 | 产品配置、审批规则、产品匹配、补审作业 |
+| 风险监控 | 出现了什么风险、该怎么处置 | 风险预警、监控指标、处置动作、规则效果 |
+| 贷后经营 | 恢复、观察还是继续经营 | 贷后总览、客户分层、恢复作业、增收动作 |
+| 合作方管理 | 场景如何接入、如何复制落地 | 接入总览、数据来源、银行模板、实施路径 |
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 设计原则
+
+- **多样本驱动**：5 个真实企业样本贯穿全流程，`SampleSwitcher` 全局切换
+- **组合层 / 样本层分离**：组合经营看背景，当前样本做主角
+- **统一作业台语法**：每个场景页 = `StageStrip` + `SampleHero` + `SceneQuestion` + 核心作业区 + `AiJudgmentBlock`
+- **AI 三段式输出**：当前判断 → 判断依据 → 建议动作
+- **阶段感**：生态接入 → 客群识别 → 预授信 → 补审 → 审批通过 → 风险监控 → 贷后恢复
+
+## 样本企业
+
+| 简称 | 全称 | 链条角色 | 初始阶段 |
+|------|------|----------|----------|
+| 裕同包装 | 深圳市裕同包装科技股份有限公司 | 三级包装材料供应商 | 补审 |
+| 王子新材 | 深圳王子新材料股份有限公司 | 疑似三级包装供应商 | 已识别 |
+| 中外运物流 | 中外运物流有限公司 | 链上物流服务主体 | 预授信 |
+| 新宙邦 | 深圳新宙邦科技股份有限公司 | 二级辅料供应商 | 已批准 |
+| 瑞泰新能源 | 江苏瑞泰新能源材料股份有限公司 | 三级辅料供应商 | 恢复中 |
+
+链主：宁德时代新能源科技股份有限公司 · 桥接节点：欣旺达电子股份有限公司
+
+## 技术栈
+
+- **React 19** + **TypeScript**
+- **Vite 6** 构建
+- **Tailwind CSS 4** + **shadcn/ui** 组件库
+- **Motion (Framer Motion)** 动画
+- **Lucide React** 图标
+- React Context 全局状态管理
+
+## 快速开始
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器 (默认 http://localhost:3000)
+npm run dev
+
+# 类型检查
+npm run lint
+
+# 构建生产版本
+npm run build
+```
+
+## 目录结构
+
+```
+src/
+├── App.tsx                       # 应用入口 & 路由
+├── constants.ts                  # 场景/模块定义
+├── types.ts                      # 全局类型
+├── components/
+│   ├── SceneLayout.tsx           # 统一场景布局骨架
+│   ├── ProductPrimitives.tsx     # 作业台基础组件库
+│   └── scenes/
+│       ├── CockpitScene.tsx      # 今日工作台（首页）
+│       ├── CustomerPoolScene.tsx # 客群识别
+│       ├── AssetPoolScene.tsx    # 授信资产池
+│       ├── ProductApprovalScene.tsx # 产品与审批
+│       ├── RiskMonitorScene.tsx  # 风险监控
+│       ├── PostLoanScene.tsx     # 贷后经营
+│       └── PartnerManagementScene.tsx # 合作方管理
+├── demo/
+│   ├── DemoContext.tsx           # 全局演示状态管理
+│   ├── DemoComponents.tsx        # 演示通用组件（SceneHero, ActionBar 等）
+│   └── chainLoan/
+│       └── data.ts              # 样本数据 & 业务辅助函数
+└── index.css                    # Tailwind 入口
+```
+
+## 演示流程
+
+1. 打开首页（今日工作台），查看今日任务和重点客户
+2. 进入**合作方管理** → 点击"开始脱核链贷演示"
+3. 切换至**客群识别** → 查看关系图谱与经营证据 → 生成预授信
+4. 切换至**授信资产池** → 观察客户在池间流转
+5. 切换至**产品与审批** → 完成补审作业 → 批准授信
+6. 切换至**风险监控** → 模拟风险事件 → 观察额度收缩
+7. 切换至**贷后经营** → 恢复经营 → 完成闭环
+
+## License
+
+本项目为内部原型演示用途。

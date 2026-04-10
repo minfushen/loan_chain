@@ -12,11 +12,10 @@ import { Scene } from './types';
 export const SCENES: Scene[] = [
   {
     id: 'cockpit',
-    title: '全局控制台',
+    title: '今日工作台',
     icon: Blocks,
     modules: [
-      { id: 'overview', title: '经营总览' },
-      { id: 'mvp', title: '作战面板' },
+      { id: 'overview', title: '工作台' },
     ],
   },
   {

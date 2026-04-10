@@ -33,9 +33,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useDemo } from '../../demo/DemoContext';
-import { DemoStepper, CaseSummaryCard, ActionBar } from '../../demo/DemoComponents';
-import { SAMPLES, type ChainLoanSample, SAMPLE_HENGYUAN } from '../../demo/chainLoan/data';
-import { AiBar, SampleSwitcher, SelectedSampleSummary } from '../ProductPrimitives';
+import { SceneHero, ActionBar } from '../../demo/DemoComponents';
+import { SAMPLES, type ChainLoanSample } from '../../demo/chainLoan/data';
+import { SampleSwitcher, SelectedSampleSummary, AiJudgmentBlock } from '../ProductPrimitives';
 
 interface CustomerPoolSceneProps {
   activeModule: string;
@@ -106,10 +106,10 @@ interface StandardSegment {
   status: 'active' | 'trial' | 'pending';
   dataSources: string[];
   rules: { label: string; detail: string }[];
+  applicableProducts: string[];
+  exclusions: string;
+  applicableCustomers: string;
   coverage: string;
-  conversionRate: string;
-  avgLimit: string;
-  riskRate: string;
   updateTime: string;
   icon: React.ReactNode;
   color: string;
@@ -126,7 +126,10 @@ const STANDARD_SEGMENTS: StandardSegment[] = [
       { label: '品类稳定', detail: '主营品类占比 ≥ 60%，未出现重大品类跳转' },
       { label: '下游分散', detail: '前 3 大开票对象占比 ≤ 70%' },
     ],
-    coverage: '3,400', conversionRate: '34%', avgLimit: '¥68,000', riskRate: '1.2%',
+    applicableProducts: ['订单微贷', '税票流水贷'],
+    exclusions: '停票 > 3 月或存在重大品类跳转',
+    applicableCustomers: '制造业小微 · 有稳定开票的供应链参与者',
+    coverage: '3,400',
     updateTime: '2026-04-05',
     icon: <FileText size={16} />, color: '#1890FF',
   },
@@ -140,7 +143,10 @@ const STANDARD_SEGMENTS: StandardSegment[] = [
       { label: '收付平衡', detail: '收款/付款比例在 0.3~3.0 之间' },
       { label: '账期合理', detail: '主要对手方收付款间隔稳定在 15~60 天' },
     ],
-    coverage: '2,180', conversionRate: '28%', avgLimit: '¥47,000', riskRate: '1.8%',
+    applicableProducts: ['经营信用贷', '税票流水贷'],
+    exclusions: '月均流水 < 10 万或存在连续 2 月空白',
+    applicableCustomers: '对公结算活跃的小微企业',
+    coverage: '2,180',
     updateTime: '2026-04-03',
     icon: <Wallet size={16} />, color: '#10B981',
   },
@@ -154,7 +160,10 @@ const STANDARD_SEGMENTS: StandardSegment[] = [
       { label: '语义匹配', detail: '摘要长期出现货款、材料款、运费等经营关键词' },
       { label: '关系互惠', detail: '存在双向交易或上下游闭环证据' },
     ],
-    coverage: '1,560', conversionRate: '22%', avgLimit: '¥53,000', riskRate: '2.1%',
+    applicableProducts: ['订单微贷', '场景专项贷'],
+    exclusions: '无法识别稳定对手方或关系图谱断裂',
+    applicableCustomers: '供应链中下游有稳定往来关系的小微',
+    coverage: '1,560',
     updateTime: '2026-04-01',
     icon: <Network size={16} />, color: '#8B5CF6',
   },
@@ -168,7 +177,10 @@ const STANDARD_SEGMENTS: StandardSegment[] = [
       { label: '双重活跃', detail: '企业结算与个人账户同时活跃 ≥ 4 个月' },
       { label: '信用无异常', detail: '法人无逾期、无司法负面' },
     ],
-    coverage: '960', conversionRate: '41%', avgLimit: '¥61,000', riskRate: '0.9%',
+    applicableProducts: ['经营信用贷', '消费+经营组合贷'],
+    exclusions: '法人征信有逾期或代发人数波动 > 50%',
+    applicableCustomers: '法人与企业双重活跃的小微企业主',
+    coverage: '960',
     updateTime: '2026-03-28',
     icon: <Users size={16} />, color: '#F59E0B',
   },
@@ -182,7 +194,10 @@ const STANDARD_SEGMENTS: StandardSegment[] = [
       { label: '规模匹配', detail: '缴费规模与申报经营体量基本吻合' },
       { label: '地址一致', detail: '缴费地址与工商注册或实际经营地址一致' },
     ],
-    coverage: '1,340', conversionRate: '19%', avgLimit: '¥38,000', riskRate: '2.4%',
+    applicableProducts: ['经营信用贷'],
+    exclusions: '缴费地址与工商地址不一致或社保中断 > 3 月',
+    applicableCustomers: '小微经营实体 · 有稳定经营场所证据',
+    coverage: '1,340',
     updateTime: '2026-03-25',
     icon: <Building2 size={16} />, color: '#EC4899',
   },
@@ -203,10 +218,10 @@ interface LongtailScenario {
   status: 'active' | 'trial' | 'pending';
   dataSources: string[];
   rules: { label: string; detail: string }[];
+  applicableProducts: string[];
+  exclusions: string;
+  applicableCustomers: string;
   coverage: string;
-  conversionRate: string;
-  avgLimit: string;
-  riskRate: string;
   updateTime: string;
   icon: React.ReactNode;
   color: string;
@@ -223,7 +238,10 @@ const LONGTAIL_SCENARIOS: LongtailScenario[] = [
       { label: '回款闭环', detail: '下游回款归集账户可追溯至对应订单' },
       { label: '关系评分', detail: '关系强度 ≥ 70 分且经营真实性 ≥ 65 分' },
     ],
-    coverage: '460', conversionRate: '18%', avgLimit: '¥82,000', riskRate: '2.8%',
+    applicableProducts: ['订单微贷'],
+    exclusions: '三流偏差 > 20% 或关系强度 < 60',
+    applicableCustomers: '无链主确权的供应链小微企业',
+    coverage: '460',
     updateTime: '2026-04-07',
     icon: <ArrowRightLeft size={16} />, color: '#6366F1',
   },
@@ -237,7 +255,10 @@ const LONGTAIL_SCENARIOS: LongtailScenario[] = [
       { label: '结算稳定', detail: '月均运费结算金额波动 ≤ 20%' },
       { label: '路线稳定', detail: '常跑线路 ≥ 2 条，线路连续 ≥ 3 个月' },
     ],
-    coverage: '1,200', conversionRate: '15%', avgLimit: '¥35,000', riskRate: '3.1%',
+    applicableProducts: ['运费贷', '服务贷'],
+    exclusions: '签收率 < 90% 或运单月均 < 15',
+    applicableCustomers: '物流链末端个体或小微承运商',
+    coverage: '1,200',
     updateTime: '2026-04-02',
     icon: <TrendingUp size={16} />, color: '#0EA5E9',
   },
@@ -251,7 +272,10 @@ const LONGTAIL_SCENARIOS: LongtailScenario[] = [
       { label: '客户黏性', detail: '复购客户占比 ≥ 40%' },
       { label: '团队稳定', detail: '代发工资人数稳定且无大幅波动' },
     ],
-    coverage: '680', conversionRate: '12%', avgLimit: '¥41,000', riskRate: '3.5%',
+    applicableProducts: ['经营信用贷'],
+    exclusions: '复购率 < 30% 或合同中断 > 6 月',
+    applicableCustomers: '技术/咨询/设计类轻资产服务企业',
+    coverage: '680',
     updateTime: '2026-03-20',
     icon: <Briefcase size={16} />, color: '#14B8A6',
   },
@@ -802,8 +826,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
       default:
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="谁该进入资产池、依据是什么" />}
 
             <SelectedSampleSummary sample={currentSample} />
 
@@ -828,13 +851,13 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
               </div>
             </div>
 
-            {/* Stats summary */}
+            {/* 识别结论汇总 — 三类标准结论 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: '已识别候选', value: '38', detail: '本周新增 5', color: 'text-[#2563EB]' },
-                { label: 'A 级（可授信）', value: '12', detail: '转化率 31.6%', color: 'text-[#047857]' },
-                { label: 'B 级（观察池）', value: '18', detail: '平均观察 2.3 周', color: 'text-[#1890FF]' },
-                { label: 'C 级（仅线索）', value: '8', detail: '待补充数据', color: 'text-[#94A3B8]' },
+                { label: '已识别，可入池', value: '12', detail: '满足经营实质 + 关系强度', color: 'text-[#047857]' },
+                { label: '待验证，继续观察', value: '18', detail: '证据不足 · 需补充或持续追踪', color: 'text-[#F59E0B]' },
+                { label: '不建议入池', value: '8', detail: '关系弱或经营真实性不足', color: 'text-[#94A3B8]' },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-xl border border-[#E2E8F0] bg-white p-4">
                   <div className="text-[11px] text-[#94A3B8]">{stat.label}</div>
@@ -844,10 +867,10 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
               ))}
             </div>
 
-            <AiBar
-              conclusion="38 户候选中 12 户达 A 级可授信标准"
+            <AiJudgmentBlock
+              judgment="38 户候选中 12 户达 A 级可授信标准，建议优先处理关系强度 > 80% 的样本"
+              basis={['命中 5 条识别规则', '证据覆盖率 76%', '高置信度样本 12 户']}
               confidence={83}
-              metrics={[{ label: '命中规则', value: '5' }, { label: '证据覆盖', value: '76%' }]}
               action="查看识别依据"
             />
 
@@ -883,40 +906,38 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
                 <TableHeader>
                   <TableRow className="bg-[#F8FAFC] hover:bg-[#F8FAFC]">
                     <TableHead className="text-[11px] text-[#64748B] font-medium h-9 pl-4">主体名称</TableHead>
-                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">疑似链条</TableHead>
-                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">链条位置</TableHead>
+                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">链条角色</TableHead>
                     <TableHead className="text-[11px] text-[#64748B] font-medium h-9">关系强度</TableHead>
-                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">经营真实性</TableHead>
-                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">风险排除</TableHead>
-                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">候选等级</TableHead>
-                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">建议动作</TableHead>
+                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">真实性评分</TableHead>
+                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">证据覆盖度</TableHead>
+                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">识别结论</TableHead>
+                    <TableHead className="text-[11px] text-[#64748B] font-medium h-9">下一步动作</TableHead>
                     <TableHead className="text-[11px] text-[#64748B] font-medium h-9 pr-4 text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {RELATION_CANDIDATES.map((c) => {
                     const grade = GRADE_STYLES[c.grade];
-                    const status = STATUS_MAP_V2[c.status];
                     const isSelected = c.sampleId === selectedSampleId;
+                    const conclusion = c.grade === 'A' ? '已识别，可入池' : c.grade === 'B' ? '待验证，继续观察' : '不建议入池';
+                    const conclusionStyle = c.grade === 'A' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : c.grade === 'B' ? 'bg-[#FFFBEB] text-[#92400E] border-[#FDE68A]' : 'bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]';
                     return (
                       <TableRow key={c.name} className={`cursor-pointer transition-colors ${isSelected ? 'bg-[#EFF6FF] hover:bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]'}`} onClick={() => selectSample(c.sampleId)}>
                         <TableCell className="text-[13px] font-medium pl-4 py-3 max-w-[200px]">
                           <div className={`truncate ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>{c.name}</div>
-                          <Badge variant="outline" className={`text-[9px] mt-1 ${status.className}`}>{status.label}</Badge>
                         </TableCell>
-                        <TableCell className="text-[12px] text-[#64748B] py-3">{c.chain}</TableCell>
                         <TableCell className="text-[12px] text-[#334155] py-3">{c.position}</TableCell>
-                        <TableCell className="py-3 w-28">
+                        <TableCell className="py-3 w-24">
                           <ScoreBar value={c.relationScore} color={c.relationScore >= 70 ? 'bg-[#2563EB]' : 'bg-[#94A3B8]'} />
                         </TableCell>
-                        <TableCell className="py-3 w-28">
+                        <TableCell className="py-3 w-24">
                           <ScoreBar value={c.authenticityScore} color={c.authenticityScore >= 70 ? 'bg-[#047857]' : 'bg-[#F59E0B]'} />
                         </TableCell>
-                        <TableCell className="py-3 w-28">
+                        <TableCell className="py-3 w-24">
                           <ScoreBar value={c.riskExclusionScore} color={c.riskExclusionScore >= 80 ? 'bg-[#16A34A]' : 'bg-[#DC2626]'} />
                         </TableCell>
                         <TableCell className="py-3">
-                          <Badge className={`text-[10px] ${grade.bg} ${grade.text} border ${grade.border}`}>{grade.label}</Badge>
+                          <Badge className={`text-[10px] border ${conclusionStyle}`}>{conclusion}</Badge>
                         </TableCell>
                         <TableCell className="text-[12px] text-[#475569] py-3">{c.action}</TableCell>
                         <TableCell className="pr-4 py-3 text-right">
@@ -959,8 +980,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
       case 'graph':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="谁该进入资产池、依据是什么" />}
 
             <RelationGraph />
 
@@ -972,8 +992,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
       case 'linked':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="谁该进入资产池、依据是什么" />}
             <LinkedEnhanced />
             {active && <ActionBar />}
           </div>
@@ -983,8 +1002,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
       case 'standard':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="谁该进入资产池、依据是什么" />}
 
             {/* 概览统计 — 仅规则口径 */}
             <div className="grid grid-cols-3 gap-3">
@@ -1056,14 +1074,29 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
                       ))}
                     </div>
 
-                    {/* 运营效果（独立区块，不同底色） */}
+                    {/* 规则定义属性 */}
                     <div className="px-4 py-2.5 bg-[#FAFBFC]">
-                      <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider mb-1.5">运营效果（参考）</p>
-                      <div className="flex items-center gap-5 text-[12px]">
-                        <span className="text-[#94A3B8]">覆盖 <span className="font-semibold text-[#0F172A]">{seg.coverage}</span> 户</span>
-                        <span className="text-[#94A3B8]">转化 <span className="font-semibold text-emerald-600">{seg.conversionRate}</span></span>
-                        <span className="text-[#94A3B8]">均额 <span className="font-semibold text-[#0F172A]">{seg.avgLimit}</span></span>
-                        <span className="text-[#94A3B8]">风险 <span className={`font-semibold ${parseFloat(seg.riskRate) > 2.0 ? 'text-amber-600' : 'text-emerald-600'}`}>{seg.riskRate}</span></span>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[12px]">
+                        <div>
+                          <span className="text-[#94A3B8]">适用产品</span>
+                          <div className="flex gap-1 mt-0.5 flex-wrap">
+                            {seg.applicableProducts.map(p => (
+                              <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">{p}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-[#94A3B8]">适用客群</span>
+                          <div className="mt-0.5 text-[11px] text-[#0F172A]">{seg.applicableCustomers}</div>
+                        </div>
+                        <div className="col-span-2 mt-1">
+                          <span className="text-[#94A3B8]">排除条件</span>
+                          <div className="mt-0.5 text-[11px] text-[#C2410C]">{seg.exclusions}</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-3 text-[10px] text-[#94A3B8] border-t border-[#F1F5F9] pt-2">
+                        <span>覆盖 <span className="font-semibold text-[#0F172A]">{seg.coverage}</span> 户</span>
+                        <span>更新 {seg.updateTime}</span>
                       </div>
                     </div>
                   </div>
@@ -1085,8 +1118,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
       case 'long-tail':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="谁该进入资产池、依据是什么" />}
 
             {/* 场景说明 */}
             <div className="rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-white p-4">
@@ -1150,19 +1182,32 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: Cust
                       </div>
                     </div>
 
-                    <div className="px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
+                    <div className="px-4 py-2.5 border-t border-[#F1F5F9]">
+                      <div className="flex items-center gap-1.5 mb-2">
                         <span className="text-[11px] text-[#94A3B8] mr-1">数据来源</span>
                         {sc.dataSources.map(ds => (
                           <span key={ds} className="text-[10px] px-1.5 py-0.5 rounded bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]">{ds}</span>
                         ))}
                       </div>
-                      <div className="flex items-center gap-4 text-[12px]">
-                        <span className="text-[#94A3B8]">覆盖 <span className="font-semibold text-[#0F172A]">{sc.coverage}</span> 户</span>
-                        <span className="text-[#94A3B8]">转化 <span className="font-semibold text-emerald-600">{sc.conversionRate}</span></span>
-                        <span className="text-[#94A3B8]">均额 <span className="font-semibold text-[#0F172A]">{sc.avgLimit}</span></span>
-                        <span className="text-[#94A3B8]">风险 <span className={`font-semibold ${parseFloat(sc.riskRate) > 3.0 ? 'text-amber-600' : 'text-emerald-600'}`}>{sc.riskRate}</span></span>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[12px]">
+                        <div>
+                          <span className="text-[#94A3B8]">适用产品</span>
+                          <div className="flex gap-1 mt-0.5 flex-wrap">
+                            {sc.applicableProducts.map(p => (
+                              <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">{p}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-[#94A3B8]">适用客群</span>
+                          <div className="mt-0.5 text-[11px] text-[#0F172A]">{sc.applicableCustomers}</div>
+                        </div>
+                        <div className="col-span-2 mt-1">
+                          <span className="text-[#94A3B8]">排除条件</span>
+                          <span className="ml-2 text-[11px] text-[#C2410C]">{sc.exclusions}</span>
+                        </div>
                       </div>
+                      <div className="mt-2 text-[10px] text-[#94A3B8]">覆盖 <span className="font-semibold text-[#0F172A]">{sc.coverage}</span> 户 · 更新 {sc.updateTime}</div>
                     </div>
                   </div>
                 );

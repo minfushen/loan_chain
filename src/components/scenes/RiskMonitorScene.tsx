@@ -9,10 +9,10 @@ import {
   ShieldAlert,
   TrendingDown,
 } from 'lucide-react';
-import { FlowRow, AiBar, AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, InsightCard, ActionSuggestionCard } from '../ProductPrimitives';
+import { FlowRow, AiNote, SampleSwitcher, SelectedSampleSummary, PanelCard, InsightCard, ActionSuggestionCard, AiJudgmentBlock } from '../ProductPrimitives';
 import { useDemo } from '../../demo/DemoContext';
-import { DemoStepper, CaseSummaryCard, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
-import { SAMPLES, SAMPLE_HENGYUAN, getRiskEventForSample } from '../../demo/chainLoan/data';
+import { SceneHero, ActionBar, RiskEventPanel } from '../../demo/DemoComponents';
+import { SAMPLES, getRiskEventForSample } from '../../demo/chainLoan/data';
 
 interface RiskMonitorSceneProps {
   activeModule: string;
@@ -22,7 +22,6 @@ interface RiskMonitorSceneProps {
 export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskMonitorSceneProps) {
   const scene = SCENES.find((item) => item.id === 'risk-monitor')!;
   const { active, riskSimulated, simulateRisk, stage, currentSample, selectSample, selectedSampleId } = useDemo();
-  const isHengyuan = currentSample.id === SAMPLE_HENGYUAN.id;
 
   const isRiskStage = stage === 'risk_alert';
   const sampleRiskEvent = getRiskEventForSample(currentSample);
@@ -56,8 +55,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
       case 'signals':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
             <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden">
               <div className="px-5 py-3 border-b border-[#E2E8F0]">
                 <div className="text-sm font-semibold text-[#0F172A]">监控指标看板</div>
@@ -65,23 +63,24 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
               </div>
               <div className="divide-y divide-[#E2E8F0]">
                 {[
-                  { name: '账户净流出', threshold: '连续 3 周净流出', current: riskSimulated ? currentSample.accountFlowStatus : '净流入', severity: (riskSimulated && currentSample.riskFlags.length > 0 ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '生成排查任务' },
-                  { name: '回款周期拉长', threshold: '拉长幅度 > 40%', current: riskSimulated ? `${currentSample.avgReceivableCycle}（+44%）` : `${currentSample.avgReceivableCycle}（稳定）`, severity: (riskSimulated && parseInt(currentSample.avgReceivableCycle) > 40 ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '额度临时收缩' },
-                  { name: '断票风险', threshold: '连续 2 个月未开票', current: currentSample.invoiceContinuityMonths >= 10 ? '正常' : '连续性不足', severity: (currentSample.invoiceContinuityMonths < 6 ? 'warn' : 'normal') as 'high' | 'warn' | 'normal', action: '触发拒件' },
-                  { name: '废票率异常', threshold: '近 6 月废票占比 > 10%', current: '3.8%', severity: 'normal' as const, action: '触发预警' },
-                  { name: '客户集中度', threshold: '单一客户占比 > 55%', current: currentSample.maxCustomerConcentration, severity: (parseInt(currentSample.maxCustomerConcentration) > 55 ? 'warn' : 'normal') as 'high' | 'warn' | 'normal', action: '自动收缩敞口' },
-                  { name: '物流履约延迟', threshold: '10 天内 ≥ 3 笔延迟', current: riskSimulated ? currentSample.logisticsStatus : '正常', severity: (riskSimulated && currentSample.logisticsStatus.includes('延迟') ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '联合回款排查' },
+                  { name: '回款周期拉长', threshold: '拉长幅度 > 40%', current: riskSimulated ? `${currentSample.avgReceivableCycle}（+44%）` : `${currentSample.avgReceivableCycle}（稳定）`, severity: (riskSimulated && parseInt(currentSample.avgReceivableCycle) > 40 ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '额度临时收缩', explain: '回款账期持续拉长意味着下游资金链承压' },
+                  { name: '物流履约延迟', threshold: '10 天内 ≥ 3 笔延迟', current: riskSimulated ? currentSample.logisticsStatus : '正常', severity: (riskSimulated && currentSample.logisticsStatus.includes('延迟') ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '联合回款排查', explain: '物流延迟可能反映订单交付能力恶化' },
+                  { name: '对公账户净流出', threshold: '连续 3 周净流出', current: riskSimulated ? currentSample.accountFlowStatus : '净流入', severity: (riskSimulated && currentSample.riskFlags.length > 0 ? 'high' : 'normal') as 'high' | 'warn' | 'normal', action: '生成排查任务', explain: '持续净流出可能表示主营收入萎缩' },
+                  { name: '开票或订单波动', threshold: '连续 2 个月未开票', current: currentSample.invoiceContinuityMonths >= 10 ? '正常' : '连续性不足', severity: (currentSample.invoiceContinuityMonths < 6 ? 'warn' : 'normal') as 'high' | 'warn' | 'normal', action: '触发预警', explain: '断票或订单突降意味着业务实质可能已变化' },
+                  { name: '客户集中度上升', threshold: '单一客户占比 > 55%', current: currentSample.maxCustomerConcentration, severity: (parseInt(currentSample.maxCustomerConcentration) > 55 ? 'warn' : 'normal') as 'high' | 'warn' | 'normal', action: '自动收缩敞口', explain: '过度依赖单一客户增大违约传染风险' },
                 ].map((sig) => (
                   <div key={sig.name} className="px-5 py-3 flex items-center gap-4">
                     <div className={`w-2 h-2 rounded-full shrink-0 ${sig.severity === 'high' ? 'bg-[#DC2626]' : sig.severity === 'warn' ? 'bg-[#F59E0B]' : 'bg-[#16A34A]'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-medium text-[#0F172A]">{sig.name}</div>
-                      <div className="mt-0.5 text-[11px] text-[#64748B]">阈值: {sig.threshold} → {sig.action}</div>
+                      <div className="mt-0.5 text-[11px] text-[#64748B]">阈值: {sig.threshold} · 动作: {sig.action}</div>
+                      <div className="mt-0.5 text-[10px] text-[#94A3B8]">{sig.explain}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className={`text-xs font-medium ${sig.severity === 'high' ? 'text-[#DC2626]' : sig.severity === 'warn' ? 'text-[#C2410C]' : 'text-[#16A34A]'}`}>
                         {sig.current}
                       </div>
+                      <div className="text-[10px] text-[#94A3B8] mt-0.5">{sig.severity === 'high' ? '预警触发' : sig.severity === 'warn' ? '观察中' : '正常监控'}</div>
                     </div>
                   </div>
                 ))}
@@ -93,8 +92,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
       case 'actions':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
 
             {/* 风险处置流程条 */}
             <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-3">
@@ -177,8 +175,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
       case 'quality':
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
             <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-3 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-semibold text-[#0F172A]">规则效果评估</span>
@@ -235,15 +232,15 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
       default:
         return (
           <div className="space-y-4">
-            {active && <DemoStepper />}
-            {active && <CaseSummaryCard />}
+            {active && <SceneHero question="当前出现了什么风险、该怎么处置" />}
             <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-3 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-semibold text-[#0F172A]">预警总览</span>
+                <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">仅服务已在营客户</Badge>
                 <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
               </div>
               <div className="flex items-center gap-2">
-                {['前置预警', '动态监控', '额度联动'].map(t => (
+                {['正常监控', '观察中', '预警触发'].map(t => (
                   <Badge key={t} className="bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-[10px]">{t}</Badge>
                 ))}
               </div>
@@ -253,13 +250,34 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
 
             {riskSimulated && <RiskEventPanel />}
 
+            {/* 风险动作链 */}
+            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5">
+              {['风险信号出现', '进入观察 / 触发预警', '收缩额度 / 生成复核', '进入恢复判断'].map((step, i) => {
+                const doneIdx = riskSimulated ? 2 : currentSample.riskFlags.length > 0 ? 1 : 0;
+                const done = i < doneIdx;
+                const isCurrent = i === doneIdx;
+                return (
+                  <React.Fragment key={step}>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium ${done ? 'bg-[#ECFDF3] text-[#047857]' : isCurrent ? 'bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]' : 'text-[#94A3B8]'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full text-[8px] flex items-center justify-center font-bold ${done ? 'bg-[#047857] text-white' : isCurrent ? 'bg-[#DC2626] text-white' : 'bg-[#E2E8F0] text-[#94A3B8]'}`}>{done ? '✓' : i + 1}</span>
+                      {step}
+                    </div>
+                    {i < 3 && <div className={`flex-1 h-px ${done ? 'bg-[#047857]' : 'bg-[#E2E8F0]'}`} />}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[
-                { label: '风险主体', value: currentSample.shortName, sub: `${currentSample.roleInChain} · ${currentSample.chainName}`, dot: 'blue' },
-                { label: '当前可用额度', value: isHengyuan ? `${availableLimit}万` : currentSample.currentLimit, sub: isHengyuan ? (riskSimulated ? '系统已自动收缩 20%' : '尚未触发额度收缩') : currentSample.approvalStatus, dot: (isHengyuan ? riskSimulated : currentSample.riskStatus !== '正常') ? 'red' : 'green' },
-                { label: '风险级别', value: isHengyuan ? (riskSimulated ? '中度预警' : '正常监控') : currentSample.riskStatus, sub: isHengyuan ? '根据回款周期与物流履约共同判断' : (currentSample.riskFlags.join('、') || '无风险标识'), dot: (isHengyuan ? riskSimulated : currentSample.riskStatus !== '正常') ? 'red' : 'green' },
-                { label: '联动动作', value: riskSimulated ? '已执行' : '待触发', sub: '自动收缩额度并生成复核任务', dot: riskSimulated ? 'amber' : 'slate' },
-              ].map(m => (
+              {(() => {
+                const riskTier = riskSimulated ? '预警触发' : currentSample.riskFlags.length > 0 ? '观察中' : '正常监控';
+                return [
+                  { label: '风险主体', value: currentSample.shortName, sub: `${currentSample.roleInChain} · ${currentSample.chainName}`, dot: 'blue' },
+                  { label: '当前可用额度', value: riskSimulated ? `${availableLimit}万` : currentSample.currentLimit, sub: riskSimulated ? `系统已自动收缩，原额度 ${maxLimit}万` : '尚未触发额度收缩', dot: riskSimulated ? 'red' : currentSample.riskStatus !== '正常' ? 'amber' : 'green' },
+                  { label: '风险状态', value: riskTier, sub: currentSample.riskFlags.length > 0 ? currentSample.riskFlags.join('、') : '经营指标在阈值范围内', dot: riskTier === '预警触发' ? 'red' : riskTier === '观察中' ? 'amber' : 'green' },
+                  { label: '联动动作', value: riskSimulated ? '已执行' : '待触发', sub: riskSimulated ? '已收缩额度并生成复核任务' : '信号触发后自动收缩额度', dot: riskSimulated ? 'amber' : 'slate' },
+                ] as { label: string; value: string; sub: string; dot: string }[];
+              })().map(m => (
                 <Card key={m.label} className="border border-[#E5E7EB] bg-white">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
@@ -273,11 +291,13 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: RiskM
               ))}
             </div>
 
-            <AiBar
-              conclusion={riskSimulated ? '检测到中度风险，已收缩额度至 96 万' : '经营状态正常，持续监控中'}
-              confidence={riskSimulated ? 85 : 96}
-              metrics={[{ label: '探针', value: '风险探针 Agent' }]}
-              action={riskSimulated ? '启动人工复核' : '自动监控中'}
+            <AiJudgmentBlock
+              judgment={riskSimulated ? `检测到中度风险，${currentSample.shortName}额度已收缩至 ${shrunkLimit} 万` : `${currentSample.shortName}经营状态正常，持续监控中`}
+              basis={riskSimulated
+                ? [currentSample.riskFlags.join('、') || '经营波动', `回款周期 ${currentSample.avgReceivableCycle}`, `额度由 ${maxLimit} 万收缩至 ${shrunkLimit} 万`]
+                : ['各项经营指标在正常区间', `回款周期 ${currentSample.avgReceivableCycle}`, '无异常信号']}
+              confidence={riskSimulated ? currentSample.agentHints.confidence : 96}
+              action={riskSimulated ? currentSample.agentHints.suggestedAction : '自动监控中'}
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.95fr] gap-6">

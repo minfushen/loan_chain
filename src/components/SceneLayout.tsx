@@ -3,6 +3,7 @@ import { Module } from '../types';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'motion/react';
+import { DEMO_DISCLAIMER } from '../demo/chainLoan/data';
 
 interface SceneLayoutProps {
   title: string;
@@ -113,6 +114,7 @@ export default function SceneLayout({
               className="p-5"
             >
               {children}
+              <div className="mt-6 text-center text-[10px] text-[#94A3B8] pb-2">{DEMO_DISCLAIMER}</div>
             </motion.div>
           </ScrollArea>
 

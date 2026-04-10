@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { DemoStage, CHAIN_LOAN_STAGE_LABELS, SAMPLES, type ChainLoanSample, SAMPLE_HENGYUAN } from './chainLoan/data';
+import { DemoStage, CHAIN_LOAN_STAGE_LABELS, SAMPLES, type ChainLoanSample, SAMPLE_YUTONG } from './chainLoan/data';
 import { SceneId } from '../types';
 
 const STAGE_ORDER: DemoStage[] = [
@@ -81,7 +81,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<DemoState>({
     active: false,
     stage: 'ecosystem',
-    selectedSampleId: SAMPLE_HENGYUAN.id,
+    selectedSampleId: SAMPLE_YUTONG.id,
     evidenceDrawerOpen: false,
     sampleStates: buildInitialSampleStates(),
   });
@@ -99,7 +99,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     [navigateFn],
   );
 
-  const currentSample = SAMPLES.find((s) => s.id === state.selectedSampleId) ?? SAMPLE_HENGYUAN;
+  const currentSample = SAMPLES.find((s) => s.id === state.selectedSampleId) ?? SAMPLE_YUTONG;
   const currentSampleState = state.sampleStates[state.selectedSampleId] ?? { stage: 'ecosystem' as DemoStage, riskSimulated: false, recoveryComplete: false };
   const riskSimulated = currentSampleState.riskSimulated;
   const recoveryComplete = currentSampleState.recoveryComplete;
@@ -132,8 +132,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const startDemo = useCallback(() => {
     setState((prev) => {
       const newSampleStates = { ...prev.sampleStates };
-      newSampleStates[SAMPLE_HENGYUAN.id] = { stage: 'ecosystem', riskSimulated: false, recoveryComplete: false };
-      return { ...prev, active: true, stage: 'ecosystem', selectedSampleId: SAMPLE_HENGYUAN.id, sampleStates: newSampleStates };
+      newSampleStates[SAMPLE_YUTONG.id] = { stage: 'ecosystem', riskSimulated: false, recoveryComplete: false };
+      return { ...prev, active: true, stage: 'ecosystem', selectedSampleId: SAMPLE_YUTONG.id, sampleStates: newSampleStates };
     });
   }, []);
 
@@ -231,7 +231,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     setState({
       active: false,
       stage: 'ecosystem',
-      selectedSampleId: SAMPLE_HENGYUAN.id,
+      selectedSampleId: SAMPLE_YUTONG.id,
       evidenceDrawerOpen: false,
       sampleStates: buildInitialSampleStates(),
     });

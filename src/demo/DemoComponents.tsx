@@ -26,7 +26,38 @@ import {
 } from './chainLoan/data';
 import { AnimatePresence, motion } from 'motion/react';
 
-// ─── DemoStepper ────────────────────────────────────────────────────────────
+// ─── SceneHero — unified page header for all business scenes ────────────────
+// Replaces the DemoStepper + CaseSummaryCard pair everywhere.
+// Reads from DemoContext internally; scenes only pass `question`.
+import { StageStrip, SampleHero, SceneQuestion, SampleSwitcher, type StateName } from '../components/ProductPrimitives';
+
+export function SceneHero({ question }: { question: string }) {
+  const { active, stage, currentSample, riskSimulated, recoveryComplete, selectSample, selectedSampleId } = useDemo();
+  if (!active) return null;
+
+  const riskState: StateName =
+    riskSimulated && !recoveryComplete ? 'risk' : riskSimulated && recoveryComplete ? 'watch' : currentSample.riskStatus === '观察' ? 'watch' : 'normal';
+  const riskLabel = riskState === 'risk' ? '中度预警' : riskState === 'watch' ? '恢复观察' : '正常';
+  const limit = riskSimulated && !recoveryComplete ? currentSample.currentLimit : currentSample.recommendedLimit;
+  const stageLabel = CHAIN_LOAN_STAGE_LABELS[stage] ?? '—';
+
+  return (
+    <div className="space-y-2">
+      <StageStrip currentStage={stage} />
+      <SampleHero
+        sample={currentSample}
+        stageLabel={stageLabel}
+        riskLabel={riskLabel}
+        riskState={riskState}
+        limit={limit}
+        switcher={<SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />}
+      />
+      <SceneQuestion question={question} />
+    </div>
+  );
+}
+
+// ─── DemoStepper (legacy — prefer SceneHero) ────────────────────────────────
 export function DemoStepper() {
   const { active, stage, stageIndex, currentSample } = useDemo();
   if (!active) return null;
