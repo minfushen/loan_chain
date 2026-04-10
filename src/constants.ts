@@ -19,7 +19,7 @@ export const SCENES: Scene[] = [
   },
   {
     id: 'customer-pool',
-    title: '客群识别',
+    title: '候选资产池',
     icon: Building2,
     modules: [
       { id: 'internal', title: '候选资产池' },
@@ -31,17 +31,6 @@ export const SCENES: Scene[] = [
     ],
   },
   {
-    id: 'asset-pool',
-    title: '授信资产池',
-    icon: DatabaseZap,
-    modules: [
-      { id: 'pipeline', title: '转化看板' },
-      { id: 'pre-credit', title: '预授信池' },
-      { id: 'review', title: '补审队列' },
-      { id: 'activated', title: '在营资产' },
-    ],
-  },
-  {
     id: 'product-approval',
     title: '产品与审批',
     icon: FileCheck2,
@@ -50,6 +39,17 @@ export const SCENES: Scene[] = [
       { id: 'rules', title: '审批规则' },
       { id: 'matching', title: '产品匹配' },
       { id: 'review', title: '补审作业' },
+    ],
+  },
+  {
+    id: 'asset-pool',
+    title: '授信资产池',
+    icon: DatabaseZap,
+    modules: [
+      { id: 'pipeline', title: '转化看板' },
+      { id: 'pre-credit', title: '预授信池' },
+      { id: 'review', title: '补审队列' },
+      { id: 'activated', title: '在营资产' },
     ],
   },
   {
