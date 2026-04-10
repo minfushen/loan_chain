@@ -139,14 +139,14 @@ export const CHAIN_LOAN_DEMO_CASE: ChainLoanDemoCase = {
   defaultStage: 'ecosystem',
   company: {
     id: 'cmp-yutong-001',
-    companyName: '深圳市裕同包装科技股份有限公司',
-    shortName: '裕同包装',
+    companyName: '常州衡远包装材料有限公司',
+    shortName: '衡远包装',
     industry: '新能源包装材料',
     chainName: '新能源电池产业链',
     borrowerRole: '三级包装材料供应商',
     annualSalesRange: '680万',
     establishedYear: '2018',
-    region: '广东深圳',
+    region: '江苏常州',
     legalRep: '周海峰',
     employeeCount: 27,
     hasInternalSettlement: true,
@@ -159,27 +159,27 @@ export const CHAIN_LOAN_DEMO_CASE: ChainLoanDemoCase = {
     nodes: [
       {
         id: 'anchor',
-        label: '宁德时代',
+        label: '宁川新能源',
         role: '链主企业',
         description: '动力电池制造龙头，决定整条链的采购需求节奏',
       },
       {
         id: 'tier2',
-        label: '欣旺达',
+        label: '盛拓模组科技',
         role: '二级供应商',
         tier: '二级',
-        description: '向链主供货的电池模组企业，向裕同包装稳定采购包装材料',
+        description: '向链主供货的电池模组企业，向衡远包装稳定采购包装材料',
       },
       {
         id: 'borrower',
-        label: '裕同包装',
+        label: '衡远包装',
         role: '借款主体',
         tier: '三级',
         description: '为模组企业提供高频周转箱、缓冲包装和回收包装服务',
       },
       {
         id: 'logistics',
-        label: '中外运物流',
+        label: '驰远物流',
         role: '物流数据方',
         description: '提供发货、签收、回单和运输延迟数据',
       },
@@ -204,7 +204,7 @@ export const CHAIN_LOAN_DEMO_CASE: ChainLoanDemoCase = {
       '本案例不依赖链主企业直接确权，也不要求链主出具付款承诺，而是基于订单、结算、物流和履约数据识别其真实经营信用。',
   },
   identificationSignals: [
-    '近 90 天来自欣旺达的高频小额订单持续发生，未出现订单中断。',
+    '近 90 天来自盛拓模组科技的高频小额订单持续发生，未出现订单中断。',
     '回款主要进入本行对公账户，资金路径清晰，可穿透到法人个人账户沉淀。',
     '物流平台回单显示发货与签收链条闭环，历史履约稳定。',
     '发票集中度可控，未出现对单一客户过度依赖。',
@@ -215,7 +215,7 @@ export const CHAIN_LOAN_DEMO_CASE: ChainLoanDemoCase = {
       id: 'order-001',
       type: 'order',
       title: '近 90 天订单稳定',
-      summary: '二级模组供应商向裕同包装持续发出高频小额订单，符合微型供应链场景特征。',
+      summary: '二级模组供应商向衡远包装持续发出高频小额订单，符合微型供应链场景特征。',
       metricLabel: '订单总额',
       metricValue: '386万',
       detailPoints: [
@@ -349,7 +349,7 @@ export const CHAIN_LOAN_DEMO_CASE: ChainLoanDemoCase = {
       id: 'tl-2',
       stage: 'identified',
       title: '客群识别',
-      description: '识别裕同包装为可经营的三级供应商主体。',
+      description: '识别衡远包装为可经营的三级供应商主体。',
     },
     {
       id: 'tl-3',
@@ -436,8 +436,8 @@ export interface ChainLoanSample {
 export const SAMPLES: ChainLoanSample[] = [
   {
     id: 'sample-hengyuan',
-    companyName: '深圳市裕同包装科技股份有限公司',
-    shortName: '裕同包装',
+    companyName: '常州衡远包装材料有限公司',
+    shortName: '衡远包装',
     chainName: '新能源电池产业链',
     roleInChain: '三级包装材料供应商',
     segmentTag: 'A可授信',
@@ -451,8 +451,8 @@ export const SAMPLES: ChainLoanSample[] = [
     relationStrength: 87,
     authenticityScore: 92,
     evidenceCoverage: 90,
-    mainChainPath: ['宁德时代', '欣旺达', '裕同包装'],
-    keyCounterparty: '欣旺达',
+    mainChainPath: ['宁川新能源', '盛拓模组科技', '衡远包装'],
+    keyCounterparty: '盛拓模组科技',
     orderCount90d: 22,
     orderAmount90d: '156万',
     invoiceContinuityMonths: 11,
@@ -469,8 +469,8 @@ export const SAMPLES: ChainLoanSample[] = [
   },
   {
     id: 'sample-jiali',
-    companyName: '深圳王子新材料股份有限公司',
-    shortName: '王子新材',
+    companyName: '溧阳佳利包装材料有限公司',
+    shortName: '佳利包装',
     chainName: '新能源电池产业链',
     roleInChain: '疑似三级包装供应商',
     segmentTag: 'C待观察',
@@ -484,8 +484,8 @@ export const SAMPLES: ChainLoanSample[] = [
     relationStrength: 48,
     authenticityScore: 52,
     evidenceCoverage: 46,
-    mainChainPath: ['宁德时代', '欣旺达', '王子新材'],
-    keyCounterparty: '欣旺达',
+    mainChainPath: ['宁川新能源', '盛拓模组科技', '佳利包装'],
+    keyCounterparty: '盛拓模组科技',
     orderCount90d: 8,
     orderAmount90d: '49万',
     invoiceContinuityMonths: 6,
@@ -502,8 +502,8 @@ export const SAMPLES: ChainLoanSample[] = [
   },
   {
     id: 'sample-chiyuan',
-    companyName: '中外运物流有限公司',
-    shortName: '中外运物流',
+    companyName: '无锡驰远物流服务有限公司',
+    shortName: '驰远物流',
     chainName: '新能源电池产业链',
     roleInChain: '链上物流服务主体',
     segmentTag: 'B可做但需处理',
@@ -517,8 +517,8 @@ export const SAMPLES: ChainLoanSample[] = [
     relationStrength: 74,
     authenticityScore: 81,
     evidenceCoverage: 76,
-    mainChainPath: ['宁德时代', '欣旺达', '中外运物流'],
-    keyCounterparty: '欣旺达',
+    mainChainPath: ['宁川新能源', '盛拓模组科技', '驰远物流'],
+    keyCounterparty: '盛拓模组科技',
     orderCount90d: 61,
     orderAmount90d: '34万',
     invoiceContinuityMonths: 10,
@@ -535,8 +535,8 @@ export const SAMPLES: ChainLoanSample[] = [
   },
   {
     id: 'sample-ruixin',
-    companyName: '深圳新宙邦科技股份有限公司',
-    shortName: '新宙邦',
+    companyName: '苏州锐信新材料有限公司',
+    shortName: '锐信新材',
     chainName: '新能源电池产业链',
     roleInChain: '二级辅料供应商',
     segmentTag: 'B可做但需处理',
@@ -550,8 +550,8 @@ export const SAMPLES: ChainLoanSample[] = [
     relationStrength: 83,
     authenticityScore: 88,
     evidenceCoverage: 84,
-    mainChainPath: ['宁德时代', '欣旺达', '新宙邦'],
-    keyCounterparty: '欣旺达',
+    mainChainPath: ['宁川新能源', '盛拓模组科技', '锐信新材'],
+    keyCounterparty: '盛拓模组科技',
     orderCount90d: 18,
     orderAmount90d: '208万',
     invoiceContinuityMonths: 12,
@@ -568,8 +568,8 @@ export const SAMPLES: ChainLoanSample[] = [
   },
   {
     id: 'sample-ruifeng',
-    companyName: '江苏瑞泰新能源材料股份有限公司',
-    shortName: '瑞泰新能源',
+    companyName: '昆山瑞丰辅料有限公司',
+    shortName: '瑞丰辅料',
     chainName: '新能源电池产业链',
     roleInChain: '三级辅料供应商',
     segmentTag: 'D风险经营中',
@@ -583,8 +583,8 @@ export const SAMPLES: ChainLoanSample[] = [
     relationStrength: 79,
     authenticityScore: 84,
     evidenceCoverage: 78,
-    mainChainPath: ['宁德时代', '欣旺达', '瑞泰新能源'],
-    keyCounterparty: '欣旺达',
+    mainChainPath: ['宁川新能源', '盛拓模组科技', '瑞丰辅料'],
+    keyCounterparty: '盛拓模组科技',
     orderCount90d: 12,
     orderAmount90d: '87万',
     invoiceContinuityMonths: 9,
@@ -759,7 +759,7 @@ export function getEvidenceForSample(sample: ChainLoanSample): DemoEvidence[] {
 }
 
 // ── 演示声明 ──────────────────────────────────────
-export const DEMO_DISCLAIMER = '企业名称为公开可检索主体，供应链关系、授信状态与风险状态为演示化示例。';
+export const DEMO_DISCLAIMER = '本演示所有企业名称、供应链关系、授信状态与风险状态均为虚构示例，不代表真实商业关系。';
 
 // ── 演示操作文案 ──────────────────────────────────
 

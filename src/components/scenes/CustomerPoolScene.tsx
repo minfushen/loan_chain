@@ -300,11 +300,11 @@ interface CounterpartyNode {
 }
 
 const COUNTERPARTY_NODES: CounterpartyNode[] = [
-  { id: 'cp-1', name: '欣旺达', direction: 'downstream', txCount: 48, txAmount: '386万', months: 14, cycleDays: '30-35天', concentration: '42%', keywords: ['包装箱', '材料款', '周转箱'], status: 'stable', relationStrength: 92, evidenceSources: ['对公流水', '增值税发票', '物流签收'], isMainChain: true },
+  { id: 'cp-1', name: '盛拓模组科技', direction: 'downstream', txCount: 48, txAmount: '386万', months: 14, cycleDays: '30-35天', concentration: '42%', keywords: ['包装箱', '材料款', '周转箱'], status: 'stable', relationStrength: 92, evidenceSources: ['对公流水', '增值税发票', '物流签收'], isMainChain: true },
   { id: 'cp-2', name: '金利达新材料', direction: 'upstream', txCount: 22, txAmount: '156万', months: 11, cycleDays: '15-20天', concentration: '28%', keywords: ['原材料', '采购款', 'EPE'], status: 'stable', relationStrength: 88, evidenceSources: ['对公流水', '增值税发票', '采购合同'], isMainChain: true },
-  { id: 'cp-3', name: '中外运物流', direction: 'service', txCount: 61, txAmount: '34万', months: 18, cycleDays: '周结', concentration: '—', keywords: ['运费', '物流费'], status: 'stable', relationStrength: 85, evidenceSources: ['对公流水', '运单签收', '物流轨迹'], isMainChain: false },
+  { id: 'cp-3', name: '驰远物流', direction: 'service', txCount: 61, txAmount: '34万', months: 18, cycleDays: '周结', concentration: '—', keywords: ['运费', '物流费'], status: 'stable', relationStrength: 85, evidenceSources: ['对公流水', '运单签收', '物流轨迹'], isMainChain: false },
   { id: 'cp-4', name: '常州永信化工', direction: 'upstream', txCount: 15, txAmount: '89万', months: 8, cycleDays: '30天', concentration: '16%', keywords: ['胶水', '材料款'], status: 'stable', relationStrength: 76, evidenceSources: ['对公流水', '增值税发票'], isMainChain: false },
-  { id: 'cp-5', name: '瑞泰新能源', direction: 'downstream', txCount: 12, txAmount: '67万', months: 6, cycleDays: '45天', concentration: '12%', keywords: ['缓冲材料', '货款'], status: 'new', relationStrength: 61, evidenceSources: ['对公流水', '发票'], isMainChain: false },
+  { id: 'cp-5', name: '瑞丰辅料', direction: 'downstream', txCount: 12, txAmount: '67万', months: 6, cycleDays: '45天', concentration: '12%', keywords: ['缓冲材料', '货款'], status: 'new', relationStrength: 61, evidenceSources: ['对公流水', '发票'], isMainChain: false },
   { id: 'cp-6', name: '溧阳宏达机械', direction: 'downstream', txCount: 8, txAmount: '38万', months: 4, cycleDays: '不规律', concentration: '7%', keywords: ['加工费', '服务费'], status: 'attention', relationStrength: 42, evidenceSources: ['对公流水'], isMainChain: false },
   { id: 'cp-7', name: '苏州汇能塑胶', direction: 'upstream', txCount: 18, txAmount: '112万', months: 9, cycleDays: '30天', concentration: '19%', keywords: ['塑料粒子', '原材料'], status: 'stable', relationStrength: 80, evidenceSources: ['对公流水', '增值税发票', '物流签收'], isMainChain: true },
   { id: 'cp-8', name: '顺捷报关行', direction: 'service', txCount: 24, txAmount: '18万', months: 12, cycleDays: '月结', concentration: '—', keywords: ['报关费', '代理费'], status: 'stable', relationStrength: 72, evidenceSources: ['对公流水', '报关单据'], isMainChain: false },
@@ -407,14 +407,14 @@ function RelationGraph() {
               <div className="w-6 h-6 rounded bg-[#7C3AED] flex items-center justify-center"><Network size={13} className="text-white" /></div>
               <div className="text-[12px]">
                 <span className="text-[#94A3B8]">链主</span>
-                <span className="ml-1.5 font-semibold text-[#7C3AED]">宁德时代</span>
+                <span className="ml-1.5 font-semibold text-[#7C3AED]">宁川新能源</span>
                 <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">未确权</span>
               </div>
             </div>
             <div className="text-[#CBD5E1]">→</div>
             <div className="text-[12px]">
               <span className="text-[#94A3B8]">Tier-2</span>
-              <span className="ml-1.5 font-semibold text-[#3B82F6]">欣旺达</span>
+              <span className="ml-1.5 font-semibold text-[#3B82F6]">盛拓模组科技</span>
               <span className="ml-1 text-[10px] text-[#64748B]">· 桥接</span>
             </div>
             <div className="text-[#CBD5E1]">→</div>
@@ -442,7 +442,7 @@ function RelationGraph() {
           </div>
         </div>
         <div className="mt-2 pt-2 border-t border-[#F1F5F9] text-[11px] text-[#64748B] leading-5">
-          链主<span className="font-semibold text-[#7C3AED]">宁德时代</span>未对借款主体进行确权。本图谱基于银行内部结算流水、发票、物流等数据，推断<span className="font-semibold text-[#0F172A]">{centerName}</span>处于新能源电池产业链 Tier-3 层级，经营关系真实，具备脱核授信条件。
+          链主<span className="font-semibold text-[#7C3AED]">宁川新能源</span>未对借款主体进行确权。本图谱基于银行内部结算流水、发票、物流等数据，推断<span className="font-semibold text-[#0F172A]">{centerName}</span>处于新能源电池产业链 Tier-3 层级，经营关系真实，具备脱核授信条件。
         </div>
       </div>
 
@@ -476,7 +476,7 @@ function RelationGraph() {
           {/* Supply chain flow backbone */}
           <line x1={cx - 380} y1={cy} x2={cx + 380} y2={cy} stroke="#CBD5E1" strokeWidth={1} strokeDasharray="6 4" opacity={0.2} />
 
-          {/* Chain master demand flow — dashed purple from 欣旺达 to 宁德时代 */}
+          {/* Chain master demand flow — dashed purple from 盛拓模组科技 to 宁川新能源 */}
           {(() => {
             const shengtuo = positions.find(p => p.node.id === 'cp-1');
             if (!shengtuo) return null;
@@ -522,15 +522,15 @@ function RelationGraph() {
             );
           })}
 
-          {/* ── Chain master node (宁德时代) ── */}
+          {/* ── Chain master node (宁川新能源) ── */}
           <g>
             <circle cx={chainMasterX} cy={chainMasterY} r={32} fill="#7C3AED" filter="url(#ns)" />
             <circle cx={chainMasterX} cy={chainMasterY} r={32} fill="none" stroke="#6D28D9" strokeWidth={2} strokeDasharray="5 3" />
-            <text x={chainMasterX} y={chainMasterY - 6} textAnchor="middle" fill="white" fontSize={10.5} fontWeight={700} className="select-none">宁德时代</text>
+            <text x={chainMasterX} y={chainMasterY - 6} textAnchor="middle" fill="white" fontSize={10.5} fontWeight={700} className="select-none">宁川新能源</text>
             <text x={chainMasterX} y={chainMasterY + 7} textAnchor="middle" fill="#E9D5FF" fontSize={7.5} fontWeight={500} className="select-none">链主 · 未确权</text>
           </g>
 
-          {/* ── Center node: borrower (裕同包装) ── */}
+          {/* ── Center node: borrower (衡远包装) ── */}
           <g filter="url(#ns)">
             <circle cx={cx} cy={cy} r={34} fill="#EFF6FF" />
             <circle cx={cx} cy={cy} r={34} fill="none" stroke="#3B82F6" strokeWidth={2} />
