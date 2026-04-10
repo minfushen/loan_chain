@@ -1,0 +1,11 @@
+!.env.example
+*.log
+.DS_Store
+.env*
+.git.bak-*
+build/
+coverage/
+dist
+dist/
+node_modules
+node_modules/
