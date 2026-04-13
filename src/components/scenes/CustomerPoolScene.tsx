@@ -348,7 +348,7 @@ function SmartFeedFlow() {
                       <ConfidenceDots score={item.personScore} label="人" showHint />
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-[#7C3AED] hover:bg-[#F3E8FF] gap-1" onClick={e => { e.stopPropagation(); navigate('partner-management', 'due-diligence'); }}>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-[#7C3AED] hover:bg-[#F3E8FF] gap-1" onClick={e => { e.stopPropagation(); navigate('smart-due-diligence', 'dd-report'); }}>
                         <FileSearch size={9} />一键尽调
                       </Button>
                       <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-[#86909C] gap-1">
@@ -830,8 +830,8 @@ function RelationGraph() {
    Main Component
    ══════════════════════════════════════════════════════════════════ */
 
-export default function CustomerPoolScene({ activeModule, onModuleChange }: { activeModule: string; onModuleChange: (id: string) => void }) {
-  const scene = SCENES.find((item) => item.id === 'customer-pool')!;
+export default function CustomerPoolScene({ activeModule, onModuleChange, sceneOverride }: { activeModule: string; onModuleChange: (id: string) => void; sceneOverride?: string }) {
+  const scene = SCENES.find((item) => item.id === (sceneOverride || 'smart-identify'))!;
   const { active, selectSample, selectedSampleId, navigate } = useDemo();
   const [filterOpen, setFilterOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -911,7 +911,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
                     <TableCell className="py-2.5"><StageBadge stage={c.stage} /></TableCell>
                     <TableCell className="py-2.5"><div className="space-y-0.5"><ConfidenceDots score={c.bizScore} label="企" /><ConfidenceDots score={c.personScore} label="人" showHint /></div></TableCell>
                     <TableCell className="py-2.5"><div className={cn('text-[11px]', isLocked ? 'text-[#C9CDD4]' : 'text-[#86909C]')}>{c.updatedAgo}</div>{isLocked && <div className="mt-1" title={c.lockReason}><Button variant="ghost" size="sm" className="h-5 text-[9px] px-1.5 text-[#A9AEB8] cursor-not-allowed" disabled>推进</Button></div>}</TableCell>
-                    <TableCell className="py-2.5 pr-4 text-right"><Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 gap-1 text-[#7C3AED] hover:bg-[#F3E8FF]" onClick={e => { e.stopPropagation(); navigate('partner-management', 'due-diligence'); }}><FileSearch size={10} />尽调</Button></TableCell>
+                    <TableCell className="py-2.5 pr-4 text-right"><Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 gap-1 text-[#7C3AED] hover:bg-[#F3E8FF]" onClick={e => { e.stopPropagation(); navigate('smart-due-diligence', 'dd-report'); }}><FileSearch size={10} />尽调</Button></TableCell>
                   </TableRow>
                 );
               })}
@@ -971,7 +971,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange }: { ac
                         <StageBadge stage={c.stage} />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 gap-1 text-[#7C3AED] hover:bg-[#F3E8FF]" onClick={e => { e.stopPropagation(); navigate('partner-management', 'due-diligence'); }}><FileSearch size={10} />一键尽调</Button>
+                        <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 gap-1 text-[#7C3AED] hover:bg-[#F3E8FF]" onClick={e => { e.stopPropagation(); navigate('smart-due-diligence', 'dd-report'); }}><FileSearch size={10} />一键尽调</Button>
                         <span className="text-[10px] text-[#86909C]">{c.updatedAgo}</span>
                       </div>
                     </div>

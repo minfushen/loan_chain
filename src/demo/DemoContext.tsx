@@ -13,13 +13,13 @@ const STAGE_ORDER: DemoStage[] = [
 ];
 
 const STAGE_SCENE_MAP: Record<DemoStage, { sceneId: SceneId; moduleId: string }> = {
-  ecosystem: { sceneId: 'partner-management', moduleId: 'ecosystem' },
-  identified: { sceneId: 'customer-pool', moduleId: 'internal' },
-  pre_credit: { sceneId: 'asset-pool', moduleId: 'pre-credit' },
-  manual_review: { sceneId: 'product-approval', moduleId: 'review' },
-  approved: { sceneId: 'product-approval', moduleId: 'review' },
-  risk_alert: { sceneId: 'risk-monitor', moduleId: 'warning' },
-  post_loan_recovery: { sceneId: 'post-loan', moduleId: 'operations' },
+  ecosystem: { sceneId: 'strategy-config', moduleId: 'standard' },
+  identified: { sceneId: 'smart-identify', moduleId: 'feed' },
+  pre_credit: { sceneId: 'asset-pool', moduleId: 'pipeline' },
+  manual_review: { sceneId: 'smart-approval', moduleId: 'review' },
+  approved: { sceneId: 'smart-approval', moduleId: 'review' },
+  risk_alert: { sceneId: 'smart-monitor', moduleId: 'warning' },
+  post_loan_recovery: { sceneId: 'smart-operation', moduleId: 'operations' },
 };
 
 type SampleStateMap = Record<string, { stage: DemoStage; riskSimulated: boolean; recoveryComplete: boolean }>;

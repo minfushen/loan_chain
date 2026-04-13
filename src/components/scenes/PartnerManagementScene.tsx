@@ -204,8 +204,8 @@ const RuleCard: React.FC<{ rule: { id: string; name: string; desc: string; scope
 
 interface Props { activeModule: string; onModuleChange: (id: string) => void }
 
-export default function PartnerManagementScene({ activeModule, onModuleChange }: Props) {
-  const scene = SCENES.find(s => s.id === 'partner-management')!;
+export default function PartnerManagementScene({ activeModule, onModuleChange, sceneOverride }: Props & { sceneOverride?: string }) {
+  const scene = SCENES.find(s => s.id === (sceneOverride || 'strategy-config'))!;
 
   const [sceneSearch, setSceneSearch] = React.useState('');
   const [selectedSceneId, setSelectedSceneId] = React.useState<string | null>(null);

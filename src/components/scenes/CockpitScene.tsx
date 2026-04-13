@@ -71,7 +71,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
   const riskLabel = riskState === 'risk' ? '中度预警' : riskState === 'watch' ? '恢复观察' : '正常';
 
   const judgment = (() => {
-    if (!active) return '演示未启动，点击策略与配置开始';
+    if (!active) return '尚未启动案例，点击策略与配置开始';
     if (recoveryComplete) return `恢复条件已满足，额度已回升至 ${currentSample.recommendedLimit}，进入常规监控`;
     if (riskSimulated) return `${currentSample.riskFlags.slice(0, 2).join('、') || '经营波动'}，已收缩额度至 ${currentSample.currentLimit}，观察中`;
     if (stageIndex >= STAGE_ORDER.indexOf('approved')) return `授信已批准 ${currentSample.recommendedLimit}，经营闭环正常运行`;
@@ -82,14 +82,14 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
   })();
 
   const nextActions: { label: string; target: SceneId }[] = (() => {
-    if (!active) return [{ label: '开始演示', target: 'partner-management' as SceneId }];
-    if (recoveryComplete) return [{ label: '查看贷后经营', target: 'post-loan' as SceneId }, { label: '查看客群池', target: 'customer-pool' as SceneId }];
-    if (riskSimulated) return [{ label: '查看贷后恢复', target: 'post-loan' as SceneId }, { label: '查看风险监控', target: 'risk-monitor' as SceneId }];
-    if (stageIndex >= STAGE_ORDER.indexOf('approved')) return [{ label: '进入风险监控', target: 'risk-monitor' as SceneId }, { label: '查看资产池', target: 'asset-pool' as SceneId }];
-    if (stageIndex >= STAGE_ORDER.indexOf('manual_review')) return [{ label: '进入补审', target: 'product-approval' as SceneId }];
+    if (!active) return [{ label: '开始演示', target: 'strategy-config' as SceneId }];
+    if (recoveryComplete) return [{ label: '查看智能经营', target: 'smart-operation' as SceneId }, { label: '查看智能识别', target: 'smart-identify' as SceneId }];
+    if (riskSimulated) return [{ label: '查看恢复经营', target: 'smart-operation' as SceneId }, { label: '查看智能监控', target: 'smart-monitor' as SceneId }];
+    if (stageIndex >= STAGE_ORDER.indexOf('approved')) return [{ label: '进入智能监控', target: 'smart-monitor' as SceneId }, { label: '查看资产池', target: 'asset-pool' as SceneId }];
+    if (stageIndex >= STAGE_ORDER.indexOf('manual_review')) return [{ label: '进入补审', target: 'smart-approval' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('pre_credit')) return [{ label: '进入资产池', target: 'asset-pool' as SceneId }];
-    if (stageIndex >= STAGE_ORDER.indexOf('identified')) return [{ label: '查看客群池', target: 'customer-pool' as SceneId }];
-    return [{ label: '进入策略与配置', target: 'partner-management' as SceneId }];
+    if (stageIndex >= STAGE_ORDER.indexOf('identified')) return [{ label: '查看智能识别', target: 'smart-identify' as SceneId }];
+    return [{ label: '进入策略与配置', target: 'strategy-config' as SceneId }];
   })();
 
   /* ── Computed tasks ── */
@@ -104,11 +104,11 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
     const preSamples = SAMPLES.filter(s => s.stage === 'pre_credit');
     const observeSamples = SAMPLES.filter(s => s.segmentTag === 'C待观察');
 
-    if (reviewSamples.length > 0) high.push({ label: `${reviewSamples.map(s => s.shortName).join('、')} — 补审待批准`, source: '规则引擎', target: 'product-approval' as SceneId, type: 'review' });
-    if (recoverySamples.length > 0) high.push({ label: `${recoverySamples.map(s => s.shortName).join('、')} — 风险恢复跟进`, source: '预警引擎', target: 'post-loan' as SceneId, type: 'recovery' });
-    if (riskSamples.length > 0) normal.push({ label: `${riskSamples.map(s => s.shortName).join('、')} — 风险复查`, source: '预警引擎', target: 'risk-monitor' as SceneId, type: 'risk' });
+    if (reviewSamples.length > 0) high.push({ label: `${reviewSamples.map(s => s.shortName).join('、')} — 补审待批准`, source: '规则引擎', target: 'smart-approval' as SceneId, type: 'review' });
+    if (recoverySamples.length > 0) high.push({ label: `${recoverySamples.map(s => s.shortName).join('、')} — 风险恢复跟进`, source: '预警引擎', target: 'smart-operation' as SceneId, type: 'recovery' });
+    if (riskSamples.length > 0) normal.push({ label: `${riskSamples.map(s => s.shortName).join('、')} — 风险复查`, source: '预警引擎', target: 'smart-monitor' as SceneId, type: 'risk' });
     if (preSamples.length > 0) normal.push({ label: `${preSamples.map(s => s.shortName).join('、')} — 产品匹配`, source: '识别引擎', target: 'asset-pool' as SceneId, type: 'match' });
-    if (observeSamples.length > 0) followUp.push({ label: `${observeSamples.map(s => s.shortName).join('、')} — 持续观察`, source: '系统', target: 'customer-pool' as SceneId, type: 'observe' });
+    if (observeSamples.length > 0) followUp.push({ label: `${observeSamples.map(s => s.shortName).join('、')} — 持续观察`, source: '系统', target: 'smart-identify' as SceneId, type: 'observe' });
 
     return { high, normal, followUp };
   }, []);
@@ -233,19 +233,19 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
                 {highStrengthReview > 0 ? `补审队列中 ${highStrengthReview} 户关系强度 > 80%，建议优先处理。` : ''}
                 {receivableRiskCount > 0 ? ` ${riskCount} 笔预警中回款延迟类 ${receivableRiskCount} 笔占比最高。` : ` ${SAMPLES.length} 个样本经营状态总体稳定。`}
               </p>
-              <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#2563EB] hover:bg-[#EFF6FF] shrink-0" onClick={() => navigate('customer-pool')}>查看<ArrowRight size={10} className="ml-0.5" /></Button>
+              <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#2563EB] hover:bg-[#EFF6FF] shrink-0" onClick={() => navigate('smart-identify')}>查看<ArrowRight size={10} className="ml-0.5" /></Button>
             </div>
 
             {/* Quick entries + Donut */}
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_240px] gap-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {[
-                  { label: '候选资产池', target: 'customer-pool' as SceneId, icon: <Search size={14} />, stat: `候选 ${SAMPLES.length} 户` },
-                  { label: '补审作业', target: 'product-approval' as SceneId, icon: <FileCheck2 size={14} />, stat: `待审 ${reviewCount} 户` },
-                  { label: '风险监控', target: 'risk-monitor' as SceneId, icon: <ShieldAlert size={14} />, stat: `预警 ${riskCount} 笔` },
-                  { label: '贷后经营', target: 'post-loan' as SceneId, icon: <Activity size={14} />, stat: `恢复 ${recoveryCount} 户` },
+                  { label: '智能识别', target: 'smart-identify' as SceneId, icon: <Search size={14} />, stat: `候选 ${SAMPLES.length} 户` },
+                  { label: '智能审批', target: 'smart-approval' as SceneId, icon: <FileCheck2 size={14} />, stat: `待审 ${reviewCount} 户` },
+                  { label: '智能监控', target: 'smart-monitor' as SceneId, icon: <ShieldAlert size={14} />, stat: `预警 ${riskCount} 笔` },
+                  { label: '智能经营', target: 'smart-operation' as SceneId, icon: <Activity size={14} />, stat: `恢复 ${recoveryCount} 户` },
                   { label: '授信资产池', target: 'asset-pool' as SceneId, icon: <BarChart3 size={14} />, stat: `在营 ${activeSamples} 户` },
-                  { label: '策略与配置', target: 'partner-management' as SceneId, icon: <DatabaseZap size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
+                  { label: '策略与配置', target: 'strategy-config' as SceneId, icon: <DatabaseZap size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
                 ].map(e => (
                   <button key={e.label} className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-3 hover:border-primary/30 hover:shadow-md transition-all text-left group" onClick={() => navigate(e.target)}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground group-hover:border-primary/30 group-hover:text-primary group-hover:bg-primary/5 transition-colors shrink-0">{e.icon}</div>
@@ -281,11 +281,11 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
          ════════════════════════════════════════════════════════════════════ */
       case 'todo': {
         const todoItems = [
-          { id: 't-01', type: '补审' as const, label: `${SAMPLES.filter(s => s.stage === 'manual_review').map(s => s.shortName).join('、') || '—'} — 补审待批准`, count: reviewCount, icon: FileCheck2, color: 'amber', target: 'product-approval' as SceneId, priority: '高' },
-          { id: 't-02', type: '逾期' as const, label: '逾期 15 天以上企业需催收', count: SAMPLES.filter(s => s.riskFlags.some(f => f.includes('回款'))).length, icon: AlertTriangle, color: 'red', target: 'risk-monitor' as SceneId, priority: '高' },
-          { id: 't-03', type: '审批' as const, label: '待审批贷款申请', count: reviewCount + SAMPLES.filter(s => s.stage === 'pre_credit').length, icon: CheckCircle2, color: 'blue', target: 'product-approval' as SceneId, priority: '中' },
-          { id: 't-04', type: '新增' as const, label: '今日新增候选企业待跟进', count: SAMPLES.filter(s => s.segmentTag === 'C待观察' || s.stage === 'identified').length, icon: Users, color: 'green', target: 'customer-pool' as SceneId, priority: '普通' },
-          { id: 't-05', type: '恢复' as const, label: `${SAMPLES.filter(s => s.stage === 'recovery').map(s => s.shortName).join('、') || '—'} — 恢复跟进`, count: recoveryCount, icon: Activity, color: 'slate', target: 'post-loan' as SceneId, priority: '普通' },
+          { id: 't-01', type: '补审' as const, label: `${SAMPLES.filter(s => s.stage === 'manual_review').map(s => s.shortName).join('、') || '—'} — 补审待批准`, count: reviewCount, icon: FileCheck2, color: 'amber', target: 'smart-approval' as SceneId, priority: '高' },
+          { id: 't-02', type: '逾期' as const, label: '逾期 15 天以上企业需催收', count: SAMPLES.filter(s => s.riskFlags.some(f => f.includes('回款'))).length, icon: AlertTriangle, color: 'red', target: 'smart-monitor' as SceneId, priority: '高' },
+          { id: 't-03', type: '审批' as const, label: '待审批贷款申请', count: reviewCount + SAMPLES.filter(s => s.stage === 'pre_credit').length, icon: CheckCircle2, color: 'blue', target: 'smart-approval' as SceneId, priority: '中' },
+          { id: 't-04', type: '新增' as const, label: '今日新增候选企业待跟进', count: SAMPLES.filter(s => s.segmentTag === 'C待观察' || s.stage === 'identified').length, icon: Users, color: 'green', target: 'smart-identify' as SceneId, priority: '普通' },
+          { id: 't-05', type: '恢复' as const, label: `${SAMPLES.filter(s => s.stage === 'recovery').map(s => s.shortName).join('、') || '—'} — 恢复跟进`, count: recoveryCount, icon: Activity, color: 'slate', target: 'smart-operation' as SceneId, priority: '普通' },
         ];
         const colorMap: Record<string, { dot: string; bg: string; text: string; border: string }> = {
           amber: { dot: 'bg-[#F59E0B]', bg: 'bg-[#FFFBEB]', text: 'text-[#92400E]', border: 'border-[#FDE68A]' },
@@ -353,7 +353,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
                 <span className="text-[13px] font-semibold text-[#0F172A]">风险预警</span>
                 <span className="text-[11px] text-[#94A3B8]">当日风险状况</span>
               </div>
-              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]" onClick={() => navigate('risk-monitor')}>进入风险监控 <ArrowRight size={9} /></Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]" onClick={() => navigate('smart-monitor')}>进入智能监控 <ArrowRight size={9} /></Button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -366,7 +366,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
             <WorkbenchPanel title="风险预警明细" badge={<Badge className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">{newAlertCount} 条活跃预警</Badge>}>
               <div className="space-y-2">
                 {riskSamples.length > 0 ? riskSamples.map(s => (
-                  <button key={s.id} className="w-full text-left rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 hover:bg-[#FEE2E2] transition-colors" onClick={() => navigate('risk-monitor')}>
+                  <button key={s.id} className="w-full text-left rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 hover:bg-[#FEE2E2] transition-colors" onClick={() => navigate('smart-monitor')}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[12px] font-semibold text-[#0F172A]">{s.shortName}</span>
                       <Badge className="bg-[#DC2626] text-white border-transparent text-[9px]">风险</Badge>
@@ -383,9 +383,9 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
             {/* Quick links */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {[
-                { label: '预警总览', desc: '查看全部风险概览', target: 'risk-monitor' as SceneId, module: 'warning' },
-                { label: '处置动作', desc: '执行催收与处置任务', target: 'risk-monitor' as SceneId, module: 'actions' },
-                { label: '规则效果', desc: '分析规则触发与准确率', target: 'risk-monitor' as SceneId, module: 'quality' },
+                { label: '预警总览', desc: '查看全部风险概览', target: 'smart-monitor' as SceneId, module: 'warning' },
+                { label: '处置任务', desc: '执行催收与处置任务', target: 'smart-monitor' as SceneId, module: 'actions' },
+                { label: '规则效果', desc: '分析规则触发与准确率', target: 'smart-monitor' as SceneId, module: 'quality' },
               ].map(e => (
                 <button key={e.label} className="rounded-lg border border-[#E2E8F0] bg-white p-4 text-left hover:bg-[#FAFBFF] hover:border-[#BFDBFE] transition-colors" onClick={() => navigate(e.target, e.module)}>
                   <div className="text-[12px] font-semibold text-[#0F172A]">{e.label}</div>
@@ -401,109 +401,37 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
       }
 
       /* ════════════════════════════════════════════════════════════════════
-         PAGE 4: 数据概览
+         PAGE 4: 我的客户
          ════════════════════════════════════════════════════════════════════ */
-      case 'data-overview':
+      case 'my-customers':
         return (
           <div className="space-y-4">
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Gauge size={14} className="text-[#2563EB]" />
-                <span className="text-[13px] font-semibold text-[#0F172A]">数据概览</span>
-                <span className="text-[11px] text-[#94A3B8]">当日关键业务数据</span>
+                <Users size={14} className="text-[#2563EB]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">我的客户</span>
+                <span className="text-[11px] text-[#94A3B8]">共 {SAMPLES.length} 户客户</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MetricCard label="还款率" value="95.2%" detail="-0.1% 较上期" tone="green" />
-              <MetricCard label="客户活跃度" value="78%" detail="+2% 较上期" tone="amber" />
-              <MetricCard label="转化率" value="26.1%" detail="候选→预授信" tone="blue" />
-              <MetricCard label="规则触发次数" value="70 次" detail="当日累计" tone="slate" />
+              <MetricCard label="在营客户" value={`${activeSamples} 户`} detail="正常经营" icon={CheckCircle2} tone="green" />
+              <MetricCard label="待跟进" value={`${followUpCount} 户`} detail="需主动联系" icon={Users} tone="blue" />
+              <MetricCard label="风险客户" value={`${riskCount} 户`} detail="存在风险信号" icon={ShieldAlert} tone="red" />
+              <MetricCard label="恢复中" value={`${recoveryCount} 户`} detail="恢复经营观察" icon={Activity} tone="amber" />
             </div>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-[13px] font-semibold text-[#0F172A]">还款率趋势（近 90 天）</div>
-                  <button onClick={() => navigate('post-loan', 'operations')} className="text-[10px] text-[#2563EB] hover:underline flex items-center gap-1">进入贷后总览 <ArrowRight size={9} /></button>
-                </div>
-                <TrendLineChart
-                  data={[
-                    { name: '1月', actual: 95.8, target: 95 },
-                    { name: '2月', actual: 95.5, target: 95 },
-                    { name: '3月', actual: 95.1, target: 95 },
-                    { name: '4月上', actual: 95.2, target: 95 },
-                  ]}
-                  lines={[
-                    { key: 'actual', color: CHART_COLORS.emerald, label: '还款率 (%)' },
-                    { key: 'target', color: CHART_COLORS.amber, label: '目标线', dashed: true },
-                  ]}
-                  height={180}
-                />
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="grid grid-cols-[1fr_100px_100px_100px_80px] gap-0 px-4 py-2.5 border-b border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-medium text-[#94A3B8] uppercase tracking-wider">
+                <div>客户名称</div><div>阶段</div><div>风险状态</div><div>额度</div><div>操作</div>
               </div>
-
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-[13px] font-semibold text-[#0F172A]">转化漏斗</div>
-                  <button onClick={() => navigate('asset-pool', 'funnel')} className="text-[10px] text-[#2563EB] hover:underline flex items-center gap-1">进入转化看板 <ArrowRight size={9} /></button>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { stage: '候选池', value: `${SAMPLES.length} 户`, pct: 100, desc: '全部候选企业' },
-                    { stage: '预授信', value: `${SAMPLES.filter(s => s.stage !== 'identified').length} 户`, pct: 80, desc: '通过初筛' },
-                    { stage: '补审通过', value: `${SAMPLES.filter(s => ['approved', 'risk_alert', 'recovery'].includes(s.stage)).length} 户`, pct: 60, desc: '审批完成' },
-                    { stage: '在营', value: `${activeSamples} 户`, pct: 40, desc: '已放款经营' },
-                  ].map(f => (
-                    <div key={f.stage}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2"><span className="text-[11px] font-medium text-[#0F172A]">{f.stage}</span><span className="text-[10px] text-[#64748B]">{f.value}</span></div>
-                        <span className="text-[11px] font-semibold text-[#2563EB]">{f.pct}%</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full bg-[#60A5FA] transition-all" style={{ width: `${f.pct}%` }} /></div>
-                      <div className="mt-0.5 text-[10px] text-[#94A3B8]">{f.desc}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Rule effectiveness */}
-            <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-[13px] font-semibold text-[#0F172A]">规则效果速览（当日触发）</div>
-                <button onClick={() => navigate('risk-monitor', 'quality')} className="text-[10px] text-[#2563EB] hover:underline flex items-center gap-1">进入规则效果 <ArrowRight size={9} /></button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3"><div className="text-[10px] text-[#94A3B8]">总触发次数</div><div className="mt-0.5 text-lg font-bold text-[#0F172A]">70</div></div>
-                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3"><div className="text-[10px] text-[#94A3B8]">平均转化率</div><div className="mt-0.5 text-lg font-bold text-[#0F172A]">50%</div></div>
-                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3"><div className="text-[10px] text-[#94A3B8]">平均准确率</div><div className="mt-0.5 text-lg font-bold text-[#0F172A]">72%</div></div>
-                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3"><div className="text-[10px] text-[#94A3B8]">有效规则数</div><div className="mt-0.5 text-lg font-bold text-[#0F172A]">6</div></div>
-              </div>
-              <DistributionBarChart
-                data={[
-                  { name: '逾期规则', value: 18, color: CHART_COLORS.red },
-                  { name: '回款规则', value: 15, color: CHART_COLORS.amber },
-                  { name: '流水规则', value: 12, color: CHART_COLORS.blue },
-                  { name: '关系规则', value: 10, color: CHART_COLORS.emerald },
-                  { name: '集中度规则', value: 8, color: CHART_COLORS.violet },
-                  { name: '其他', value: 7, color: CHART_COLORS.slate },
-                ]}
-                height={160}
-              />
-            </div>
-
-            {/* Quick links */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[
-                { label: '贷后总览', desc: '还款率、客户活跃度、增收贡献', target: 'post-loan' as SceneId, module: 'operations' },
-                { label: '转化看板', desc: '候选→预授信→在营转化', target: 'asset-pool' as SceneId, module: 'funnel' },
-                { label: '规则效果', desc: '规则触发次数、转化率、准确率', target: 'risk-monitor' as SceneId, module: 'quality' },
-              ].map(e => (
-                <button key={e.label} className="rounded-lg border border-[#E2E8F0] bg-white p-4 text-left hover:bg-[#FAFBFF] hover:border-[#BFDBFE] transition-colors" onClick={() => navigate(e.target, e.module)}>
-                  <div className="text-[12px] font-semibold text-[#0F172A]">{e.label}</div>
-                  <div className="text-[10px] text-[#94A3B8] mt-1">{e.desc}</div>
-                  <div className="mt-2 text-[10px] text-[#2563EB] flex items-center gap-1">进入 <ArrowRight size={9} /></div>
+              {SAMPLES.map(s => (
+                <button key={s.id} className="w-full grid grid-cols-[1fr_100px_100px_100px_80px] gap-0 px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 items-center hover:bg-[#FAFBFF] transition-colors text-left" onClick={() => { selectSample(s.id); navigate('smart-identify', 'list'); }}>
+                  <div><div className="text-[12px] font-medium text-[#0F172A]">{s.shortName}</div><div className="text-[10px] text-[#94A3B8]">{s.roleInChain}</div></div>
+                  <div><Badge className={cn('text-[9px] border', s.approvalStatus === '已批准' || s.approvalStatus === '已降额' ? 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]' : s.approvalStatus === '恢复中' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]')}>{s.approvalStatus}</Badge></div>
+                  <div><StatusPill state={s.riskStatus === '正常' ? 'normal' : s.riskStatus === '观察' ? 'watch' : 'risk'} label={s.riskStatus} /></div>
+                  <div className="text-[12px] font-semibold text-[#0F172A]">{s.recommendedLimit}</div>
+                  <div className="text-[10px] text-[#2563EB] flex items-center gap-1">查看 <ArrowRight size={9} /></div>
                 </button>
               ))}
             </div>

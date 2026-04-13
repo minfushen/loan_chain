@@ -2,12 +2,13 @@ import { LucideIcon } from 'lucide-react';
 
 export type SceneId =
   | 'cockpit'
-  | 'customer-pool'
+  | 'smart-identify'
+  | 'smart-due-diligence'
+  | 'smart-approval'
   | 'asset-pool'
-  | 'product-approval'
-  | 'risk-monitor'
-  | 'post-loan'
-  | 'partner-management';
+  | 'smart-monitor'
+  | 'smart-operation'
+  | 'strategy-config';
 
 export interface Module {
   id: string;

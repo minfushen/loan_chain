@@ -11,6 +11,7 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  Clock,
   Clock3,
   Edit,
   Eye,
@@ -21,6 +22,7 @@ import {
   Package,
   Plus,
   Power,
+  RefreshCw,
   RotateCcw,
   Search,
   Send,
@@ -107,8 +109,8 @@ const REPAY_TREND_90D = [
 
 interface Props { activeModule: string; onModuleChange: (id: string) => void }
 
-export default function PostLoanScene({ activeModule, onModuleChange }: Props) {
-  const scene = SCENES.find(s => s.id === 'post-loan')!;
+export default function PostLoanScene({ activeModule, onModuleChange, sceneOverride }: Props & { sceneOverride?: string }) {
+  const scene = SCENES.find(s => s.id === (sceneOverride || 'smart-operation'))!;
   const { active, currentSample, selectSample, selectedSampleId } = useDemo();
 
   const [tierFilter, setTierFilter] = React.useState('all');
@@ -459,6 +461,47 @@ export default function PostLoanScene({ activeModule, onModuleChange }: Props) {
             {active && <ActionBar />}
           </div>
         );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE: 恢复经营
+         ════════════════════════════════════════════════════════════════════ */
+      case 'recovery': {
+        const recoverySamples = SAMPLES.filter(s => s.stage === 'recovery' || s.riskFlags.length >= 2);
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <RefreshCw size={14} className="text-[#EA580C]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">恢复经营</span>
+                <span className="text-[11px] text-[#94A3B8]">风险客户恢复跟踪与经营重建</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MetricCard label="恢复中" value={`${recoverySamples.length} 户`} detail="进行中" icon={RefreshCw} tone="amber" />
+              <MetricCard label="已恢复" value="2 户" detail="本季度" icon={CheckCircle2} tone="green" />
+              <MetricCard label="平均恢复周期" value="45 天" detail="近 6 月" icon={Clock} tone="blue" />
+              <MetricCard label="恢复成功率" value="68%" detail="近 6 月" icon={TrendingUp} tone="slate" />
+            </div>
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#F1F5F9]"><span className="text-[13px] font-semibold text-[#0F172A]">恢复任务列表</span></div>
+              <div className="divide-y divide-[#F1F5F9]">
+                {recoverySamples.length > 0 ? recoverySamples.map(s => (
+                  <div key={s.id} className="flex items-center justify-between px-4 py-3 hover:bg-[#FAFBFF] transition-colors">
+                    <div>
+                      <div className="text-[12px] font-medium text-[#0F172A]">{s.shortName}</div>
+                      <div className="text-[10px] text-[#94A3B8]">风险信号: {s.riskFlags.join('、') || '无'} · 额度 {s.currentLimit}</div>
+                    </div>
+                    <Badge className="text-[9px] bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]">恢复中</Badge>
+                  </div>
+                )) : (
+                  <div className="text-center py-6 text-[13px] text-[#94A3B8]">暂无恢复经营任务</div>
+                )}
+              </div>
+            </div>
+            {active && <ActionBar />}
+          </div>
+        );
+      }
 
       /* ════════════════════════════════════════════════════════════════════
          PAGE 4: 动作模板

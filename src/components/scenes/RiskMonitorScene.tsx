@@ -4,6 +4,7 @@ import { SCENES } from '../../constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
   Bell,
@@ -99,13 +100,14 @@ const STATUS_TASK_STYLE = {
 
 interface Props { activeModule: string; onModuleChange: (id: string) => void }
 
-export default function RiskMonitorScene({ activeModule, onModuleChange }: Props) {
-  const scene = SCENES.find(s => s.id === 'risk-monitor')!;
+export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOverride }: Props & { sceneOverride?: string }) {
+  const scene = SCENES.find(s => s.id === (sceneOverride || 'smart-monitor'))!;
   const { active, riskSimulated, currentSample, selectSample, selectedSampleId } = useDemo();
 
   const [taskStatusFilter, setTaskStatusFilter] = React.useState('all');
   const [effectRange, setEffectRange] = React.useState('30');
 
+  const riskSamples = SAMPLES.filter(s => s.riskFlags.length >= 2);
   const filteredTasks = DISPOSAL_TASKS.filter(t => taskStatusFilter === 'all' || t.status === taskStatusFilter);
 
   const renderContent = () => {
@@ -419,6 +421,54 @@ export default function RiskMonitorScene({ activeModule, onModuleChange }: Props
             </div>
 
             {active && <ActionBar />}
+          </div>
+        );
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE: 风险探针
+         ════════════════════════════════════════════════════════════════════ */
+      case 'probe':
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Activity size={14} className="text-[#7C3AED]" />
+                <span className="text-[13px] font-semibold text-[#0F172A]">风险探针</span>
+                <span className="text-[11px] text-[#94A3B8]">实时检测核心风险指标异动</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: '活跃探针', value: '12', detail: '实时运行', tone: 'green' as const },
+                { label: '今日触发', value: `${riskSamples.length}`, detail: '探针报警', tone: 'red' as const },
+                { label: '平均响应', value: '2.3s', detail: '检测耗时', tone: 'blue' as const },
+                { label: '覆盖样本', value: `${SAMPLES.length}`, detail: '全样本', tone: 'slate' as const },
+              ].map(m => (
+                <div key={m.label} className="rounded-xl border border-[#E2E8F0] bg-white px-3.5 py-3">
+                  <div className="text-[10px] text-[#94A3B8] uppercase tracking-wider">{m.label}</div>
+                  <div className="mt-1 text-lg font-bold text-[#0F172A]">{m.value}</div>
+                  <div className="text-[10px] text-[#64748B]">{m.detail}</div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#F1F5F9]"><span className="text-[13px] font-semibold text-[#0F172A]">探针列表</span></div>
+              <div className="divide-y divide-[#F1F5F9]">
+                {[
+                  { name: '回款周期拉长探针', target: '回款天数 > 45天', status: '正常', freq: '每日' },
+                  { name: '账户净流出探针', target: '连续 3 周净流出', status: riskSamples.length > 0 ? '触发' : '正常', freq: '每周' },
+                  { name: '物流履约延迟探针', target: '延迟率 > 20%', status: riskSamples.length > 0 ? '触发' : '正常', freq: '每日' },
+                  { name: '客户集中度探针', target: '单客户占比 > 60%', status: '正常', freq: '每月' },
+                  { name: '发票断裂探针', target: '连续 2 月无开票', status: '正常', freq: '每月' },
+                  { name: '关系强度衰减探针', target: '强度下降 > 15%', status: '正常', freq: '每周' },
+                ].map(p => (
+                  <div key={p.name} className="flex items-center justify-between px-4 py-3 hover:bg-[#FAFBFF] transition-colors">
+                    <div><div className="text-[12px] font-medium text-[#0F172A]">{p.name}</div><div className="text-[10px] text-[#94A3B8]">阈值: {p.target} · 频率: {p.freq}</div></div>
+                    <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full', p.status === '触发' ? 'bg-[#FEF2F2] text-[#DC2626]' : 'bg-[#F0FDF4] text-[#047857]')}>{p.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         );
 

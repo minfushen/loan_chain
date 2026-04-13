@@ -111,8 +111,8 @@ function ConfidenceDots({ label, value, max = 5 }: { label: string; value: numbe
    Component
    ══════════════════════════════════════════════════════════════════════════ */
 
-export default function ProductApprovalScene({ activeModule, onModuleChange }: Props) {
-  const scene = SCENES.find((s) => s.id === 'product-approval')!;
+export default function ProductApprovalScene({ activeModule, onModuleChange, sceneOverride }: Props & { sceneOverride?: string }) {
+  const scene = SCENES.find((s) => s.id === (sceneOverride || 'smart-approval'))!;
   const { active, stage, stageIndex, advanceStage, currentSample, selectSample, selectedSampleId } = useDemo();
   const [selectedFlowId, setSelectedFlowId] = React.useState('flow-2');
   const [productTypeFilter, setProductTypeFilter] = React.useState<string>('all');
