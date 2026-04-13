@@ -82,7 +82,7 @@ export const SCENES: Scene[] = [
   },
   {
     id: 'partner-management',
-    title: '数据与接入',
+    title: '策略与配置',
     icon: Settings2,
     modules: [
       { id: 'standard', title: '标准小微规则' },

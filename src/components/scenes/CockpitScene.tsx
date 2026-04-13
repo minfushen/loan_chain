@@ -71,7 +71,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
   const riskLabel = riskState === 'risk' ? '中度预警' : riskState === 'watch' ? '恢复观察' : '正常';
 
   const judgment = (() => {
-    if (!active) return '演示未启动，点击数据与接入开始';
+    if (!active) return '演示未启动，点击策略与配置开始';
     if (recoveryComplete) return `恢复条件已满足，额度已回升至 ${currentSample.recommendedLimit}，进入常规监控`;
     if (riskSimulated) return `${currentSample.riskFlags.slice(0, 2).join('、') || '经营波动'}，已收缩额度至 ${currentSample.currentLimit}，观察中`;
     if (stageIndex >= STAGE_ORDER.indexOf('approved')) return `授信已批准 ${currentSample.recommendedLimit}，经营闭环正常运行`;
@@ -89,7 +89,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
     if (stageIndex >= STAGE_ORDER.indexOf('manual_review')) return [{ label: '进入补审', target: 'product-approval' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('pre_credit')) return [{ label: '进入资产池', target: 'asset-pool' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('identified')) return [{ label: '查看客群池', target: 'customer-pool' as SceneId }];
-    return [{ label: '进入数据与接入', target: 'partner-management' as SceneId }];
+    return [{ label: '进入策略与配置', target: 'partner-management' as SceneId }];
   })();
 
   /* ── Computed tasks ── */
@@ -245,7 +245,7 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
                   { label: '风险监控', target: 'risk-monitor' as SceneId, icon: <ShieldAlert size={14} />, stat: `预警 ${riskCount} 笔` },
                   { label: '贷后经营', target: 'post-loan' as SceneId, icon: <Activity size={14} />, stat: `恢复 ${recoveryCount} 户` },
                   { label: '授信资产池', target: 'asset-pool' as SceneId, icon: <BarChart3 size={14} />, stat: `在营 ${activeSamples} 户` },
-                  { label: '数据与接入', target: 'partner-management' as SceneId, icon: <DatabaseZap size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
+                  { label: '策略与配置', target: 'partner-management' as SceneId, icon: <DatabaseZap size={14} />, stat: `${new Set(SAMPLES.map(s => s.chainName)).size} 条链` },
                 ].map(e => (
                   <button key={e.label} className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-3 hover:border-primary/30 hover:shadow-md transition-all text-left group" onClick={() => navigate(e.target)}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground group-hover:border-primary/30 group-hover:text-primary group-hover:bg-primary/5 transition-colors shrink-0">{e.icon}</div>
