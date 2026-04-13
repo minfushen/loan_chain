@@ -8,24 +8,33 @@ import {
   AlertTriangle,
   ArrowRight,
   Bell,
+  Brain,
   Check,
   CheckCircle2,
   ChevronDown,
   Clock,
+  Download,
   Edit,
   Eye,
+  FileCheck2,
   FileText,
+  Layers,
   Loader2,
   Plus,
   Power,
+  RefreshCw,
   Search,
   Send,
   Settings,
+  Shield,
   ShieldAlert,
+  Star,
   Trash2,
   TrendingDown,
   TrendingUp,
+  UserCheck,
   XCircle,
+  Zap,
 } from 'lucide-react';
 import {
   PageHeader,
@@ -106,6 +115,16 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
 
   const [taskStatusFilter, setTaskStatusFilter] = React.useState('all');
   const [effectRange, setEffectRange] = React.useState('30');
+  const [selectedAlertId, setSelectedAlertId] = React.useState<string>('wa-01');
+  const [alertLevelFilter, setAlertLevelFilter] = React.useState<string>('all');
+  const [selectedMetricId, setSelectedMetricId] = React.useState<string>('mt-01');
+  const [metricStatusFilter, setMetricStatusFilter] = React.useState<string>('all');
+  const [selectedRiskObjId, setSelectedRiskObjId] = React.useState<string>('ro-01');
+  const [riskLevelFilter, setRiskLevelFilter] = React.useState<string>('all');
+  const [selectedDispTaskId, setSelectedDispTaskId] = React.useState<string>('dt-01');
+  const [dispStatusFilter, setDispStatusFilter] = React.useState<string>('all');
+  const [selectedRuleId, setSelectedRuleId] = React.useState<string>('rl-01');
+  const [ruleEvalFilter, setRuleEvalFilter] = React.useState<string>('all');
 
   const riskSamples = SAMPLES.filter(s => s.riskFlags.length >= 2);
   const filteredTasks = DISPOSAL_TASKS.filter(t => taskStatusFilter === 'all' || t.status === taskStatusFilter);
@@ -114,308 +133,1347 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
     switch (activeModule) {
 
       /* ════════════════════════════════════════════════════════════════════
-         PAGE 1: 预警总览 (DEFAULT)
+         PAGE 1: 预警总览 (5 区工作台)
          ════════════════════════════════════════════════════════════════════ */
       case 'warning':
-      default:
+      default: {
+        type AlertLevel = '一般预警' | '重点预警' | '高优先级预警' | '已升级风险';
+        type AnomalyType = '指标波动异常' | '风险信号上升' | '还款异常' | '活跃下降' | '规则集中命中' | '待处理任务积压';
+        type AlertTrend = '上升' | '持平' | '下降' | '波动';
+        type AlertStatus = '新增' | '处理中' | '待确认' | '已升级' | '已关闭';
+        type ObjType = '企业主体' | '在营资产' | '风险对象' | '规则命中对象' | '监控指标对象';
+        type AlertType = '风险预警' | '指标预警' | '履约预警' | '活跃预警' | '规则异常预警';
+
+        interface WarnTier { level: AlertLevel; count: number; objects: number; pct: number; trend: AlertTrend; mainType: AnomalyType; action: string }
+        interface WarnObj {
+          id: string; name: string; objType: ObjType; source: string; updatedAt: string;
+          alertLevel: AlertLevel; alertType: AlertType; triggeredAt: string; impact: string; status: AlertStatus;
+          suggestion: string; inDisposal: boolean; needConfirm: boolean;
+        }
+        interface AnomalyItem {
+          name: string; type: AnomalyType; objects: number; severity: '高' | '中' | '低'; summary: string;
+          status: string; targetPage: string; blocking: boolean;
+        }
+
+        const WARN_TIERS: WarnTier[] = [
+          { level: '一般预警', count: 42, objects: 38, pct: 48, trend: '持平', mainType: '活跃下降', action: '持续观察' },
+          { level: '重点预警', count: 25, objects: 20, pct: 29, trend: '上升', mainType: '风险信号上升', action: '下钻指标监测' },
+          { level: '高优先级预警', count: 14, objects: 12, pct: 16, trend: '上升', mainType: '还款异常', action: '下钻风险识别' },
+          { level: '已升级风险', count: 6, objects: 6, pct: 7, trend: '波动', mainType: '规则集中命中', action: '进入处置作业' },
+        ];
+
+        const WARN_OBJS: WarnObj[] = [
+          { id: 'wa-01', name: '瑞泰新能源材料', objType: '企业主体', source: '风险探针', updatedAt: '1小时前', alertLevel: '高优先级预警', alertType: '风险预警', triggeredAt: '04/09 08:30', impact: '涉及余额 ¥260万', status: '新增', suggestion: '进入处置', inDisposal: false, needConfirm: false },
+          { id: 'wa-02', name: '王子新材料', objType: '在营资产', source: '监控指标', updatedAt: '2小时前', alertLevel: '高优先级预警', alertType: '指标预警', triggeredAt: '04/09 07:15', impact: '净流出连续4周', status: '处理中', suggestion: '查看指标', inDisposal: true, needConfirm: false },
+          { id: 'wa-03', name: '驰远物流服务', objType: '风险对象', source: '规则引擎', updatedAt: '3小时前', alertLevel: '重点预警', alertType: '履约预警', triggeredAt: '04/08 18:00', impact: '运单频次下降35%', status: '待确认', suggestion: '重点关注', inDisposal: false, needConfirm: true },
+          { id: 'wa-04', name: '新宙邦科技', objType: '规则命中对象', source: '规则引擎', updatedAt: '5小时前', alertLevel: '重点预警', alertType: '规则异常预警', triggeredAt: '04/08 14:20', impact: '客户集中度62%', status: '处理中', suggestion: '查看风险', inDisposal: true, needConfirm: false },
+          { id: 'wa-05', name: '盛拓模组科技', objType: '在营资产', source: '还款监控', updatedAt: '6小时前', alertLevel: '重点预警', alertType: '履约预警', triggeredAt: '04/08 10:00', impact: '回款金额连续下降', status: '新增', suggestion: '重点关注', inDisposal: false, needConfirm: true },
+          { id: 'wa-06', name: '裕同包装科技', objType: '企业主体', source: '风险探针', updatedAt: '1天前', alertLevel: '一般预警', alertType: '活跃预警', triggeredAt: '04/07 09:30', impact: '活跃度下降15%', status: '新增', suggestion: '持续观察', inDisposal: false, needConfirm: false },
+          { id: 'wa-07', name: '佳利包装', objType: '监控指标对象', source: '监控指标', updatedAt: '1天前', alertLevel: '一般预警', alertType: '指标预警', triggeredAt: '04/07 08:00', impact: '证据覆盖率不足', status: '已关闭', suggestion: '持续观察', inDisposal: false, needConfirm: false },
+          { id: 'wa-08', name: '科陆储能技术', objType: '企业主体', source: '规则引擎', updatedAt: '2天前', alertLevel: '已升级风险', alertType: '风险预警', triggeredAt: '04/06 16:00', impact: '涉及余额 ¥180万', status: '已升级', suggestion: '进入处置', inDisposal: true, needConfirm: false },
+        ];
+
+        const ANOMALY_ITEMS: AnomalyItem[] = [
+          { name: '还款预警集中上升', type: '还款异常', objects: 8, severity: '高', summary: '轻微逾期与持续逾期资产同步增加，回款节奏出现结构性波动', status: '待跟进', targetPage: '还款表现', blocking: true },
+          { name: '风险信号升级加速', type: '风险信号上升', objects: 6, severity: '高', summary: '近7天已升级风险从4户增至6户，增速偏快', status: '已关注', targetPage: '风险监控', blocking: true },
+          { name: '规则集中命中偏高', type: '规则集中命中', objects: 5, severity: '中', summary: '回款拉长规则与客户集中度规则交叉命中率偏高', status: '待分析', targetPage: '规则效果', blocking: false },
+          { name: '待处理任务积压', type: '待处理任务积压', objects: 3, severity: '中', summary: '高优先级待处理任务在48小时内未闭环', status: '待推进', targetPage: '处置任务', blocking: true },
+          { name: '活跃度下降趋势', type: '活跃下降', objects: 4, severity: '低', summary: '部分一般预警对象活跃度持续下降，可能转为重点预警', status: '观察中', targetPage: '指标监测', blocking: false },
+        ];
+
+        const LEVEL_STYLE: Record<AlertLevel, string> = {
+          '一般预警': 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]',
+          '重点预警': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '高优先级预警': 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+          '已升级风险': 'bg-[#450A0A] text-white border-[#991B1B]',
+        };
+        const STATUS_STYLE: Record<AlertStatus, string> = {
+          '新增': 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]',
+          '处理中': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '待确认': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
+          '已升级': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
+          '已关闭': 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]',
+        };
+        const SEV_STYLE: Record<string, string> = {
+          '高': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
+          '中': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '低': 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]',
+        };
+        const TR_ICON: Record<AlertTrend, typeof TrendingUp> = { '上升': TrendingUp, '持平': ArrowRight, '下降': TrendingDown, '波动': Zap };
+        const TR_CLR: Record<AlertTrend, string> = { '上升': 'text-[#DC2626]', '持平': 'text-[#64748B]', '下降': 'text-[#047857]', '波动': 'text-[#F59E0B]' };
+
+        const totalAlerts = WARN_TIERS.reduce((s, t) => s + t.count, 0);
+        const highPriCount = WARN_OBJS.filter(o => o.alertLevel === '高优先级预警').length;
+        const newCount = WARN_OBJS.filter(o => o.status === '新增').length;
+        const pendingCount = WARN_OBJS.filter(o => o.status !== '已关闭' && o.status !== '已升级').length;
+        const upgradedCount = WARN_OBJS.filter(o => o.status === '已升级').length;
+        const confirmCount = WARN_OBJS.filter(o => o.needConfirm).length;
+
+        const filteredAlerts = WARN_OBJS.filter(o => {
+          if (alertLevelFilter === 'all') return true;
+          if (alertLevelFilter === '高') return o.alertLevel === '高优先级预警' || o.alertLevel === '已升级风险';
+          if (alertLevelFilter === '重点') return o.alertLevel === '重点预警';
+          if (alertLevelFilter === '一般') return o.alertLevel === '一般预警';
+          return true;
+        });
+        const activeAlert = filteredAlerts.find(a => a.id === selectedAlertId) ?? filteredAlerts[0] ?? WARN_OBJS[0];
+
         return (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Header */}
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShieldAlert size={14} className="text-[#DC2626]" />
-                <span className="text-[13px] font-semibold text-[#0F172A]">预警总览</span>
-                <span className="text-[11px] text-[#94A3B8]">数据口径: 全量 · 截至 {new Date().toLocaleDateString('zh-CN')}</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">预警总览</h2>
+                <p className="text-[11px] text-[#64748B] mt-0.5">统一查看当前预警事件、异常信号与待处理事项，辅助监控判断与后续处置推进。</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#DC2626] border-[#FCA5A5]" onClick={() => onModuleChange('signals')}>
-                  <Eye size={10} /> 查看风险资产
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]" onClick={() => onModuleChange('signals')}>
-                  <Settings size={10} /> 设置预警规则
-                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新总览</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出预警概览</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看监控规则</Button>
               </div>
             </div>
 
-            {/* Stats cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MetricCard label="风险资产" value="50 户" detail="占在营比 4.5%" tone="red" />
-              <MetricCard label="逾期率" value="4.5%" detail="+0.2% 近 7 天" tone="amber" />
-              <MetricCard label="高风险" value="5 户" detail="需紧急介入" tone="red" />
-              <MetricCard label="待处置任务" value={`${DISPOSAL_TASKS.filter(t => t.status === '待处理').length} 个`} detail="含高优先级" tone="amber" />
+            {/* 1. Overview cards */}
+            <div className="grid grid-cols-6 gap-3">
+              {[
+                { label: '预警总数', value: `${totalAlerts}`, desc: '纳入监控范围', icon: ShieldAlert, color: 'text-[#DC2626]' },
+                { label: '高优先级', value: `${highPriCount}`, desc: '建议优先处理', icon: AlertTriangle, color: 'text-[#991B1B]' },
+                { label: '新增预警', value: `${newCount}`, desc: '本期新增', icon: Bell, color: 'text-[#F59E0B]' },
+                { label: '待处理', value: `${pendingCount}`, desc: '未完成处理/确认', icon: Clock, color: 'text-[#C2410C]' },
+                { label: '已升级风险', value: `${upgradedCount}`, desc: '升级为重点风险', icon: TrendingUp, color: 'text-[#DC2626]' },
+                { label: '需人工确认', value: `${confirmCount}`, desc: '边界信号需复核', icon: UserCheck, color: 'text-[#7C3AED]' },
+              ].map(c => (
+                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
+                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
+                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
+                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
+                </div>
+              ))}
             </div>
 
-            {/* Risk level distribution (donut) + overdue trend (line) */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-                <div className="text-[13px] font-semibold text-[#0F172A]">风险等级分布</div>
-                <div className="grid grid-cols-[1fr_1fr] gap-4 items-center">
-                  <DonutChart
-                    data={[
-                      { name: '低风险', value: 30, color: CHART_COLORS.emerald },
-                      { name: '中风险', value: 15, color: CHART_COLORS.amber },
-                      { name: '高风险', value: 5, color: CHART_COLORS.red },
-                    ]}
-                    height={160}
-                    innerRadius={40}
-                    outerRadius={62}
-                    centerLabel="风险户"
-                    centerValue="50"
-                  />
-                  <div className="space-y-3">
-                    {[
-                      { label: '低风险', count: 30, pct: '60%', color: CHART_COLORS.emerald, dots: 5 },
-                      { label: '中风险', count: 15, pct: '30%', color: CHART_COLORS.amber, dots: 3 },
-                      { label: '高风险', count: 5, pct: '10%', color: CHART_COLORS.red, dots: 1 },
-                    ].map(r => (
-                      <div key={r.label} className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                        <span className="text-[11px] text-[#64748B] flex-1">{r.label}</span>
-                        <span className="text-[12px] font-semibold text-[#0F172A]">{r.count} 户</span>
-                        <span className="text-[10px] text-[#94A3B8]">{r.pct}</span>
+            {/* 2. Tier board */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-semibold text-[#0F172A]">预警分层与趋势</span>
+                  <span className="text-[9px] text-[#94A3B8] ml-2">优先查看高优先级预警与新增预警</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-6 text-[9px] text-[#64748B]">切换维度</Button>
+              </div>
+              <div className="p-3 space-y-1.5">
+                {WARN_TIERS.map(tier => {
+                  const TIcon = TR_ICON[tier.trend];
+                  return (
+                    <div key={tier.level} className="flex items-center gap-3 rounded-lg border border-[#F1F5F9] bg-[#FAFBFF] px-3 py-2 hover:bg-[#EFF6FF]/30 transition-colors cursor-pointer"
+                      onClick={() => { setAlertLevelFilter(tier.level === '一般预警' ? '一般' : tier.level === '重点预警' ? '重点' : '高'); }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge className={cn('text-[7px] border', LEVEL_STYLE[tier.level])}>{tier.level}</Badge>
+                          <span className="text-[9px] text-[#64748B]">主要类型: {tier.mainType}</span>
+                        </div>
+                        <div className="text-[9px] text-[#94A3B8] mt-0.5">建议: {tier.action}</div>
+                      </div>
+                      <div className="text-right shrink-0 w-16">
+                        <div className="text-[12px] font-bold text-[#0F172A]">{tier.count} 条</div>
+                        <div className="text-[9px] text-[#64748B]">涉及 {tier.objects} 个对象</div>
+                      </div>
+                      <div className="shrink-0 w-10 text-right"><div className="text-[11px] font-bold text-[#0F172A]">{tier.pct}%</div></div>
+                      <div className={cn('shrink-0 flex items-center gap-0.5 text-[9px]', TR_CLR[tier.trend])}>
+                        <TIcon size={10} />{tier.trend}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3-column: Objects + Anomalies + AI */}
+            <div className="grid grid-cols-[240px_1fr_250px] gap-3" style={{ minHeight: 460 }}>
+
+              {/* COL 1: Key alert objects */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-3 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">重点预警对象</span>
+                  <p className="text-[9px] text-[#94A3B8] mt-0.5">重点关注预警等级与影响范围</p>
+                </div>
+                <div className="px-2 py-1.5 border-b border-[#F1F5F9] flex items-center gap-1.5">
+                  <select className="h-5 rounded border border-[#E2E8F0] bg-[#F8FAFC] px-1 text-[9px] text-[#334155] flex-1" value={alertLevelFilter} onChange={e => setAlertLevelFilter(e.target.value)}>
+                    <option value="all">全部等级</option><option value="高">高优/已升级</option><option value="重点">重点</option><option value="一般">一般</option>
+                  </select>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredAlerts.map(obj => {
+                    const isActive = activeAlert?.id === obj.id;
+                    return (
+                      <div key={obj.id} onClick={() => setSelectedAlertId(obj.id)}
+                        className={cn('px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all', isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]')}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[11px] font-semibold text-[#0F172A] truncate">{obj.name}</span>
+                          <Badge className={cn('text-[7px] border', LEVEL_STYLE[obj.alertLevel])}>{obj.alertLevel}</Badge>
+                        </div>
+                        <div className="text-[9px] text-[#64748B] mb-1">{obj.objType} · {obj.source}</div>
+                        <div className="flex items-center gap-1.5 mb-1 text-[8px]">
+                          <Badge className={cn('text-[7px] border', STATUS_STYLE[obj.status])}>{obj.status}</Badge>
+                          {obj.needConfirm && <Badge className="text-[7px] bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]">需确认</Badge>}
+                        </div>
+                        <div className="flex items-center justify-between text-[8px] text-[#94A3B8]">
+                          <span>{obj.impact}</span>
+                          <span>{obj.updatedAt}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <Button variant="outline" size="sm" className="h-5 text-[8px] px-1.5 gap-0.5 border-[#BFDBFE] text-[#2563EB]" onClick={e => e.stopPropagation()}>详情</Button>
+                          {obj.inDisposal ? (
+                            <Badge className="text-[7px] bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]">处置中</Badge>
+                          ) : (
+                            <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#C2410C]" onClick={e => { e.stopPropagation(); onModuleChange('actions'); }}>处置</Button>
+                          )}
+                          <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#64748B]"><Star size={8} /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredAlerts.length === 0 && (
+                    <div className="text-center py-8 space-y-1">
+                      <CheckCircle2 size={18} className="text-[#A7F3D0] mx-auto" />
+                      <div className="text-[10px] text-[#047857]">当前筛选下暂无预警</div>
+                      <div className="text-[9px] text-[#94A3B8]">建议调整筛选条件</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* COL 2: Anomaly + detail */}
+              <div className="space-y-3 overflow-hidden flex flex-col">
+                {/* Active alert detail */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex-1 flex flex-col">
+                  <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">预警详情</span>
+                    <div className="flex items-center gap-1.5">
+                      <Badge className={cn('text-[7px] border', LEVEL_STYLE[activeAlert.alertLevel])}>{activeAlert.alertLevel}</Badge>
+                      <Badge className={cn('text-[7px] border', STATUS_STYLE[activeAlert.status])}>{activeAlert.status}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                    <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] pb-2 border-b border-[#F1F5F9]">
+                      <div><span className="text-[#94A3B8]">对象</span> <span className="text-[#0F172A] font-medium">{activeAlert.name}</span></div>
+                      <div><span className="text-[#94A3B8]">类型</span> <span className="text-[#0F172A]">{activeAlert.objType}</span></div>
+                      <div><span className="text-[#94A3B8]">来源</span> <span className="text-[#0F172A]">{activeAlert.source}</span></div>
+                      <div><span className="text-[#94A3B8]">预警类型</span> <span className="text-[#0F172A]">{activeAlert.alertType}</span></div>
+                      <div><span className="text-[#94A3B8]">触发时间</span> <span className="text-[#0F172A]">{activeAlert.triggeredAt}</span></div>
+                      <div><span className="text-[#94A3B8]">影响范围</span> <span className="text-[#DC2626] font-medium">{activeAlert.impact}</span></div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-semibold text-[#0F172A]">处理信息</div>
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px]">
+                        <div><span className="text-[#94A3B8]">建议动作</span> <span className="text-[#0F172A] font-medium">{activeAlert.suggestion}</span></div>
+                        <div><span className="text-[#94A3B8]">是否已处置</span> <span className={activeAlert.inDisposal ? 'text-[#C2410C]' : 'text-[#64748B]'}>{activeAlert.inDisposal ? '是' : '否'}</span></div>
+                        <div><span className="text-[#94A3B8]">需人工确认</span> <span className={activeAlert.needConfirm ? 'text-[#7C3AED]' : 'text-[#64748B]'}>{activeAlert.needConfirm ? '是' : '否'}</span></div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Eye size={9} />查看详情</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FCA5A5] text-[#DC2626]" onClick={() => onModuleChange('actions')}><Send size={9} />进入处置</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Star size={9} />重点关注</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => onModuleChange('signals')}><Activity size={9} />查看指标</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => onModuleChange('probe')}><Shield size={9} />查看风险</Button>
+                      {activeAlert.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />人工确认</Button>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Anomaly & pending items */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+                  <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold text-[#0F172A]">异常关注与待处理</span>
+                      <span className="text-[9px] text-[#94A3B8] ml-2">如异常持续增加建议进入处置推进</span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-6 text-[9px] gap-1 text-[#64748B]"><Download size={9} />待处理清单</Button>
+                  </div>
+                  <div className="divide-y divide-[#F1F5F9] max-h-[200px] overflow-y-auto">
+                    {ANOMALY_ITEMS.map(item => (
+                      <div key={item.name} className="px-4 py-2.5 hover:bg-[#FAFBFF] transition-colors">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-[#0F172A]">{item.name}</span>
+                            <Badge className={cn('text-[7px] border', SEV_STYLE[item.severity])}>{item.severity}</Badge>
+                            {item.blocking && <Badge className="text-[7px] bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]">阻塞</Badge>}
+                          </div>
+                          <span className="text-[8px] text-[#94A3B8]">{item.objects} 个对象</span>
+                        </div>
+                        <div className="text-[9px] text-[#64748B] mb-1">{item.summary}</div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className="text-[7px] bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]">{item.status}</Badge>
+                          <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#2563EB]"
+                            onClick={() => {
+                              if (item.targetPage === '还款表现') onModuleChange('repayment');
+                              else if (item.targetPage === '风险监控') onModuleChange('probe');
+                              else if (item.targetPage === '规则效果') onModuleChange('quality');
+                              else if (item.targetPage === '处置任务') onModuleChange('actions');
+                              else if (item.targetPage === '指标监测') onModuleChange('signals');
+                            }}>{item.targetPage} →</Button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-                <div className="text-[13px] font-semibold text-[#0F172A]">逾期率趋势（近 7 天）</div>
-                <TrendLineChart
-                  data={TREND_7D.map(d => ({ name: d.name, actual: d.rate, threshold: 5 }))}
-                  lines={[
-                    { key: 'actual', color: CHART_COLORS.red, label: '逾期率 (%)' },
-                    { key: 'threshold', color: CHART_COLORS.amber, label: '阈值线', dashed: true },
-                  ]}
-                  height={160}
-                />
+              {/* COL 3: AI judgment */}
+              <div className="space-y-3">
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
+                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
+                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
+                        当前监控整体处于可控范围内，但部分高优先级预警与新增异常对象正在上升，建议优先下钻处理。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">预警摘要</div>
+                      <p className="text-[9px] text-[#475569] leading-4">
+                        一般预警数量整体稳定，重点预警与待处理事项集中在少数对象与特定异常类型上，当前已出现局部风险升级迹象。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">监控整体结论</div>
+                      {(() => {
+                        const health = 62;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${health}%`, backgroundColor: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }} /></div>
+                            <span className="text-[10px] font-bold" style={{ color: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }}>健康度 {health}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要关注提示</div>
+                      <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
+                        <div>· 高优先级预警 {highPriCount} 条需优先处理</div>
+                        <div>· 还款预警集中上升，涉及 8 个对象</div>
+                        <div>· 待处理任务存在 48 小时积压</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
+                      <p className="text-[10px] text-[#7C3AED] font-medium">
+                        建议优先查看高优先级预警对象与待处理积压项，并结合指标监测与风险识别结果判断是否需要进入处置作业。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
+                      <p className="text-[10px] text-[#475569]">{activeAlert.alertLevel === '高优先级预警' || activeAlert.alertLevel === '已升级风险' ? '处置作业' : '指标监测'}</p>
+                    </div>
+
+                    {activeAlert.needConfirm && (
+                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
+                        该预警存在边界判断或冲突信号，建议人工确认。
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" onClick={() => onModuleChange('signals')}><Activity size={10} />进入指标监测</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full" onClick={() => onModuleChange('probe')}><Shield size={10} />进入风险识别</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('actions')}><Send size={10} />进入处置作业</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full"><UserCheck size={10} />人工确认</Button>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Risk level trend line chart (30 day) */}
-            <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-              <div className="text-[13px] font-semibold text-[#0F172A]">风险等级变化趋势（近 30 天）</div>
-              <TrendLineChart
-                data={[
-                  { name: '第 1 周', low: 28, mid: 12, high: 3 },
-                  { name: '第 2 周', low: 29, mid: 13, high: 4 },
-                  { name: '第 3 周', low: 30, mid: 14, high: 4 },
-                  { name: '第 4 周', low: 30, mid: 15, high: 5 },
-                ]}
-                lines={[
-                  { key: 'low', color: CHART_COLORS.emerald, label: '低风险' },
-                  { key: 'mid', color: CHART_COLORS.amber, label: '中风险' },
-                  { key: 'high', color: CHART_COLORS.red, label: '高风险' },
-                ]}
-                height={180}
-              />
-            </div>
-
-            {/* Risk watch list */}
-            <WorkbenchPanel title="风险关注清单" badge={<Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-[10px]">{SAMPLES.filter(s => s.riskFlags.length > 0).length} 家关注</Badge>}>
-              <div className="divide-y divide-[#F1F5F9]">
-                {SAMPLES.filter(s => s.riskFlags.length > 0).map(s => (
-                  <button key={s.id} onClick={() => selectSample(s.id)} className={cn('w-full flex items-center justify-between py-2.5 px-2 -mx-2 text-left rounded-lg transition-colors', s.id === selectedSampleId ? 'bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]')}>
-                    <div className="min-w-0">
-                      <div className={cn('text-[12px] font-medium truncate', s.id === selectedSampleId ? 'text-[#2563EB]' : 'text-[#0F172A]')}>{s.shortName}</div>
-                      <div className="text-[10px] text-[#94A3B8]">{s.roleInChain} · {s.riskFlags.join('、')}</div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge className={cn('text-[9px] border', s.riskStatus === '中度预警' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]' : s.riskStatus === '观察' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]')}>{s.riskStatus}</Badge>
-                      <span className="text-[11px] font-medium text-[#0F172A]">{s.currentLimit}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </WorkbenchPanel>
 
             {active && <ActionBar />}
           </div>
         );
+      }
 
       /* ════════════════════════════════════════════════════════════════════
-         PAGE 2: 监控指标 (Rule Engine)
+         PAGE 2: 指标监测 (5 区工作台)
          ════════════════════════════════════════════════════════════════════ */
-      case 'signals':
+      case 'signals': {
+        type MetricLevel = '正常指标' | '轻微波动指标' | '异常指标' | '高关注指标';
+        type WaveType = '上升异常' | '下降异常' | '持续波动' | '阈值突破' | '集中偏离';
+        type MetricStatus = '正常' | '轻微波动' | '异常' | '高关注' | '待确认';
+        type SeverityLvl = '低' | '中' | '高';
+        type MetricType = '预警数量类指标' | '风险识别类指标' | '处置效率类指标' | '规则命中类指标' | '还款波动类指标' | '资产活跃类指标';
+        type MetricTrend = '上升' | '持平' | '下降' | '波动';
+
+        interface MetricTier { level: MetricLevel; count: number; pct: number; trend: MetricTrend; waveType: WaveType; impact: string; action: string }
+        interface MonitorMetric {
+          id: string; name: string; type: MetricType; module: string; period: string;
+          currentVal: string; threshold: string; deviation: string; trend: MetricTrend; updatedAt: string;
+          status: MetricStatus; severity: SeverityLvl; impact: string; suggestion: string;
+          conclusion: string; historyNote: string; relatedRisk: string; toRiskIdent: boolean; toRuleEval: boolean; needConfirm: boolean;
+        }
+
+        const METRIC_TIERS: MetricTier[] = [
+          { level: '正常指标', count: 18, pct: 45, trend: '持平', waveType: '持续波动', impact: '无直接影响', action: '持续观察' },
+          { level: '轻微波动指标', count: 10, pct: 25, trend: '波动', waveType: '阈值突破', impact: '影响预警数量', action: '下钻异常详情' },
+          { level: '异常指标', count: 8, pct: 20, trend: '上升', waveType: '上升异常', impact: '影响风险识别', action: '联动风险识别' },
+          { level: '高关注指标', count: 4, pct: 10, trend: '上升', waveType: '集中偏离', impact: '影响处置优先级', action: '进入处置作业' },
+        ];
+
+        const METRIC_ITEMS: MonitorMetric[] = [
+          { id: 'mt-01', name: '预警增长率', type: '预警数量类指标', module: '预警总览', period: '近 7 天', currentVal: '+18.5%', threshold: '≤10%', deviation: '超出 8.5pp', trend: '上升', updatedAt: '30分钟前', status: '高关注', severity: '高', impact: '预警数量持续增加，影响整体处置节奏', suggestion: '联动风险识别', conclusion: '当前指标在短期内出现明显偏离，已超出稳定波动范围', historyNote: '近 30 天从 8.2% 上升至 18.5%', relatedRisk: '可能导致处置任务积压', toRiskIdent: true, toRuleEval: false, needConfirm: false },
+          { id: 'mt-02', name: '风险升级率', type: '风险识别类指标', module: '风险识别', period: '近 7 天', currentVal: '6.8%', threshold: '≤4%', deviation: '超出 2.8pp', trend: '上升', updatedAt: '1小时前', status: '异常', severity: '高', impact: '风险升级速度加快，涉及 6 个对象', suggestion: '进入风险识别', conclusion: '已形成明显异常，风险从中度向高度转化加速', historyNote: '上期 3.5%，本期 6.8%', relatedRisk: '关联高优先级预警上升', toRiskIdent: true, toRuleEval: true, needConfirm: false },
+          { id: 'mt-03', name: '处置闭环时效', type: '处置效率类指标', module: '处置作业', period: '近 30 天', currentVal: '3.8 天', threshold: '≤2.5 天', deviation: '超时 1.3 天', trend: '上升', updatedAt: '2小时前', status: '异常', severity: '中', impact: '处置效率下降，部分任务 48 小时未闭环', suggestion: '进入处置作业', conclusion: '出现短期波动，处置积压增加', historyNote: '上月平均 2.1 天', relatedRisk: '可能导致风险进一步升级', toRiskIdent: false, toRuleEval: false, needConfirm: false },
+          { id: 'mt-04', name: '规则命中集中度', type: '规则命中类指标', module: '规则评估', period: '近 7 天', currentVal: '72%', threshold: '≤50%', deviation: '超出 22pp', trend: '上升', updatedAt: '3小时前', status: '高关注', severity: '高', impact: '少数规则集中命中，可能存在规则冗余', suggestion: '进入规则评估', conclusion: '存在集中偏离，规则有效性需复核', historyNote: '上期 48%，本期 72%', relatedRisk: '规则判断质量下降', toRiskIdent: false, toRuleEval: true, needConfirm: true },
+          { id: 'mt-05', name: '还款逾期率', type: '还款波动类指标', module: '还款表现', period: '近 7 天', currentVal: '4.5%', threshold: '≤3%', deviation: '超出 1.5pp', trend: '上升', updatedAt: '4小时前', status: '异常', severity: '中', impact: '轻微逾期与持续逾期同步增加', suggestion: '联动风险识别', conclusion: '出现短期波动，逾期资产扩面', historyNote: '近 30 天从 2.8% 升至 4.5%', relatedRisk: '影响资产质量和回款节奏', toRiskIdent: true, toRuleEval: false, needConfirm: false },
+          { id: 'mt-06', name: '资产活跃度', type: '资产活跃类指标', module: '在营资产', period: '近 30 天', currentVal: '78%', threshold: '≥85%', deviation: '低于 7pp', trend: '下降', updatedAt: '5小时前', status: '轻微波动', severity: '低', impact: '部分对象活跃度持续下降', suggestion: '持续观察', conclusion: '该指标存在轻微波动，尚未形成持续异常', historyNote: '上月 84%，本月 78%', relatedRisk: '可能影响后续识别质量', toRiskIdent: false, toRuleEval: false, needConfirm: false },
+          { id: 'mt-07', name: '回款周期偏离', type: '还款波动类指标', module: '还款表现', period: '近 30 天', currentVal: '+38%', threshold: '≤20%', deviation: '超出 18pp', trend: '上升', updatedAt: '6小时前', status: '高关注', severity: '高', impact: '涉及 12 户回款周期拉长', suggestion: '进入处置作业', conclusion: '已形成明显异常', historyNote: '连续 3 个月上升', relatedRisk: '直接影响还款表现与风险判断', toRiskIdent: true, toRuleEval: false, needConfirm: false },
+          { id: 'mt-08', name: '预警误报率', type: '规则命中类指标', module: '规则评估', period: '近 30 天', currentVal: '22%', threshold: '≤15%', deviation: '超出 7pp', trend: '波动', updatedAt: '1天前', status: '轻微波动', severity: '中', impact: '可能增加人工确认成本', suggestion: '进入规则评估', conclusion: '存在边界波动待确认', historyNote: '上月 18%', relatedRisk: '影响规则判断质量', toRiskIdent: false, toRuleEval: true, needConfirm: true },
+          { id: 'mt-09', name: '新增监控覆盖率', type: '预警数量类指标', module: '预警总览', period: '本月', currentVal: '92%', threshold: '≥90%', deviation: '达标', trend: '持平', updatedAt: '1天前', status: '正常', severity: '低', impact: '覆盖度良好', suggestion: '持续观察', conclusion: '当前指标表现稳定', historyNote: '连续 3 月保持 90% 以上', relatedRisk: '无', toRiskIdent: false, toRuleEval: false, needConfirm: false },
+          { id: 'mt-10', name: '风险确认转化率', type: '风险识别类指标', module: '风险识别', period: '近 30 天', currentVal: '61%', threshold: '≥55%', deviation: '达标', trend: '持平', updatedAt: '2天前', status: '正常', severity: '低', impact: '转化效率正常', suggestion: '持续观察', conclusion: '当前指标表现稳定', historyNote: '上月 58%', relatedRisk: '无', toRiskIdent: false, toRuleEval: false, needConfirm: false },
+        ];
+
+        const LEVEL_MT: Record<MetricLevel, string> = {
+          '正常指标': 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]',
+          '轻微波动指标': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '异常指标': 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+          '高关注指标': 'bg-[#450A0A] text-white border-[#991B1B]',
+        };
+        const STATUS_MT: Record<MetricStatus, string> = {
+          '正常': 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]',
+          '轻微波动': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '异常': 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+          '高关注': 'bg-[#450A0A] text-white border-[#991B1B]',
+          '待确认': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
+        };
+        const SEV_MT: Record<SeverityLvl, string> = { '高': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]', '中': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]', '低': 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]' };
+        const TR_MT_ICON: Record<MetricTrend, typeof TrendingUp> = { '上升': TrendingUp, '持平': ArrowRight, '下降': TrendingDown, '波动': Zap };
+        const TR_MT_CLR: Record<MetricTrend, string> = { '上升': 'text-[#DC2626]', '持平': 'text-[#64748B]', '下降': 'text-[#047857]', '波动': 'text-[#F59E0B]' };
+
+        const totalMetrics = METRIC_TIERS.reduce((s, t) => s + t.count, 0);
+        const normalCount = METRIC_TIERS[0].count;
+        const abnormalCount = METRIC_ITEMS.filter(m => m.status === '异常').length;
+        const waveCount = METRIC_ITEMS.filter(m => m.status === '轻微波动').length;
+        const highCount = METRIC_ITEMS.filter(m => m.status === '高关注').length;
+        const pendingMt = METRIC_ITEMS.filter(m => m.needConfirm || m.status === '异常' || m.status === '高关注').length;
+
+        const filteredMetrics = METRIC_ITEMS.filter(m => {
+          if (metricStatusFilter === 'all') return true;
+          return m.status === metricStatusFilter;
+        });
+        const activeMt = filteredMetrics.find(m => m.id === selectedMetricId) ?? filteredMetrics[0] ?? METRIC_ITEMS[0];
+
         return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Settings size={14} className="text-[#2563EB]" />
-                <span className="text-[13px] font-semibold text-[#0F172A]">监控指标</span>
-                <span className="text-[11px] text-[#94A3B8]">共 {MONITORING_RULES.length} 条规则</span>
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">指标监测</h2>
+                <p className="text-[11px] text-[#64748B] mt-0.5">统一查看核心监测指标的当前表现、变化趋势与异常波动，辅助异常判断与后续处置。</p>
               </div>
-              <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white">
-                <Plus size={10} /> 添加规则
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新指标结果</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出指标清单</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看监测规则</Button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MetricCard label="启用规则" value={`${MONITORING_RULES.filter(r => r.status === '启用').length} 条`} detail="正在生效" tone="green" />
-              <MetricCard label="禁用规则" value={`${MONITORING_RULES.filter(r => r.status === '禁用').length} 条`} detail="暂停监控" tone="slate" />
-              <MetricCard label="本月总触发" value={`${MONITORING_RULES.reduce((s, r) => s + r.hitCount, 0)} 次`} detail="所有启用规则" tone="amber" />
-              <MetricCard label="平均命中率" value={`${(MONITORING_RULES.reduce((s, r) => s + parseFloat(r.hitRate), 0) / MONITORING_RULES.length).toFixed(1)}%`} detail="基于在营资产" tone="blue" />
-            </div>
-
-            {/* Rule table */}
-            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
-              <div className="grid grid-cols-[1fr_80px_100px_80px_70px_80px_100px] gap-0 px-4 py-2.5 border-b border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-medium text-[#94A3B8] uppercase tracking-wider">
-                <div>规则名称</div><div>阈值</div><div>触发条件</div><div>状态</div><div>命中率</div><div>触发次数</div><div>操作</div>
-              </div>
-              {MONITORING_RULES.map(rule => (
-                <div key={rule.id} className="grid grid-cols-[1fr_80px_100px_80px_70px_80px_100px] gap-0 px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 items-center hover:bg-[#FAFBFF] transition-colors">
-                  <div>
-                    <div className="text-[12px] font-medium text-[#0F172A]">{rule.name}</div>
-                    <div className="text-[10px] text-[#94A3B8] mt-0.5">类型: {rule.type} · 最近触发: {rule.lastTriggered}</div>
-                  </div>
-                  <div className="text-[11px] font-mono text-[#334155]">{rule.threshold}</div>
-                  <div className="text-[11px] text-[#64748B]">{rule.trigger}</div>
-                  <div>
-                    <Badge className={cn('text-[9px] border', rule.status === '启用' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]')}>
-                      {rule.status === '启用' ? <><Power size={8} className="mr-0.5" /> 启用</> : '禁用'}
-                    </Badge>
-                  </div>
-                  <div className="text-[11px] font-semibold text-[#0F172A]">{rule.hitRate}</div>
-                  <div className="text-[11px] text-[#64748B]">{rule.hitCount} 次/月</div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5 text-[#2563EB]"><Edit size={10} /></Button>
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5 text-[#94A3B8]"><Trash2 size={10} /></Button>
-                  </div>
+            {/* 1. Overview cards */}
+            <div className="grid grid-cols-6 gap-3">
+              {[
+                { label: '监测指标总数', value: `${totalMetrics}`, desc: '纳入统一监测', icon: Activity, color: 'text-[#2563EB]' },
+                { label: '正常指标', value: `${normalCount}`, desc: '处于正常区间', icon: CheckCircle2, color: 'text-[#047857]' },
+                { label: '异常指标', value: `${abnormalCount}`, desc: '偏离正常区间', icon: AlertTriangle, color: 'text-[#DC2626]' },
+                { label: '波动指标', value: `${waveCount}`, desc: '需持续观察', icon: Zap, color: 'text-[#F59E0B]' },
+                { label: '高关注指标', value: `${highCount}`, desc: '建议优先跟踪', icon: Star, color: 'text-[#991B1B]' },
+                { label: '待处理指标', value: `${pendingMt}`, desc: '需确认或干预', icon: Clock, color: 'text-[#C2410C]' },
+              ].map(c => (
+                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
+                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
+                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
+                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
                 </div>
               ))}
             </div>
 
-            {/* Add rule hint */}
-            <div className="rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 text-center">
-              <div className="text-[11px] text-[#94A3B8]">点击"添加规则"可配置新的监控指标</div>
-              <div className="mt-1 text-[10px] text-[#CBD5E1]">支持逾期、还款异常、流水异常等多种规则类型 · 配置阈值和触发条件后即时生效</div>
+            {/* 2. Tier board */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-semibold text-[#0F172A]">指标分层与趋势</span>
+                  <span className="text-[9px] text-[#94A3B8] ml-2">重点关注阈值偏离程度与波动集中情况</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-6 text-[9px] text-[#64748B]">切换维度</Button>
+              </div>
+              <div className="p-3 space-y-1.5">
+                {METRIC_TIERS.map(tier => {
+                  const TIcon = TR_MT_ICON[tier.trend];
+                  return (
+                    <div key={tier.level} className="flex items-center gap-3 rounded-lg border border-[#F1F5F9] bg-[#FAFBFF] px-3 py-2 hover:bg-[#EFF6FF]/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (tier.level === '正常指标') setMetricStatusFilter('正常');
+                        else if (tier.level === '轻微波动指标') setMetricStatusFilter('轻微波动');
+                        else if (tier.level === '异常指标') setMetricStatusFilter('异常');
+                        else setMetricStatusFilter('高关注');
+                      }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge className={cn('text-[7px] border', LEVEL_MT[tier.level])}>{tier.level}</Badge>
+                          <span className="text-[9px] text-[#64748B]">{tier.waveType} · {tier.impact}</span>
+                        </div>
+                        <div className="text-[9px] text-[#94A3B8] mt-0.5">建议: {tier.action}</div>
+                      </div>
+                      <div className="text-right shrink-0 w-14">
+                        <div className="text-[12px] font-bold text-[#0F172A]">{tier.count}</div>
+                        <div className="text-[9px] text-[#64748B]">{tier.pct}%</div>
+                      </div>
+                      <div className={cn('shrink-0 flex items-center gap-0.5 text-[9px]', TR_MT_CLR[tier.trend])}>
+                        <TIcon size={10} />{tier.trend}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3-column: List + Detail + AI */}
+            <div className="grid grid-cols-[230px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
+
+              {/* COL 1: Metric list */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-3 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">重点指标列表</span>
+                  <p className="text-[9px] text-[#94A3B8] mt-0.5">关注当前值、趋势与异常等级</p>
+                </div>
+                <div className="px-2 py-1.5 border-b border-[#F1F5F9] flex items-center gap-1.5">
+                  <select className="h-5 rounded border border-[#E2E8F0] bg-[#F8FAFC] px-1 text-[9px] text-[#334155] flex-1" value={metricStatusFilter} onChange={e => setMetricStatusFilter(e.target.value)}>
+                    <option value="all">全部状态</option><option value="高关注">高关注</option><option value="异常">异常</option><option value="轻微波动">轻微波动</option><option value="正常">正常</option><option value="待确认">待确认</option>
+                  </select>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredMetrics.map(m => {
+                    const isActive = activeMt?.id === m.id;
+                    const TrIcon = TR_MT_ICON[m.trend];
+                    return (
+                      <div key={m.id} onClick={() => setSelectedMetricId(m.id)}
+                        className={cn('px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all', isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]')}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[11px] font-semibold text-[#0F172A] truncate">{m.name}</span>
+                          <Badge className={cn('text-[7px] border', STATUS_MT[m.status])}>{m.status}</Badge>
+                        </div>
+                        <div className="text-[9px] text-[#64748B] mb-0.5">{m.type} · {m.module}</div>
+                        <div className="flex items-center justify-between text-[9px]">
+                          <span className="font-mono text-[#0F172A] font-medium">{m.currentVal}</span>
+                          <span className="text-[#94A3B8]">阈值 {m.threshold}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <div className={cn('flex items-center gap-0.5 text-[8px]', TR_MT_CLR[m.trend])}>
+                            <TrIcon size={8} />{m.trend}
+                          </div>
+                          <Badge className={cn('text-[7px] border', SEV_MT[m.severity])}>{m.severity}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <Button variant="outline" size="sm" className="h-5 text-[8px] px-1.5 gap-0.5 border-[#BFDBFE] text-[#2563EB]" onClick={e => e.stopPropagation()}>详情</Button>
+                          <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#64748B]"><Star size={8} /></Button>
+                          <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#64748B]"><TrendingUp size={8} /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredMetrics.length === 0 && (
+                    <div className="text-center py-8 space-y-1">
+                      <CheckCircle2 size={18} className="text-[#A7F3D0] mx-auto" />
+                      <div className="text-[10px] text-[#047857]">当前筛选下暂无命中指标</div>
+                      <div className="text-[9px] text-[#94A3B8]">建议调整筛选条件</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* COL 2: Metric detail */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">当前指标详情</span>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className={cn('text-[7px] border', STATUS_MT[activeMt.status])}>{activeMt.status}</Badge>
+                    <Badge className={cn('text-[7px] border', SEV_MT[activeMt.severity])}>{activeMt.severity}</Badge>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {/* Basic info */}
+                  <div>
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1.5">指标信息</div>
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-[9px]">
+                      <div><span className="text-[#94A3B8]">名称</span> <span className="text-[#0F172A] font-medium">{activeMt.name}</span></div>
+                      <div><span className="text-[#94A3B8]">类型</span> <span className="text-[#0F172A]">{activeMt.type}</span></div>
+                      <div><span className="text-[#94A3B8]">统计口径</span> <span className="text-[#0F172A]">{activeMt.module} / {activeMt.period}</span></div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1.5">指标表现</div>
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-[9px]">
+                      <div><span className="text-[#94A3B8]">当前值</span> <span className="text-[#0F172A] font-mono font-bold text-[12px]">{activeMt.currentVal}</span></div>
+                      <div><span className="text-[#94A3B8]">阈值</span> <span className="text-[#0F172A]">{activeMt.threshold}</span></div>
+                      <div><span className="text-[#94A3B8]">偏离</span> <span className={activeMt.deviation === '达标' ? 'text-[#047857] font-medium' : 'text-[#DC2626] font-medium'}>{activeMt.deviation}</span></div>
+                      <div className="col-span-3"><span className="text-[#94A3B8]">历史趋势</span> <span className="text-[#475569]">{activeMt.historyNote}</span></div>
+                      <div><span className="text-[#94A3B8]">更新</span> <span className="text-[#64748B]">{activeMt.updatedAt}</span></div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1">异常结论</div>
+                    <p className="text-[10px] text-[#475569] leading-4 bg-[#FAFBFF] rounded px-2 py-1.5 border border-[#F1F5F9]">{activeMt.conclusion}</p>
+                  </div>
+
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1.5">影响与处理</div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[9px]">
+                      <div className="col-span-2"><span className="text-[#94A3B8]">影响范围</span> <span className="text-[#0F172A]">{activeMt.impact}</span></div>
+                      <div className="col-span-2"><span className="text-[#94A3B8]">关联风险</span> <span className="text-[#DC2626]">{activeMt.relatedRisk}</span></div>
+                      <div><span className="text-[#94A3B8]">建议动作</span> <span className="text-[#0F172A] font-medium">{activeMt.suggestion}</span></div>
+                      <div className="flex items-center gap-2">
+                        {activeMt.toRiskIdent && <Badge className="text-[7px] bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]">→ 风险识别</Badge>}
+                        {activeMt.toRuleEval && <Badge className="text-[7px] bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]">→ 规则评估</Badge>}
+                        {activeMt.needConfirm && <Badge className="text-[7px] bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]">需人工确认</Badge>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><TrendingUp size={9} />查看历史趋势</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FCA5A5] text-[#DC2626]" onClick={() => onModuleChange('probe')}><Shield size={9} />进入风险识别</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]" onClick={() => onModuleChange('quality')}><Settings size={9} />进入规则评估</Button>
+                    {activeMt.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FED7AA] text-[#C2410C]"><UserCheck size={9} />标记人工确认</Button>}
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => onModuleChange('actions')}><Send size={9} />加入处置作业</Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* COL 3: AI judgment */}
+              <div className="space-y-3">
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
+                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
+                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
+                        当前监测体系整体较稳定，但少数关键指标已出现集中偏离，需优先关注其后续变化。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">指标监测摘要</div>
+                      <p className="text-[9px] text-[#475569] leading-4">
+                        大多数指标处于正常区间，当前异常主要集中在预警增长、风险信号波动与处置积压相关指标上。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">指标健康度</div>
+                      {(() => {
+                        const health = 58;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${health}%`, backgroundColor: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }} /></div>
+                            <span className="text-[10px] font-bold" style={{ color: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }}>{health}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要波动提示</div>
+                      <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
+                        <div>· 预警增长率 +18.5%，远超阈值</div>
+                        <div>· 规则命中集中度 72%，疑似冗余</div>
+                        <div>· 回款周期偏离 +38%，连续上升</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
+                      <p className="text-[10px] text-[#7C3AED] font-medium">
+                        建议优先查看高关注异常指标的历史趋势与影响范围，并联动风险识别与处置作业判断是否需要进一步干预。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
+                      <p className="text-[10px] text-[#475569]">{activeMt.toRiskIdent ? '风险识别' : activeMt.toRuleEval ? '规则评估' : '处置作业'}</p>
+                    </div>
+
+                    {activeMt.needConfirm && (
+                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
+                        该指标当前存在边界波动，建议人工确认后再决定是否升级处理。
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full" onClick={() => onModuleChange('probe')}><Shield size={10} />进入风险识别</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('actions')}><Send size={10} />进入处置作业</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full" onClick={() => onModuleChange('quality')}><Settings size={10} />进入规则评估</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {active && <ActionBar />}
           </div>
         );
+      }
 
       /* ════════════════════════════════════════════════════════════════════
-         PAGE 3: 处置动作 (Disposal Tasks)
+         PAGE: 处置作业 (5 区工作台)
          ════════════════════════════════════════════════════════════════════ */
-      case 'actions':
+      case 'actions': {
+        type DispStatus = '待处理' | '处理中' | '待确认' | '已升级' | '已关闭' | '已撤销';
+        type DispPri = '高' | '中' | '低';
+        type DispType = '预警处置' | '风险跟进' | '指标异常处理' | '履约异常跟进' | '规则边界确认' | '误报复核' | '升级处置任务';
+        type ClosureStatus = '未闭环' | '部分闭环' | '已闭环' | '待复核';
+
+        interface DispTask {
+          id: string; name: string; type: DispType; sourcePage: string; objName: string; objType: string;
+          status: DispStatus; priority: DispPri; triggeredAt: string; deadline: string; updatedAt: string;
+          handler: string; suggestion: string; escalated: boolean; needConfirm: boolean;
+          summary: string; conclusion: string; triggerReason: string; impact: string; blocking: boolean;
+          progress: string; expectedClose: string; handleResult: string;
+          followUps: { time: string; action: string; handler: string; note: string; result: string }[];
+          closure: ClosureStatus; needTrack: boolean; toRuleEval: boolean;
+        }
+
+        const DISP_TASKS: DispTask[] = [
+          { id: 'dt-01', name: '瑞泰新能源材料-多信号处置', type: '风险跟进', sourcePage: '风险识别', objName: '瑞泰新能源材料', objType: '企业主体', status: '待处理', priority: '高', triggeredAt: '04/09 09:00', deadline: '04/11', updatedAt: '30分钟前', handler: '王敏', suggestion: '立即处理', escalated: false, needConfirm: false, summary: '逾期18天+物流延迟+净流出，5项信号叠加', conclusion: '逾期规则+物流规则+净流出规则命中', triggerReason: '风险识别结果-多信号叠加', impact: '涉及余额¥260万，影响整体资产质量', blocking: true, progress: '待启动', expectedClose: '04/11', handleResult: '持续观察', followUps: [{ time: '04/09 09:05', action: '查看详情', handler: '系统', note: '自动创建任务', result: '异常持续' }], closure: '未闭环', needTrack: true, toRuleEval: false },
+          { id: 'dt-02', name: '王子新材料-经营异常跟进', type: '指标异常处理', sourcePage: '指标监测', objName: '王子新材料', objType: '在营资产', status: '处理中', priority: '高', triggeredAt: '04/08 10:00', deadline: '04/11', updatedAt: '1小时前', handler: '陈立', suggestion: '继续跟进', escalated: false, needConfirm: false, summary: '连续4周净流出+授信骤降+客户集中度偏高', conclusion: '净流出规则+集中度规则命中', triggerReason: '指标异常-经营类信号叠加', impact: '影响经营判断与后续续贷', blocking: false, progress: '已联系客户经理排查', expectedClose: '04/11', handleResult: '已进入重点跟踪', followUps: [{ time: '04/08 11:00', action: '发起跟进', handler: '陈立', note: '已通知客户经理排查', result: '风险缓和' }, { time: '04/09 08:00', action: '补充说明', handler: '陈立', note: '客户反馈短期资金周转', result: '需持续观察' }], closure: '部分闭环', needTrack: true, toRuleEval: false },
+          { id: 'dt-03', name: '驰远物流服务-履约边界确认', type: '规则边界确认', sourcePage: '风险识别', objName: '驰远物流服务', objType: '还款对象', status: '待确认', priority: '中', triggeredAt: '04/08 18:30', deadline: '04/12', updatedAt: '2小时前', handler: '李雪婷', suggestion: '人工确认', escalated: false, needConfirm: true, summary: '运单频次下降35%+回款周期拉长，信号边界', conclusion: '物流延迟规则命中，需判断是否为季节性波动', triggerReason: '风险识别-边界信号', impact: '影响还款跟踪与履约判断', blocking: false, progress: '等待人工确认', expectedClose: '04/12', handleResult: '已发起人工确认', followUps: [{ time: '04/09 07:00', action: '发起人工确认', handler: '系统', note: '自动发起确认请求', result: '需持续观察' }], closure: '未闭环', needTrack: true, toRuleEval: true },
+          { id: 'dt-04', name: '新宙邦科技-规则集中命中复核', type: '误报复核', sourcePage: '规则评估', objName: '新宙邦科技', objType: '规则命中对象', status: '处理中', priority: '中', triggeredAt: '04/07 15:00', deadline: '04/13', updatedAt: '3小时前', handler: '王敏', suggestion: '进入规则评估', escalated: false, needConfirm: false, summary: '客户集中度62%+回款下降，规则交叉命中', conclusion: '集中度+还款规则命中，疑似规则冗余', triggerReason: '规则评估-命中集中度偏高', impact: '影响规则判断质量', blocking: false, progress: '规则评估分析中', expectedClose: '04/13', handleResult: '已进入重点跟踪', followUps: [{ time: '04/08 10:00', action: '查看详情', handler: '王敏', note: '排查规则交叉命中', result: '需持续观察' }], closure: '未闭环', needTrack: false, toRuleEval: true },
+          { id: 'dt-05', name: '科陆储能技术-升级处置', type: '升级处置任务', sourcePage: '风险识别', objName: '科陆储能技术', objType: '企业主体', status: '已升级', priority: '高', triggeredAt: '04/06 16:30', deadline: '04/10', updatedAt: '1天前', handler: '张三', suggestion: '升级处理', escalated: true, needConfirm: false, summary: '逾期+净流出+发票断裂+集中度异常4信号叠加', conclusion: '多维信号已升级', triggerReason: '风险识别-高风险升级', impact: '涉及余额¥180万', blocking: true, progress: '已移交风控团队', expectedClose: '04/10', handleResult: '已升级处理', followUps: [{ time: '04/07 09:00', action: '升级处置', handler: '系统', note: '自动升级至风控', result: '异常持续' }, { time: '04/08 14:00', action: '补充说明', handler: '张三', note: '风控团队已介入', result: '需持续观察' }], closure: '部分闭环', needTrack: true, toRuleEval: false },
+          { id: 'dt-06', name: '佳利包装-活跃下降复核', type: '误报复核', sourcePage: '指标监测', objName: '佳利包装', objType: '指标异常对象', status: '已关闭', priority: '低', triggeredAt: '04/05 10:00', deadline: '04/08', updatedAt: '2天前', handler: '李雪婷', suggestion: '关闭', escalated: false, needConfirm: false, summary: '活跃度下降但已恢复', conclusion: '已确认为季节性波动', triggerReason: '指标监测-活跃下降', impact: '影响有限', blocking: false, progress: '已确认误报', expectedClose: '04/08', handleResult: '已完成闭环', followUps: [{ time: '04/06 11:00', action: '查看详情', handler: '李雪婷', note: '排查活跃下降原因', result: '已确认误报' }, { time: '04/07 09:00', action: '标记误报', handler: '李雪婷', note: '确认为季节性波动', result: '已完成处理' }, { time: '04/07 09:05', action: '关闭任务', handler: '李雪婷', note: '标记闭环', result: '已完成处理' }], closure: '已闭环', needTrack: false, toRuleEval: true },
+          { id: 'dt-07', name: '裕同包装科技-到期提醒', type: '预警处置', sourcePage: '预警总览', objName: '裕同包装科技', objType: '企业主体', status: '待处理', priority: '低', triggeredAt: '04/09 08:00', deadline: '04/15', updatedAt: '6小时前', handler: '张三', suggestion: '持续观察', escalated: false, needConfirm: false, summary: '到期前7天预提醒，活跃度轻微下降', conclusion: '暂无明显风险', triggerReason: '预警总览-到期提醒', impact: '可能影响后续识别质量', blocking: false, progress: '待启动', expectedClose: '04/15', handleResult: '持续观察', followUps: [], closure: '未闭环', needTrack: false, toRuleEval: false },
+        ];
+
+        const DST: Record<DispStatus, string> = {
+          '待处理': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
+          '处理中': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '待确认': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
+          '已升级': 'bg-[#450A0A] text-white border-[#991B1B]',
+          '已关闭': 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]',
+          '已撤销': 'bg-[#F8FAFC] text-[#94A3B8] border-[#E2E8F0]',
+        };
+        const DPR: Record<DispPri, string> = { '高': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]', '中': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]', '低': 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]' };
+        const CLS: Record<ClosureStatus, string> = { '未闭环': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]', '部分闭环': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]', '已闭环': 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]', '待复核': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]' };
+
+        const pendingDispCount = DISP_TASKS.filter(t => t.status === '待处理').length;
+        const highPriDispCount = DISP_TASKS.filter(t => t.priority === '高').length;
+        const inProgressCount = DISP_TASKS.filter(t => t.status === '处理中').length;
+        const confirmDispCount = DISP_TASKS.filter(t => t.needConfirm || t.status === '待确认').length;
+        const closedDispCount = DISP_TASKS.filter(t => t.closure === '已闭环').length;
+        const overtimeCount = DISP_TASKS.filter(t => t.status !== '已关闭' && t.status !== '已撤销' && t.blocking).length;
+
+        const filteredDisp = DISP_TASKS.filter(t => {
+          if (dispStatusFilter === 'all') return true;
+          return t.status === dispStatusFilter;
+        });
+        const activeDisp = filteredDisp.find(t => t.id === selectedDispTaskId) ?? filteredDisp[0] ?? DISP_TASKS[0];
+
         return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertTriangle size={14} className="text-[#C2410C]" />
-                <span className="text-[13px] font-semibold text-[#0F172A]">处置任务下发</span>
-                <span className="text-[11px] text-[#94A3B8]">共 {DISPOSAL_TASKS.length} 个任务</span>
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">处置作业</h2>
+                <p className="text-[11px] text-[#64748B] mt-0.5">统一处理预警、风险与异常事项，支持分派跟进、升级处置与闭环管理。</p>
               </div>
-              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-[#64748B] gap-1"><Search size={10} /> 搜索</Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新任务</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626]"><Send size={10} />批量处置</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出任务清单</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看处置规则</Button>
+              </div>
             </div>
 
-            {/* Architecture boundary notice */}
-            <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5 flex items-center gap-2 text-[11px] text-[#94A3B8]">
-              <Send size={12} className="shrink-0" />
-              <span>本系统仅生成处置策略与任务，实际催收触达（短信/电话/企微）由 CRM 系统或客服平台执行并留痕。</span>
+            {/* 1. Overview cards */}
+            <div className="grid grid-cols-6 gap-3">
+              {[
+                { label: '待处理任务', value: `${pendingDispCount}`, desc: '等待进入处置流程', icon: Clock, color: 'text-[#DC2626]' },
+                { label: '高优先级', value: `${highPriDispCount}`, desc: '建议优先处理', icon: AlertTriangle, color: 'text-[#991B1B]' },
+                { label: '处理中', value: `${inProgressCount}`, desc: '已进入跟进流程', icon: Loader2, color: 'text-[#C2410C]' },
+                { label: '待人工确认', value: `${confirmDispCount}`, desc: '需人工复核', icon: UserCheck, color: 'text-[#7C3AED]' },
+                { label: '已闭环', value: `${closedDispCount}`, desc: '已完成处理', icon: CheckCircle2, color: 'text-[#047857]' },
+                { label: '超时未处理', value: `${overtimeCount}`, desc: '需重点关注', icon: Bell, color: 'text-[#DC2626]' },
+              ].map(c => (
+                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
+                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
+                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
+                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
+                </div>
+              ))}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MetricCard label="待下发" value={`${DISPOSAL_TASKS.filter(t => t.status === '待处理').length} 个`} detail="含高优先级" tone="red" />
-              <MetricCard label="已推送CRM" value={`${DISPOSAL_TASKS.filter(t => t.status === '处理中').length} 个`} detail="CRM跟进中" tone="amber" />
-              <MetricCard label="CRM已完成" value={`${DISPOSAL_TASKS.filter(t => t.status === '已完成').length} 个`} detail="近 30 天" tone="green" />
-              <MetricCard label="平均处置时长" value="2.4 天" detail="从下发到CRM反馈完成" tone="blue" />
-            </div>
+            {/* 3-column: Task List + Detail/Follow-up + AI */}
+            <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 500 }}>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4">
-              {/* Left: Task list */}
-              <div className="space-y-3">
-                {/* Filter bar */}
-                <div className="flex items-center gap-2">
-                  {[
-                    { value: 'all', label: '全部' },
-                    { value: '待处理', label: '待下发' },
-                    { value: '处理中', label: '已推送CRM' },
-                    { value: '已完成', label: 'CRM已完成' },
-                  ].map(opt => (
-                    <button key={opt.value} onClick={() => setTaskStatusFilter(opt.value)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors border', taskStatusFilter === opt.value ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]' : 'text-[#64748B] border-[#E2E8F0] hover:bg-[#F8FAFC]')}>
-                      {opt.label}
-                    </button>
-                  ))}
+              {/* COL 1: Task list */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-3 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">处置任务列表</span>
+                  <p className="text-[9px] text-[#94A3B8] mt-0.5">优先处理高优先级与超时任务</p>
+                </div>
+                <div className="px-2 py-1.5 border-b border-[#F1F5F9]">
+                  <select className="h-5 rounded border border-[#E2E8F0] bg-[#F8FAFC] px-1 text-[9px] text-[#334155] w-full" value={dispStatusFilter} onChange={e => setDispStatusFilter(e.target.value)}>
+                    <option value="all">全部状态</option><option value="待处理">待处理</option><option value="处理中">处理中</option><option value="待确认">待确认</option><option value="已升级">已升级</option><option value="已关闭">已关闭</option>
+                  </select>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredDisp.map(task => {
+                    const isActive = activeDisp?.id === task.id;
+                    return (
+                      <div key={task.id} onClick={() => setSelectedDispTaskId(task.id)}
+                        className={cn('px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all', isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]')}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[10px] font-semibold text-[#0F172A] truncate flex-1">{task.objName}</span>
+                          <Badge className={cn('text-[7px] border shrink-0 ml-1', DST[task.status])}>{task.status}</Badge>
+                        </div>
+                        <div className="text-[8px] text-[#64748B] mb-0.5 truncate">{task.type} · {task.sourcePage}</div>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Badge className={cn('text-[7px] border', DPR[task.priority])}>{task.priority}</Badge>
+                          <Badge className={cn('text-[7px] border', CLS[task.closure])}>{task.closure}</Badge>
+                          {task.needConfirm && <Badge className="text-[7px] bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]">需确认</Badge>}
+                        </div>
+                        <div className="flex items-center justify-between text-[8px] text-[#94A3B8]">
+                          <span>{task.handler}</span>
+                          <span>截止 {task.deadline}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Button variant="outline" size="sm" className="h-5 text-[7px] px-1 gap-0.5 border-[#BFDBFE] text-[#2563EB]" onClick={e => e.stopPropagation()}>详情</Button>
+                          {task.status === '待处理' && <Button variant="ghost" size="sm" className="h-5 text-[7px] px-1 text-[#C2410C]" onClick={e => e.stopPropagation()}>处理</Button>}
+                          <Button variant="ghost" size="sm" className="h-5 text-[7px] px-1 text-[#64748B]"><Star size={7} /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredDisp.length === 0 && (
+                    <div className="text-center py-8 space-y-1">
+                      <CheckCircle2 size={18} className="text-[#A7F3D0] mx-auto" />
+                      <div className="text-[10px] text-[#047857]">暂无待处理的处置任务</div>
+                      <div className="text-[9px] text-[#94A3B8]">建议关注预警、风险与异常指标变化</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* COL 2: Detail + Follow-up */}
+              <div className="space-y-3 flex flex-col overflow-hidden">
+                {/* Detail */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex-1 flex flex-col">
+                  <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">当前处置详情</span>
+                    <div className="flex items-center gap-1.5">
+                      <Badge className={cn('text-[7px] border', DST[activeDisp.status])}>{activeDisp.status}</Badge>
+                      <Badge className={cn('text-[7px] border', DPR[activeDisp.priority])}>{activeDisp.priority}优先级</Badge>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                    <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] pb-2 border-b border-[#F1F5F9]">
+                      <div><span className="text-[#94A3B8]">任务</span> <span className="text-[#0F172A] font-medium">{activeDisp.name}</span></div>
+                      <div><span className="text-[#94A3B8]">类型</span> <span className="text-[#0F172A]">{activeDisp.type}</span></div>
+                      <div><span className="text-[#94A3B8]">来源</span> <span className="text-[#0F172A]">{activeDisp.sourcePage}</span></div>
+                      <div><span className="text-[#94A3B8]">对象</span> <span className="text-[#0F172A]">{activeDisp.objName}</span></div>
+                      <div><span className="text-[#94A3B8]">对象类型</span> <span className="text-[#0F172A]">{activeDisp.objType}</span></div>
+                      <div><span className="text-[#94A3B8]">触发</span> <span className="text-[#0F172A]">{activeDisp.triggeredAt}</span></div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] font-semibold text-[#0F172A] mb-1">异常问题</div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
+                        <div className="col-span-2"><span className="text-[#94A3B8]">摘要</span> <span className="text-[#0F172A]">{activeDisp.summary}</span></div>
+                        <div className="col-span-2"><span className="text-[#94A3B8]">触发原因</span> <span className="text-[#0F172A]">{activeDisp.triggerReason}</span></div>
+                        <div><span className="text-[#94A3B8]">影响</span> <span className="text-[#DC2626]">{activeDisp.impact}</span></div>
+                        <div><span className="text-[#94A3B8]">阻塞后续</span> <span className={activeDisp.blocking ? 'text-[#DC2626] font-medium' : 'text-[#64748B]'}>{activeDisp.blocking ? '是' : '否'}</span></div>
+                      </div>
+                    </div>
+                    <div className="border-t border-[#F1F5F9] pt-2">
+                      <div className="text-[9px] font-semibold text-[#0F172A] mb-1">处理情况</div>
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px]">
+                        <div><span className="text-[#94A3B8]">责任人</span> <span className="text-[#0F172A]">{activeDisp.handler}</span></div>
+                        <div><span className="text-[#94A3B8]">进度</span> <span className="text-[#0F172A]">{activeDisp.progress}</span></div>
+                        <div><span className="text-[#94A3B8]">预计</span> <span className="text-[#0F172A]">{activeDisp.expectedClose}</span></div>
+                        <div><span className="text-[#94A3B8]">结论</span> <span className="text-[#0F172A] font-medium">{activeDisp.handleResult}</span></div>
+                        <div><span className="text-[#94A3B8]">建议</span> <span className="text-[#0F172A]">{activeDisp.suggestion}</span></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Edit size={9} />记录跟进</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />人工确认</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FCA5A5] text-[#DC2626]"><TrendingUp size={9} />升级处置</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BBF7D0] text-[#047857]"><XCircle size={9} />关闭任务</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />来源依据</Button>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Task cards */}
-                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
-                  {filteredTasks.map(task => {
-                    const st = STATUS_TASK_STYLE[task.status];
-                    return (
-                      <div key={task.id} className="px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 hover:bg-[#FAFBFF] transition-colors">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge className={cn('text-[9px] border', st.bg, st.text, st.border)}>
-                              {task.status === '待处理' ? <Clock size={8} className="mr-0.5" /> : task.status === '处理中' ? <Loader2 size={8} className="mr-0.5" /> : <CheckCircle2 size={8} className="mr-0.5" />}
-                              {task.status === '待处理' ? '待下发' : task.status === '处理中' ? '已推送CRM' : 'CRM已完成'}
-                            </Badge>
-                            <span className="text-[12px] font-medium text-[#0F172A]">{task.name}</span>
-                            {task.priority === '高' && <Badge className="bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5] text-[9px]">高优</Badge>}
-                          </div>
-                          <span className="text-[10px] text-[#94A3B8]">{task.manager} · 截止 {task.dueDate}</span>
+                {/* Follow-up timeline */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden" style={{ maxHeight: 200 }}>
+                  <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold text-[#0F172A]">跟进记录与闭环状态</span>
+                      <Badge className={cn('text-[7px] border ml-2', CLS[activeDisp.closure])}>{activeDisp.closure}</Badge>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#2563EB]">补充说明</Button>
+                      <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#047857]">标记闭环</Button>
+                      {activeDisp.toRuleEval && <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#7C3AED]" onClick={() => onModuleChange('quality')}>规则评估</Button>}
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto p-3 space-y-2" style={{ maxHeight: 140 }}>
+                    {activeDisp.followUps.length > 0 ? activeDisp.followUps.map((fu, i) => (
+                      <div key={i} className="flex gap-2">
+                        <div className="flex flex-col items-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#2563EB] mt-1 shrink-0" />
+                          {i < activeDisp.followUps.length - 1 && <div className="w-px flex-1 bg-[#E2E8F0]" />}
                         </div>
-                        <div className="mt-1.5 text-[11px] text-[#64748B]">原因: {task.reason}</div>
-                        <div className="mt-2 flex items-center gap-2">
-                          {task.status === '待处理' && (
-                            <>
-                              <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#DC2626] border-[#FCA5A5]"><Send size={9} /> 生成催收任务推送CRM</Button>
-                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Eye size={9} /> 查看详情</Button>
-                            </>
-                          )}
-                          {task.status === '处理中' && (
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE] text-[9px]">已为{task.manager}在CRM创建催收跟进任务</Badge>
-                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Eye size={9} /> 查看详情</Button>
-                            </div>
-                          )}
-                          {task.status === '已完成' && (
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[9px]">CRM反馈: 处置完成</Badge>
-                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Eye size={9} /> 查看详情</Button>
-                            </div>
+                        <div className="flex-1 min-w-0 pb-1">
+                          <div className="flex items-center gap-1.5 text-[9px]">
+                            <span className="text-[#64748B]">{fu.time}</span>
+                            <Badge className="text-[7px] bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]">{fu.action}</Badge>
+                            <span className="text-[#94A3B8]">{fu.handler}</span>
+                          </div>
+                          <div className="text-[9px] text-[#0F172A] mt-0.5">{fu.note}</div>
+                          <div className="text-[8px] text-[#94A3B8]">结果: {fu.result}</div>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="text-center py-3 text-[9px] text-[#94A3B8]">暂无跟进记录</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* COL 3: AI judgment */}
+              <div className="space-y-3">
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
+                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
+                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
+                        当前任务已具备初步处理基础，但异常影响仍未完全消除，建议持续跟进并结合结果判断是否升级。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">处置摘要</div>
+                      <p className="text-[9px] text-[#475569] leading-4">
+                        该任务来源于近期异常信号上升与风险识别结果，当前已进入处理流程，但仍需补充说明或进一步确认。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">处置优先级</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: activeDisp.priority === '高' ? '85%' : activeDisp.priority === '中' ? '55%' : '25%', backgroundColor: activeDisp.priority === '高' ? '#DC2626' : activeDisp.priority === '中' ? '#F59E0B' : '#64748B' }} /></div>
+                        <span className="text-[10px] font-bold" style={{ color: activeDisp.priority === '高' ? '#DC2626' : activeDisp.priority === '中' ? '#F59E0B' : '#64748B' }}>{activeDisp.priority}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要阻塞提示</div>
+                      <div className={cn('rounded px-2 py-1.5 text-[9px] space-y-0.5', activeDisp.blocking ? 'bg-[#FEF2F2] text-[#DC2626]' : 'bg-[#F8FAFC] text-[#64748B]')}>
+                        {activeDisp.blocking ? (
+                          <>
+                            <div>· 当前任务阻塞后续监控判断</div>
+                            <div>· 建议优先完成处理或升级</div>
+                          </>
+                        ) : (
+                          <div>· 当前任务未阻塞后续动作</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
+                      <p className="text-[10px] text-[#7C3AED] font-medium">
+                        建议优先完成当前跟进动作，并在异常未缓和时发起升级处置；如相关信号已确认误报，可标记闭环并进入规则评估。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
+                      <p className="text-[10px] text-[#475569]">{activeDisp.toRuleEval ? '规则评估' : activeDisp.needConfirm ? '人工确认' : '继续跟进'}</p>
+                    </div>
+
+                    {activeDisp.needConfirm && (
+                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
+                        该任务存在边界判断项，建议人工复核后再决定是否关闭。
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full"><ArrowRight size={10} />继续跟进</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full"><UserCheck size={10} />发起人工确认</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full"><TrendingUp size={10} />升级处置</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" onClick={() => onModuleChange('quality')}><Settings size={10} />进入规则评估</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {active && <ActionBar />}
+          </div>
+        );
+      }
+
+      /* ════════════════════════════════════════════════════════════════════
+         PAGE 3: 风险识别 (5 区工作台)
+         ════════════════════════════════════════════════════════════════════ */
+      case 'probe': {
+        type RiskLevel = '轻度风险信号' | '中度风险关注' | '高风险对象' | '边界待确认对象';
+        type RiskType = '经营异常风险' | '履约异常风险' | '活跃下降风险' | '规则集中命中风险' | '多信号叠加风险' | '异常行为模式风险';
+        type RiskObjStatus = '新识别' | '持续跟踪' | '待确认' | '已升级' | '已关闭';
+        type RiskObjType = '企业主体' | '在营资产' | '还款对象' | '指标异常对象' | '规则命中对象';
+        type RiskTrend = '上升' | '持平' | '下降' | '波动';
+
+        interface RiskTier { level: RiskLevel; count: number; pct: number; trend: RiskTrend; mainType: RiskType; impact: string; action: string }
+        interface RiskObj {
+          id: string; name: string; objType: RiskObjType; source: string; updatedAt: string;
+          riskLevel: RiskLevel; riskType: RiskType; triggeredAt: string; signalCount: number; status: RiskObjStatus;
+          suggestion: string; inDisposal: boolean; needConfirm: boolean;
+          conclusion: string; signals: string; overlap: string; recentChange: string; impact: string;
+          ruleHits: string; relatedMetric: string; relatedAlert: string; toDisposal: boolean;
+        }
+
+        const RISK_TIERS: RiskTier[] = [
+          { level: '轻度风险信号', count: 22, pct: 40, trend: '持平', mainType: '活跃下降风险', impact: '影响预警等级', action: '持续观察' },
+          { level: '中度风险关注', count: 18, pct: 33, trend: '上升', mainType: '履约异常风险', impact: '影响处置优先级', action: '重点跟踪' },
+          { level: '高风险对象', count: 9, pct: 16, trend: '上升', mainType: '多信号叠加风险', impact: '影响资产经营判断', action: '进入处置作业' },
+          { level: '边界待确认对象', count: 6, pct: 11, trend: '波动', mainType: '异常行为模式风险', impact: '影响还款跟踪', action: '发起人工确认' },
+        ];
+
+        const RISK_OBJS: RiskObj[] = [
+          { id: 'ro-01', name: '瑞泰新能源材料', objType: '企业主体', source: '指标监测+规则引擎', updatedAt: '30分钟前', riskLevel: '高风险对象', riskType: '多信号叠加风险', triggeredAt: '04/09 08:30', signalCount: 5, status: '新识别', suggestion: '进入处置', inDisposal: false, needConfirm: false, conclusion: '多维信号叠加，建议升级处理', signals: '逾期18天、物流延迟、净流出、回款下降、活跃度降', overlap: '5 项信号同期触发，叠加强度极高', recentChange: '近 7 天风险信号从 2 项增至 5 项', impact: '涉及余额 ¥260万，影响整体资产质量', ruleHits: '逾期规则+物流规则+净流出规则命中', relatedMetric: '预警增长率+还款逾期率异常', relatedAlert: '高优先级预警 wa-01', toDisposal: true },
+          { id: 'ro-02', name: '王子新材料', objType: '在营资产', source: '指标监测', updatedAt: '1小时前', riskLevel: '高风险对象', riskType: '经营异常风险', triggeredAt: '04/09 07:15', signalCount: 3, status: '持续跟踪', suggestion: '重点跟踪', inDisposal: true, needConfirm: false, conclusion: '已形成较明显风险特征，建议重点跟踪', signals: '连续4周净流出、授信使用率骤降、客户集中度偏高', overlap: '3 项经营类信号叠加', recentChange: '净流出趋势持续，未见缓和迹象', impact: '影响经营判断与后续续贷', ruleHits: '净流出规则+集中度规则命中', relatedMetric: '资产活跃度下降', relatedAlert: '高优先级预警 wa-02', toDisposal: true },
+          { id: 'ro-03', name: '驰远物流服务', objType: '还款对象', source: '还款监控', updatedAt: '2小时前', riskLevel: '中度风险关注', riskType: '履约异常风险', triggeredAt: '04/08 18:00', signalCount: 2, status: '待确认', suggestion: '人工确认', inDisposal: false, needConfirm: true, conclusion: '当前处于边界状态，需人工确认', signals: '运单频次下降35%、回款周期拉长', overlap: '2 项履约信号叠加', recentChange: '物流频次连续 2 周下降', impact: '影响还款跟踪与履约判断', ruleHits: '物流延迟规则命中', relatedMetric: '回款周期偏离+38%', relatedAlert: '重点预警 wa-03', toDisposal: false },
+          { id: 'ro-04', name: '新宙邦科技', objType: '规则命中对象', source: '规则引擎', updatedAt: '3小时前', riskLevel: '中度风险关注', riskType: '规则集中命中风险', triggeredAt: '04/08 14:20', signalCount: 2, status: '持续跟踪', suggestion: '进入规则评估', inDisposal: true, needConfirm: false, conclusion: '已形成较明显风险特征，建议重点跟踪', signals: '客户集中度62%、回款金额下降', overlap: '2 项规则交叉命中', recentChange: '集中度持续上升', impact: '影响规则判断质量', ruleHits: '集中度规则+还款规则命中', relatedMetric: '规则命中集中度72%', relatedAlert: '重点预警 wa-04', toDisposal: false },
+          { id: 'ro-05', name: '盛拓模组科技', objType: '在营资产', source: '还款监控', updatedAt: '5小时前', riskLevel: '中度风险关注', riskType: '履约异常风险', triggeredAt: '04/08 10:00', signalCount: 2, status: '新识别', suggestion: '重点跟踪', inDisposal: false, needConfirm: true, conclusion: '当前处于边界状态，需人工确认', signals: '回款金额连续下降、活跃度轻微下降', overlap: '履约+活跃信号叠加', recentChange: '回款连续 3 期下降', impact: '涉及余额 ¥85万', ruleHits: '还款下降规则命中', relatedMetric: '还款逾期率上升', relatedAlert: '重点预警 wa-05', toDisposal: false },
+          { id: 'ro-06', name: '裕同包装科技', objType: '企业主体', source: '指标监测', updatedAt: '8小时前', riskLevel: '轻度风险信号', riskType: '活跃下降风险', triggeredAt: '04/07 09:30', signalCount: 1, status: '新识别', suggestion: '持续观察', inDisposal: false, needConfirm: false, conclusion: '当前风险信号轻微，建议持续观察', signals: '活跃度下降15%', overlap: '单一信号', recentChange: '近 2 周活跃度持续走低', impact: '可能影响后续识别质量', ruleHits: '暂无规则命中', relatedMetric: '资产活跃度78%', relatedAlert: '一般预警 wa-06', toDisposal: false },
+          { id: 'ro-07', name: '科陆储能技术', objType: '企业主体', source: '多源综合', updatedAt: '1天前', riskLevel: '高风险对象', riskType: '多信号叠加风险', triggeredAt: '04/06 16:00', signalCount: 4, status: '已升级', suggestion: '进入处置', inDisposal: true, needConfirm: false, conclusion: '多维信号叠加，建议升级处理', signals: '逾期+净流出+发票断裂+集中度异常', overlap: '4 项信号交叉叠加', recentChange: '已从中度升级为高风险', impact: '涉及余额 ¥180万', ruleHits: '逾期+净流出+发票规则命中', relatedMetric: '多项指标异常', relatedAlert: '已升级风险 wa-08', toDisposal: true },
+          { id: 'ro-08', name: '佳利包装', objType: '指标异常对象', source: '指标监测', updatedAt: '2天前', riskLevel: '轻度风险信号', riskType: '活跃下降风险', triggeredAt: '04/07 08:00', signalCount: 1, status: '已关闭', suggestion: '持续观察', inDisposal: false, needConfirm: false, conclusion: '当前风险信号轻微，建议持续观察', signals: '证据覆盖率不足', overlap: '单一信号', recentChange: '已恢复稳定', impact: '影响有限', ruleHits: '暂无', relatedMetric: '指标已恢复', relatedAlert: '一般预警 wa-07', toDisposal: false },
+        ];
+
+        const RLVL: Record<RiskLevel, string> = {
+          '轻度风险信号': 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]',
+          '中度风险关注': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '高风险对象': 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+          '边界待确认对象': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
+        };
+        const RSTATUS: Record<RiskObjStatus, string> = {
+          '新识别': 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]',
+          '持续跟踪': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '待确认': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
+          '已升级': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
+          '已关闭': 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]',
+        };
+        const RTR_ICON: Record<RiskTrend, typeof TrendingUp> = { '上升': TrendingUp, '持平': ArrowRight, '下降': TrendingDown, '波动': Zap };
+        const RTR_CLR: Record<RiskTrend, string> = { '上升': 'text-[#DC2626]', '持平': 'text-[#64748B]', '下降': 'text-[#047857]', '波动': 'text-[#F59E0B]' };
+
+        const totalRiskObjs = RISK_TIERS.reduce((s, t) => s + t.count, 0);
+        const newRiskCount = RISK_OBJS.filter(o => o.status === '新识别').length;
+        const highRiskCount = RISK_OBJS.filter(o => o.riskLevel === '高风险对象').length;
+        const borderCount = RISK_OBJS.filter(o => o.riskLevel === '边界待确认对象' || o.needConfirm).length;
+        const pendingDisp = RISK_OBJS.filter(o => o.toDisposal && !o.inDisposal).length;
+        const needConfirmRisk = RISK_OBJS.filter(o => o.needConfirm).length;
+
+        const filteredRiskObjs = RISK_OBJS.filter(o => {
+          if (riskLevelFilter === 'all') return true;
+          if (riskLevelFilter === '高') return o.riskLevel === '高风险对象';
+          if (riskLevelFilter === '中') return o.riskLevel === '中度风险关注';
+          if (riskLevelFilter === '轻') return o.riskLevel === '轻度风险信号';
+          if (riskLevelFilter === '边界') return o.needConfirm;
+          return true;
+        });
+        const activeRO = filteredRiskObjs.find(o => o.id === selectedRiskObjId) ?? filteredRiskObjs[0] ?? RISK_OBJS[0];
+
+        return (
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">风险识别</h2>
+                <p className="text-[11px] text-[#64748B] mt-0.5">统一识别监控对象中的风险信号、异常组合与趋势变化，辅助风险判断与后续处置推进。</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新识别结果</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换识别口径</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出风险对象</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看识别规则</Button>
+              </div>
+            </div>
+
+            {/* 1. Overview cards */}
+            <div className="grid grid-cols-6 gap-3">
+              {[
+                { label: '识别对象总数', value: `${totalRiskObjs}`, desc: '完成识别判断', icon: Shield, color: 'text-[#2563EB]' },
+                { label: '新增风险对象', value: `${newRiskCount}`, desc: '本期新识别', icon: Bell, color: 'text-[#F59E0B]' },
+                { label: '高风险对象', value: `${highRiskCount}`, desc: '建议优先处理', icon: AlertTriangle, color: 'text-[#DC2626]' },
+                { label: '边界风险对象', value: `${borderCount}`, desc: '需进一步确认', icon: Zap, color: 'text-[#7C3AED]' },
+                { label: '待处置对象', value: `${pendingDisp}`, desc: '待进入处置流程', icon: Clock, color: 'text-[#C2410C]' },
+                { label: '需人工确认', value: `${needConfirmRisk}`, desc: '复杂信号需复核', icon: UserCheck, color: 'text-[#7C3AED]' },
+              ].map(c => (
+                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
+                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
+                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
+                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 2. Risk tier board */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-semibold text-[#0F172A]">风险分层与识别趋势</span>
+                  <span className="text-[9px] text-[#94A3B8] ml-2">重点关注多信号叠加与风险上升趋势</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-6 text-[9px] text-[#64748B]">切换维度</Button>
+              </div>
+              <div className="p-3 space-y-1.5">
+                {RISK_TIERS.map(tier => {
+                  const TIcon = RTR_ICON[tier.trend];
+                  return (
+                    <div key={tier.level} className="flex items-center gap-3 rounded-lg border border-[#F1F5F9] bg-[#FAFBFF] px-3 py-2 hover:bg-[#EFF6FF]/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (tier.level === '轻度风险信号') setRiskLevelFilter('轻');
+                        else if (tier.level === '中度风险关注') setRiskLevelFilter('中');
+                        else if (tier.level === '高风险对象') setRiskLevelFilter('高');
+                        else setRiskLevelFilter('边界');
+                      }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge className={cn('text-[7px] border', RLVL[tier.level])}>{tier.level}</Badge>
+                          <span className="text-[9px] text-[#64748B]">{tier.mainType} · {tier.impact}</span>
+                        </div>
+                        <div className="text-[9px] text-[#94A3B8] mt-0.5">建议: {tier.action}</div>
+                      </div>
+                      <div className="text-right shrink-0 w-14">
+                        <div className="text-[12px] font-bold text-[#0F172A]">{tier.count}</div>
+                        <div className="text-[9px] text-[#64748B]">{tier.pct}%</div>
+                      </div>
+                      <div className={cn('shrink-0 flex items-center gap-0.5 text-[9px]', RTR_CLR[tier.trend])}>
+                        <TIcon size={10} />{tier.trend}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3-column: List + Detail + AI */}
+            <div className="grid grid-cols-[230px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
+
+              {/* COL 1: Risk object list */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-3 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">风险对象列表</span>
+                  <p className="text-[9px] text-[#94A3B8] mt-0.5">关注风险等级、类型与建议动作</p>
+                </div>
+                <div className="px-2 py-1.5 border-b border-[#F1F5F9] flex items-center gap-1.5">
+                  <select className="h-5 rounded border border-[#E2E8F0] bg-[#F8FAFC] px-1 text-[9px] text-[#334155] flex-1" value={riskLevelFilter} onChange={e => setRiskLevelFilter(e.target.value)}>
+                    <option value="all">全部等级</option><option value="高">高风险</option><option value="中">中度关注</option><option value="轻">轻度信号</option><option value="边界">边界/待确认</option>
+                  </select>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredRiskObjs.map(obj => {
+                    const isActive = activeRO?.id === obj.id;
+                    return (
+                      <div key={obj.id} onClick={() => setSelectedRiskObjId(obj.id)}
+                        className={cn('px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all', isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]')}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[11px] font-semibold text-[#0F172A] truncate">{obj.name}</span>
+                          <Badge className={cn('text-[7px] border', RLVL[obj.riskLevel])}>{obj.riskLevel}</Badge>
+                        </div>
+                        <div className="text-[9px] text-[#64748B] mb-0.5">{obj.objType} · {obj.source}</div>
+                        <div className="flex items-center gap-1.5 mb-0.5 text-[8px]">
+                          <Badge className={cn('text-[7px] border', RSTATUS[obj.status])}>{obj.status}</Badge>
+                          <span className="text-[#94A3B8]">信号 {obj.signalCount} 项</span>
+                          {obj.needConfirm && <Badge className="text-[7px] bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]">需确认</Badge>}
+                        </div>
+                        <div className="flex items-center justify-between text-[8px] text-[#94A3B8]">
+                          <span>{obj.riskType}</span>
+                          <span>{obj.updatedAt}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <Button variant="outline" size="sm" className="h-5 text-[8px] px-1.5 gap-0.5 border-[#BFDBFE] text-[#2563EB]" onClick={e => e.stopPropagation()}>详情</Button>
+                          <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#64748B]"><Star size={8} /></Button>
+                          {!obj.inDisposal && obj.toDisposal && (
+                            <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#DC2626]" onClick={e => { e.stopPropagation(); onModuleChange('actions'); }}>处置</Button>
                           )}
                         </div>
                       </div>
                     );
                   })}
-                  {filteredTasks.length === 0 && <div className="text-center py-10 text-[#94A3B8] text-xs">无匹配任务</div>}
+                  {filteredRiskObjs.length === 0 && (
+                    <div className="text-center py-8 space-y-1">
+                      <CheckCircle2 size={18} className="text-[#A7F3D0] mx-auto" />
+                      <div className="text-[10px] text-[#047857]">当前筛选下暂无命中对象</div>
+                      <div className="text-[9px] text-[#94A3B8]">建议调整筛选条件</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Right: Task template & dispatch panel */}
-              <div className="space-y-4">
-                <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 space-y-3">
-                  <div className="text-[12px] font-semibold text-[#0F172A]">任务模板（推送至CRM/企微）</div>
-                  {[
-                    { name: '逾期催收跟进', desc: '生成CRM催收跟进任务', target: '→ CRM' },
-                    { name: '异常排查跟进', desc: '生成CRM异常排查任务', target: '→ CRM' },
-                    { name: '额度调整通知', desc: '生成企微通知任务', target: '→ 企微' },
-                    { name: '到期提醒跟进', desc: '生成CRM到期跟进任务', target: '→ CRM' },
-                  ].map(t => (
-                    <div key={t.name} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 hover:bg-[#EFF6FF] transition-colors cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <FileText size={10} className="text-[#64748B]" />
-                          <span className="text-[11px] font-medium text-[#0F172A]">{t.name}</span>
-                        </div>
-                        <Badge className="bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE] text-[9px]">{t.target}</Badge>
-                      </div>
-                      <div className="mt-0.5 text-[10px] text-[#94A3B8]">{t.desc}</div>
-                    </div>
-                  ))}
+              {/* COL 2: Risk detail + basis */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">当前风险详情</span>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className={cn('text-[7px] border', RLVL[activeRO.riskLevel])}>{activeRO.riskLevel}</Badge>
+                    <Badge className={cn('text-[7px] border', RSTATUS[activeRO.status])}>{activeRO.status}</Badge>
+                  </div>
                 </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div>
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1.5">对象与风险信息</div>
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-[9px]">
+                      <div><span className="text-[#94A3B8]">对象</span> <span className="text-[#0F172A] font-medium">{activeRO.name}</span></div>
+                      <div><span className="text-[#94A3B8]">类型</span> <span className="text-[#0F172A]">{activeRO.objType}</span></div>
+                      <div><span className="text-[#94A3B8]">来源</span> <span className="text-[#0F172A]">{activeRO.source}</span></div>
+                      <div><span className="text-[#94A3B8]">首次触发</span> <span className="text-[#0F172A]">{activeRO.triggeredAt}</span></div>
+                      <div><span className="text-[#94A3B8]">更新</span> <span className="text-[#64748B]">{activeRO.updatedAt}</span></div>
+                      <div><span className="text-[#94A3B8]">信号数</span> <span className="text-[#DC2626] font-bold">{activeRO.signalCount} 项</span></div>
+                    </div>
+                  </div>
 
-                <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 space-y-3">
-                  <div className="text-[12px] font-semibold text-[#0F172A]">批量下发</div>
-                  <Button variant="outline" size="sm" className="w-full h-8 text-[10px] gap-1.5 text-[#DC2626] border-[#FCA5A5]">
-                    <Send size={10} /> 批量推送催收任务至CRM
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full h-8 text-[10px] gap-1.5 text-[#2563EB] border-[#BFDBFE]">
-                    <ArrowRight size={10} /> 转入贷后经营
-                  </Button>
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1">风险结论</div>
+                    <p className="text-[10px] text-[#475569] leading-4 bg-[#FAFBFF] rounded px-2 py-1.5 border border-[#F1F5F9]">{activeRO.conclusion}</p>
+                  </div>
+
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1.5">风险表现</div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[9px]">
+                      <div className="col-span-2"><span className="text-[#94A3B8]">主要信号</span> <span className="text-[#0F172A]">{activeRO.signals}</span></div>
+                      <div><span className="text-[#94A3B8]">叠加情况</span> <span className="text-[#DC2626] font-medium">{activeRO.overlap}</span></div>
+                      <div><span className="text-[#94A3B8]">近阶段变化</span> <span className="text-[#0F172A]">{activeRO.recentChange}</span></div>
+                      <div className="col-span-2"><span className="text-[#94A3B8]">影响范围</span> <span className="text-[#0F172A]">{activeRO.impact}</span></div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A] mb-1.5">识别依据</div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[9px]">
+                      <div className="col-span-2"><span className="text-[#94A3B8]">命中规则</span> <span className="text-[#0F172A]">{activeRO.ruleHits}</span></div>
+                      <div><span className="text-[#94A3B8]">关联指标</span> <span className="text-[#0F172A]">{activeRO.relatedMetric}</span></div>
+                      <div><span className="text-[#94A3B8]">关联预警</span> <span className="text-[#0F172A]">{activeRO.relatedAlert}</span></div>
+                      <div><span className="text-[#94A3B8]">建议动作</span> <span className="text-[#0F172A] font-medium">{activeRO.suggestion}</span></div>
+                      <div className="flex items-center gap-1.5">
+                        {activeRO.toDisposal && <Badge className="text-[7px] bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]">→ 处置作业</Badge>}
+                        {activeRO.needConfirm && <Badge className="text-[7px] bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]">需人工确认</Badge>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Eye size={9} />查看识别明细</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => onModuleChange('signals')}><Activity size={9} />查看关联指标</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => onModuleChange('quality')}><Settings size={9} />查看关联规则</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FCA5A5] text-[#DC2626]" onClick={() => onModuleChange('actions')}><Send size={9} />进入处置作业</Button>
+                    {activeRO.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />标记人工确认</Button>}
+                  </div>
+                </div>
+              </div>
+
+              {/* COL 3: AI judgment */}
+              <div className="space-y-3">
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
+                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
+                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
+                        当前风险识别结果显示，少数对象已进入风险上升阶段，需优先关注其信号变化与处理状态。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">风险识别摘要</div>
+                      <p className="text-[9px] text-[#475569] leading-4">
+                        当前风险主要集中在经营波动、履约异常与规则集中命中对象上，部分对象已表现出多维信号叠加趋势。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">风险等级结论</div>
+                      {(() => {
+                        const score = 45;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${100 - score}%`, backgroundColor: score <= 30 ? '#047857' : score <= 60 ? '#F59E0B' : '#DC2626' }} /></div>
+                            <span className="text-[10px] font-bold" style={{ color: score <= 30 ? '#047857' : score <= 60 ? '#F59E0B' : '#DC2626' }}>风险度 {score}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要关注提示</div>
+                      <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
+                        <div>· 高风险对象 {highRiskCount} 个，含多信号叠加</div>
+                        <div>· 中度关注对象上升趋势明显</div>
+                        <div>· {needConfirmRisk} 个对象需人工确认</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
+                      <p className="text-[10px] text-[#7C3AED] font-medium">
+                        建议优先处理高风险与多信号叠加对象，并结合规则评估判断当前识别结果是否需要进一步优化或人工确认。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
+                      <p className="text-[10px] text-[#475569]">{activeRO.toDisposal ? '处置作业' : activeRO.needConfirm ? '人工确认' : '规则评估'}</p>
+                    </div>
+
+                    {activeRO.needConfirm && (
+                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
+                        该对象处于边界状态，信号不充分或存在冲突，建议人工复核后再决定处置。
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full" onClick={() => onModuleChange('actions')}><Send size={10} />进入处置作业</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full" onClick={() => onModuleChange('quality')}><Settings size={10} />进入规则评估</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full"><Star size={10} />继续风险跟踪</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -423,161 +1481,339 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
             {active && <ActionBar />}
           </div>
         );
+      }
 
       /* ════════════════════════════════════════════════════════════════════
-         PAGE: 风险探针
+         PAGE: 规则评估 (5 区工作台)
          ════════════════════════════════════════════════════════════════════ */
-      case 'probe':
+      case 'quality': {
+        type RuleEvalConclusion = '表现良好' | '基本稳定' | '待观察' | '待优化' | '需复核';
+        type RuleType = '预警规则' | '指标规则' | '风险识别规则' | '履约监测规则' | '组合判断规则';
+        type ProblemTag = '命中不足' | '误报偏高' | '边界过多' | '波动较大' | '场景覆盖不足' | '无';
+        type TierLevel = '高成效规则' | '稳定规则' | '待观察规则' | '待优化规则' | '高误报规则';
+        type TierTrend = '上升' | '持平' | '下降' | '波动';
+        type Validity = '有效支撑识别' | '基本有效' | '识别作用有限' | '误报偏高需调整' | '暂不能稳定使用';
+
+        interface RuleTier { level: TierLevel; count: number; pct: number; trend: TierTrend; mainProblem: string; impact: string; action: string }
+        interface EvalRule {
+          id: string; name: string; type: RuleType; scene: string; enabled: boolean; updatedAt: string;
+          hits: number; effectiveHits: number; falsePositives: number; hitRate: number; fpRate: number;
+          conclusion: RuleEvalConclusion; problem: ProblemTag; suggestion: string;
+          validity: Validity; trendDesc: string; coverageDesc: string;
+          relatedAlert: string; relatedRisk: string; relatedDisposal: string; humanFeedback: string;
+          needOptimize: boolean; needConfirm: boolean;
+        }
+
+        const RULE_TIERS: RuleTier[] = [
+          { level: '高成效规则', count: 12, pct: 32, trend: '持平', mainProblem: '无明显问题', impact: '稳定支撑预警质量', action: '继续观察' },
+          { level: '稳定规则', count: 10, pct: 27, trend: '持平', mainProblem: '部分场景覆盖不足', impact: '基本支撑风险识别', action: '继续观察' },
+          { level: '待观察规则', count: 7, pct: 19, trend: '上升', mainProblem: '识别不稳定', impact: '影响处置效率', action: '持续跟踪' },
+          { level: '待优化规则', count: 5, pct: 13, trend: '上升', mainProblem: '命中不足+边界过多', impact: '影响风险识别准确性', action: '优先优化' },
+          { level: '高误报规则', count: 3, pct: 8, trend: '波动', mainProblem: '误报偏高+反馈闭环不足', impact: '影响人工复核负担', action: '发起人工复核' },
+        ];
+
+        const EVAL_RULES: EvalRule[] = [
+          { id: 'rl-01', name: '逾期天数超阈值规则', type: '预警规则', scene: '逾期监控', enabled: true, updatedAt: '30分钟前', hits: 48, effectiveHits: 42, falsePositives: 6, hitRate: 87, fpRate: 12, conclusion: '表现良好', problem: '无', suggestion: '继续观察', validity: '有效支撑识别', trendDesc: '近 30 天命中稳定，有效率持续 >85%', coverageDesc: '覆盖逾期场景 92%', relatedAlert: '关联预警 15 条', relatedRisk: '关联风险对象 8 个', relatedDisposal: '已产生处置任务 5 个', humanFeedback: '人工确认通过率 88%', needOptimize: false, needConfirm: false },
+          { id: 'rl-02', name: '净流出连续异常规则', type: '指标规则', scene: '经营异常', enabled: true, updatedAt: '1小时前', hits: 35, effectiveHits: 28, falsePositives: 7, hitRate: 80, fpRate: 20, conclusion: '基本稳定', problem: '误报偏高', suggestion: '调整口径', validity: '基本有效', trendDesc: '近 30 天误报率从 15% 升至 20%', coverageDesc: '覆盖经营异常场景 78%', relatedAlert: '关联预警 9 条', relatedRisk: '关联风险对象 5 个', relatedDisposal: '已产生处置任务 3 个', humanFeedback: '人工确认通过率 72%', needOptimize: true, needConfirm: false },
+          { id: 'rl-03', name: '授信使用率骤降规则', type: '风险识别规则', scene: '风险识别', enabled: true, updatedAt: '2小时前', hits: 22, effectiveHits: 9, falsePositives: 13, hitRate: 41, fpRate: 59, conclusion: '待优化', problem: '误报偏高', suggestion: '优先优化', validity: '误报偏高需调整', trendDesc: '近 30 天误报率持续偏高', coverageDesc: '覆盖授信骤降场景 60%', relatedAlert: '关联预警 4 条', relatedRisk: '关联风险对象 3 个', relatedDisposal: '未产生处置任务', humanFeedback: '人工确认通过率仅 42%', needOptimize: true, needConfirm: true },
+          { id: 'rl-04', name: '物流频次下降规则', type: '履约监测规则', scene: '履约异常', enabled: true, updatedAt: '3小时前', hits: 18, effectiveHits: 14, falsePositives: 4, hitRate: 78, fpRate: 22, conclusion: '基本稳定', problem: '边界过多', suggestion: '补充反馈样本', validity: '基本有效', trendDesc: '近 30 天边界判断增多', coverageDesc: '覆盖物流异常场景 75%', relatedAlert: '关联预警 6 条', relatedRisk: '关联风险对象 4 个', relatedDisposal: '已产生处置任务 2 个', humanFeedback: '人工确认通过率 76%', needOptimize: false, needConfirm: true },
+          { id: 'rl-05', name: '客户集中度偏高规则', type: '组合判断规则', scene: '风险识别', enabled: true, updatedAt: '5小时前', hits: 30, effectiveHits: 24, falsePositives: 6, hitRate: 80, fpRate: 20, conclusion: '表现良好', problem: '无', suggestion: '继续观察', validity: '有效支撑识别', trendDesc: '近 30 天有效率稳定在 80%', coverageDesc: '覆盖集中度场景 85%', relatedAlert: '关联预警 8 条', relatedRisk: '关联风险对象 6 个', relatedDisposal: '已产生处置任务 4 个', humanFeedback: '人工确认通过率 82%', needOptimize: false, needConfirm: false },
+          { id: 'rl-06', name: '回款金额连续下降规则', type: '预警规则', scene: '还款监控', enabled: true, updatedAt: '8小时前', hits: 15, effectiveHits: 11, falsePositives: 4, hitRate: 73, fpRate: 27, conclusion: '待观察', problem: '波动较大', suggestion: '持续跟踪', validity: '基本有效', trendDesc: '近 30 天有效率波动较大', coverageDesc: '覆盖回款下降场景 68%', relatedAlert: '关联预警 5 条', relatedRisk: '关联风险对象 3 个', relatedDisposal: '已产生处置任务 1 个', humanFeedback: '暂无人工反馈', needOptimize: false, needConfirm: false },
+          { id: 'rl-07', name: '发票断裂判断规则', type: '风险识别规则', scene: '经营异常', enabled: true, updatedAt: '1天前', hits: 8, effectiveHits: 3, falsePositives: 5, hitRate: 38, fpRate: 62, conclusion: '需复核', problem: '命中不足', suggestion: '发起人工复核', validity: '暂不能稳定使用', trendDesc: '近 30 天命中数极少，误报率高', coverageDesc: '覆盖发票异常场景 35%', relatedAlert: '关联预警 1 条', relatedRisk: '关联风险对象 1 个', relatedDisposal: '未产生处置任务', humanFeedback: '人工确认通过率仅 30%', needOptimize: true, needConfirm: true },
+          { id: 'rl-08', name: '活跃度持续下降规则', type: '指标规则', scene: '指标监测', enabled: true, updatedAt: '2天前', hits: 12, effectiveHits: 4, falsePositives: 8, hitRate: 33, fpRate: 67, conclusion: '待优化', problem: '场景覆盖不足', suggestion: '调整口径', validity: '识别作用有限', trendDesc: '近 30 天有效命中仅 4 次', coverageDesc: '覆盖活跃下降场景 40%', relatedAlert: '关联预警 2 条', relatedRisk: '关联风险对象 2 个', relatedDisposal: '未产生处置任务', humanFeedback: '暂无人工反馈', needOptimize: true, needConfirm: false },
+        ];
+
+        const ECLR: Record<RuleEvalConclusion, string> = {
+          '表现良好': 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]',
+          '基本稳定': 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]',
+          '待观察': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '待优化': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
+          '需复核': 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
+        };
+        const TLVL: Record<TierLevel, string> = {
+          '高成效规则': 'bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]',
+          '稳定规则': 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]',
+          '待观察规则': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+          '待优化规则': 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
+          '高误报规则': 'bg-[#450A0A] text-white border-[#991B1B]',
+        };
+
+        const totalRules = EVAL_RULES.length;
+        const highEffRules = EVAL_RULES.filter(r => r.conclusion === '表现良好').length;
+        const toOptRules = EVAL_RULES.filter(r => r.needOptimize).length;
+        const highFpRules = EVAL_RULES.filter(r => r.fpRate >= 50).length;
+        const lowHitRules = EVAL_RULES.filter(r => r.hitRate < 50).length;
+        const needReviewRules = EVAL_RULES.filter(r => r.needConfirm).length;
+
+        const filteredRules = EVAL_RULES.filter(r => {
+          if (ruleEvalFilter === 'all') return true;
+          return r.conclusion === ruleEvalFilter;
+        });
+        const activeRule = filteredRules.find(r => r.id === selectedRuleId) ?? filteredRules[0] ?? EVAL_RULES[0];
+
         return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Activity size={14} className="text-[#7C3AED]" />
-                <span className="text-[13px] font-semibold text-[#0F172A]">风险探针</span>
-                <span className="text-[11px] text-[#94A3B8]">实时检测核心风险指标异动</span>
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">规则评估</h2>
+                <p className="text-[11px] text-[#64748B] mt-0.5">统一评估监控规则的命中表现、识别质量与误报情况，辅助规则优化与监控体系迭代。</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新评估结果</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Clock size={10} />切换统计周期</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出规则评估</Button>
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看评估口径</Button>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+            {/* 1. Overview cards */}
+            <div className="grid grid-cols-6 gap-3">
               {[
-                { label: '活跃探针', value: '12', detail: '实时运行', tone: 'green' as const },
-                { label: '今日触发', value: `${riskSamples.length}`, detail: '探针报警', tone: 'red' as const },
-                { label: '平均响应', value: '2.3s', detail: '检测耗时', tone: 'blue' as const },
-                { label: '覆盖样本', value: `${SAMPLES.length}`, detail: '全样本', tone: 'slate' as const },
-              ].map(m => (
-                <div key={m.label} className="rounded-xl border border-[#E2E8F0] bg-white px-3.5 py-3">
-                  <div className="text-[10px] text-[#94A3B8] uppercase tracking-wider">{m.label}</div>
-                  <div className="mt-1 text-lg font-bold text-[#0F172A]">{m.value}</div>
-                  <div className="text-[10px] text-[#64748B]">{m.detail}</div>
+                { label: '启用规则总数', value: `${totalRules}`, desc: '纳入监控体系的规则', icon: Layers, color: 'text-[#2563EB]' },
+                { label: '高成效规则', value: `${highEffRules}`, desc: '命中有效、质量较高', icon: CheckCircle2, color: 'text-[#047857]' },
+                { label: '待优化规则', value: `${toOptRules}`, desc: '存在明显优化空间', icon: Settings, color: 'text-[#C2410C]' },
+                { label: '高误报规则', value: `${highFpRules}`, desc: '误报水平较高', icon: AlertTriangle, color: 'text-[#DC2626]' },
+                { label: '低命中规则', value: `${lowHitRules}`, desc: '覆盖作用有限', icon: TrendingDown, color: 'text-[#F59E0B]' },
+                { label: '需人工复核', value: `${needReviewRules}`, desc: '存在边界判断或争议', icon: UserCheck, color: 'text-[#7C3AED]' },
+              ].map(c => (
+                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
+                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
+                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
+                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
                 </div>
               ))}
             </div>
-            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#F1F5F9]"><span className="text-[13px] font-semibold text-[#0F172A]">探针列表</span></div>
-              <div className="divide-y divide-[#F1F5F9]">
-                {[
-                  { name: '回款周期拉长探针', target: '回款天数 > 45天', status: '正常', freq: '每日' },
-                  { name: '账户净流出探针', target: '连续 3 周净流出', status: riskSamples.length > 0 ? '触发' : '正常', freq: '每周' },
-                  { name: '物流履约延迟探针', target: '延迟率 > 20%', status: riskSamples.length > 0 ? '触发' : '正常', freq: '每日' },
-                  { name: '客户集中度探针', target: '单客户占比 > 60%', status: '正常', freq: '每月' },
-                  { name: '发票断裂探针', target: '连续 2 月无开票', status: '正常', freq: '每月' },
-                  { name: '关系强度衰减探针', target: '强度下降 > 15%', status: '正常', freq: '每周' },
-                ].map(p => (
-                  <div key={p.name} className="flex items-center justify-between px-4 py-3 hover:bg-[#FAFBFF] transition-colors">
-                    <div><div className="text-[12px] font-medium text-[#0F172A]">{p.name}</div><div className="text-[10px] text-[#94A3B8]">阈值: {p.target} · 频率: {p.freq}</div></div>
-                    <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full', p.status === '触发' ? 'bg-[#FEF2F2] text-[#DC2626]' : 'bg-[#F0FDF4] text-[#047857]')}>{p.status}</span>
+
+            {/* 2. Rule tier board */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold text-[#0F172A]">规则分层与成效趋势</span>
+                <span className="text-[9px] text-[#94A3B8]">优先查看高误报与待优化规则的变化</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {RULE_TIERS.map(tier => (
+                  <div key={tier.level} className={cn('rounded-lg border p-2.5 space-y-1', TLVL[tier.level])}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-semibold">{tier.level}</span>
+                      <span className="text-[12px] font-bold">{tier.count}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-black/10 overflow-hidden"><div className="h-full rounded-full bg-current opacity-50" style={{ width: `${tier.pct}%` }} /></div>
+                    <div className="text-[8px] opacity-80">占比 {tier.pct}% · {tier.trend === '上升' ? '↑' : tier.trend === '下降' ? '↓' : tier.trend === '波动' ? '~' : '→'}{tier.trend}</div>
+                    <div className="text-[8px] opacity-70">主要: {tier.mainProblem}</div>
+                    <div className="text-[8px] opacity-60">{tier.impact}</div>
+                    <div className="text-[8px] font-medium mt-0.5">→ {tier.action}</div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-        );
 
-      /* ════════════════════════════════════════════════════════════════════
-         PAGE 4: 规则效果 (Rule Effectiveness)
-         ════════════════════════════════════════════════════════════════════ */
-      case 'quality':
-        return (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <TrendingUp size={14} className="text-[#2563EB]" />
-                <span className="text-[13px] font-semibold text-[#0F172A]">规则效果</span>
-                <span className="text-[11px] text-[#94A3B8]">数据口径: 近 {effectRange} 天</span>
+            {/* 3-column: Rule List + Detail + AI */}
+            <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
+
+              {/* COL 1: Rule list */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-3 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">规则列表</span>
+                  <p className="text-[9px] text-[#94A3B8] mt-0.5">关注命中效果与误报情况</p>
+                </div>
+                <div className="px-2 py-1.5 border-b border-[#F1F5F9]">
+                  <select className="h-5 rounded border border-[#E2E8F0] bg-[#F8FAFC] px-1 text-[9px] text-[#334155] w-full" value={ruleEvalFilter} onChange={e => setRuleEvalFilter(e.target.value)}>
+                    <option value="all">全部结论</option><option value="表现良好">表现良好</option><option value="基本稳定">基本稳定</option><option value="待观察">待观察</option><option value="待优化">待优化</option><option value="需复核">需复核</option>
+                  </select>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredRules.map(rule => {
+                    const isActive = activeRule?.id === rule.id;
+                    return (
+                      <div key={rule.id} onClick={() => setSelectedRuleId(rule.id)}
+                        className={cn('px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all', isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]')}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[10px] font-semibold text-[#0F172A] truncate flex-1">{rule.name}</span>
+                          <Badge className={cn('text-[7px] border shrink-0 ml-1', ECLR[rule.conclusion])}>{rule.conclusion}</Badge>
+                        </div>
+                        <div className="text-[8px] text-[#64748B] mb-0.5">{rule.type} · {rule.scene}</div>
+                        <div className="flex items-center gap-1 text-[8px]">
+                          <span className="text-[#0F172A]">命中{rule.hits}</span>
+                          <span className="text-[#047857]">有效{rule.effectiveHits}</span>
+                          <span className="text-[#DC2626]">误报{rule.falsePositives}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {rule.problem !== '无' && <Badge className="text-[7px] bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]">{rule.problem}</Badge>}
+                          {rule.needConfirm && <Badge className="text-[7px] bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]">需复核</Badge>}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Button variant="outline" size="sm" className="h-5 text-[7px] px-1 gap-0.5 border-[#BFDBFE] text-[#2563EB]" onClick={e => e.stopPropagation()}>详情</Button>
+                          <Button variant="ghost" size="sm" className="h-5 text-[7px] px-1 text-[#64748B]"><Star size={7} /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredRules.length === 0 && (
+                    <div className="text-center py-8 space-y-1">
+                      <CheckCircle2 size={18} className="text-[#A7F3D0] mx-auto" />
+                      <div className="text-[10px] text-[#047857]">当前筛选条件下暂无命中规则</div>
+                      <div className="text-[9px] text-[#94A3B8]">建议调整筛选条件后重试</div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <select className="h-7 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-2 text-[11px] text-[#334155]" value={effectRange} onChange={e => setEffectRange(e.target.value)}>
-                <option value="7">近 7 天</option>
-                <option value="30">近 30 天</option>
-                <option value="90">近 90 天</option>
-              </select>
-            </div>
 
-            {/* Metric cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MetricCard label="总触发次数" value={`${RULE_EFFECT_DATA.reduce((s, d) => s + d.triggers, 0)} 次`} detail="+10% 较上周期" tone="blue" />
-              <MetricCard label="平均转化率" value={`${Math.round(RULE_EFFECT_DATA.reduce((s, d) => s + d.conversion, 0) / RULE_EFFECT_DATA.length)}%`} detail="触发→确认风险" tone="amber" />
-              <MetricCard label="平均准确率" value={`${Math.round(RULE_EFFECT_DATA.reduce((s, d) => s + d.accuracy, 0) / RULE_EFFECT_DATA.length)}%`} detail="预警后确认为真" tone="green" />
-              <MetricCard label="有效规则数" value={`${MONITORING_RULES.filter(r => r.status === '启用').length} 条`} detail="-1 条较上周期" tone="slate" />
-            </div>
+              {/* COL 2: Detail & evaluation basis */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">规则详情与评估依据</span>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className={cn('text-[7px] border', ECLR[activeRule.conclusion])}>{activeRule.conclusion}</Badge>
+                    {activeRule.enabled && <Badge className="text-[7px] bg-[#F0FDF4] text-[#047857] border-[#BBF7D0]">启用中</Badge>}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                  {/* Rule info */}
+                  <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] pb-2 border-b border-[#F1F5F9]">
+                    <div><span className="text-[#94A3B8]">规则</span> <span className="text-[#0F172A] font-medium">{activeRule.name}</span></div>
+                    <div><span className="text-[#94A3B8]">类型</span> <span className="text-[#0F172A]">{activeRule.type}</span></div>
+                    <div><span className="text-[#94A3B8]">场景</span> <span className="text-[#0F172A]">{activeRule.scene}</span></div>
+                    <div><span className="text-[#94A3B8]">更新</span> <span className="text-[#0F172A]">{activeRule.updatedAt}</span></div>
+                    <div><span className="text-[#94A3B8]">有效性</span> <span className="text-[#0F172A]">{activeRule.validity}</span></div>
+                    {activeRule.problem !== '无' && <div><span className="text-[#94A3B8]">问题</span> <span className="text-[#DC2626]">{activeRule.problem}</span></div>}
+                  </div>
 
-            {/* Charts: trigger bar + conversion line */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-                <div className="text-[13px] font-semibold text-[#0F172A]">各规则触发次数</div>
-                <DistributionBarChart
-                  data={RULE_EFFECT_DATA.map(d => ({ name: d.name, value: d.triggers, color: CHART_COLORS.blue }))}
-                  height={200}
-                />
+                  {/* Performance */}
+                  <div>
+                    <div className="text-[9px] font-semibold text-[#0F172A] mb-1.5">成效表现</div>
+                    <div className="grid grid-cols-5 gap-2 mb-2">
+                      {[
+                        { label: '命中', value: activeRule.hits, max: 50, color: '#2563EB' },
+                        { label: '有效', value: activeRule.effectiveHits, max: 50, color: '#047857' },
+                        { label: '误报', value: activeRule.falsePositives, max: 50, color: '#DC2626' },
+                        { label: '有效率', value: activeRule.hitRate, max: 100, color: '#2563EB', suffix: '%' },
+                        { label: '误报率', value: activeRule.fpRate, max: 100, color: activeRule.fpRate >= 50 ? '#DC2626' : '#F59E0B', suffix: '%' },
+                      ].map(m => (
+                        <div key={m.label}>
+                          <div className="text-[8px] text-[#94A3B8]">{m.label}</div>
+                          <div className="text-[12px] font-bold text-[#0F172A]">{m.value}{m.suffix || ''}</div>
+                          <div className="h-1 rounded-full bg-[#F1F5F9] overflow-hidden mt-0.5"><div className="h-full rounded-full" style={{ width: `${(m.value / m.max) * 100}%`, backgroundColor: m.color }} /></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
+                      <div><span className="text-[#94A3B8]">趋势</span> <span className="text-[#0F172A]">{activeRule.trendDesc}</span></div>
+                      <div><span className="text-[#94A3B8]">覆盖</span> <span className="text-[#0F172A]">{activeRule.coverageDesc}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Evaluation basis */}
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[9px] font-semibold text-[#0F172A] mb-1.5">评估依据</div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
+                      <div><span className="text-[#94A3B8]">关联预警</span> <span className="text-[#0F172A]">{activeRule.relatedAlert}</span></div>
+                      <div><span className="text-[#94A3B8]">关联风险</span> <span className="text-[#0F172A]">{activeRule.relatedRisk}</span></div>
+                      <div><span className="text-[#94A3B8]">关联处置</span> <span className="text-[#0F172A]">{activeRule.relatedDisposal}</span></div>
+                      <div><span className="text-[#94A3B8]">人工反馈</span> <span className={activeRule.humanFeedback.includes('暂无') ? 'text-[#94A3B8]' : 'text-[#0F172A]'}>{activeRule.humanFeedback}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Optimization suggestion */}
+                  <div className="border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[9px] font-semibold text-[#0F172A] mb-1">优化建议</div>
+                    <p className="text-[9px] text-[#475569] leading-4">
+                      {activeRule.fpRate >= 50
+                        ? '建议优先优化高误报条件或补充边界反馈样本，以提升规则在当前场景下的识别稳定性。'
+                        : activeRule.hitRate < 50
+                          ? '该规则当前命中不足，建议扩展识别口径或补充场景覆盖，并结合人工反馈校准判断条件。'
+                          : '该规则当前命中表现稳定，能够持续支撑预警与风险识别，建议继续观察其后续场景覆盖情况。'
+                      }
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Eye size={9} />关联结果</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><FileCheck2 size={9} />人工反馈</Button>
+                    {activeRule.needOptimize && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FCA5A5] text-[#DC2626]"><Settings size={9} />发起优化</Button>}
+                    {activeRule.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />人工确认</Button>}
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Plus size={9} />加入优化清单</Button>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-                <div className="text-[13px] font-semibold text-[#0F172A]">各规则转化率与准确率</div>
-                <TrendLineChart
-                  data={RULE_EFFECT_DATA.map(d => ({ name: d.name, conversion: d.conversion, accuracy: d.accuracy }))}
-                  lines={[
-                    { key: 'conversion', color: CHART_COLORS.blue, label: '转化率 (%)' },
-                    { key: 'accuracy', color: CHART_COLORS.emerald, label: '准确率 (%)' },
-                  ]}
-                  height={200}
-                />
-              </div>
-            </div>
 
-            {/* Rule detail breakdown */}
-            <WorkbenchPanel title="规则效果明细">
+              {/* COL 3: AI judgment */}
               <div className="space-y-3">
-                {RULE_EFFECT_DATA.map(d => (
-                  <div key={d.name} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[12px] font-medium text-[#0F172A]">{d.name}</span>
-                      <div className="flex items-center gap-3 text-[10px] text-[#94A3B8]">
-                        <span>触发 {d.triggers} 次</span>
-                        <span>转化 {d.conversion}%</span>
-                        <span>准确 {d.accuracy}%</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-1">触发量</div>
-                        <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden"><div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${(d.triggers / 50) * 100}%` }} /></div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-1">转化率</div>
-                        <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden"><div className="h-full rounded-full bg-[#F59E0B]" style={{ width: `${d.conversion}%` }} /></div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-1">准确率</div>
-                        <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden"><div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${d.accuracy}%` }} /></div>
-                      </div>
-                    </div>
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
+                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
                   </div>
-                ))}
-              </div>
-            </WorkbenchPanel>
 
-            {/* Asset quality trend */}
-            <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 space-y-3">
-              <div className="text-[13px] font-semibold text-[#0F172A]">资产质量趋势</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { label: '不良率', value: '0.82%', change: '-0.05%', good: true },
-                  { label: '关注类占比', value: '2.41%', change: '-0.18%', good: true },
-                  { label: '逾期 30+ 天', value: '0.34%', change: '+0.02%', good: false },
-                ].map(item => (
-                  <div key={item.label} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-center">
-                    <div className="text-[10px] text-[#94A3B8]">{item.label}</div>
-                    <div className="mt-1 text-2xl font-semibold text-[#0F172A]">{item.value}</div>
-                    <div className={cn('mt-1 text-xs font-medium', item.good ? 'text-[#16A34A]' : 'text-[#DC2626]')}>{item.change}</div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
+                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
+                        当前规则体系整体可支撑基础监控目标，但部分规则在误报控制与边界识别上仍存在优化空间。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">规则成效摘要</div>
+                      <p className="text-[9px] text-[#475569] leading-4">
+                        大多数规则表现基本稳定，当前主要问题集中在少量高误报规则与低命中规则上，部分场景反馈闭环仍不充分。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">规则质量评分</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
+                          <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${Math.round((highEffRules / totalRules) * 100)}%` }} />
+                        </div>
+                        <span className="text-[10px] font-bold text-[#2563EB]">{Math.round((highEffRules / totalRules) * 100)}分</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要问题提示</div>
+                      <div className="rounded px-2 py-1.5 bg-[#FEF2F2] text-[9px] text-[#DC2626] space-y-0.5">
+                        <div>· {highFpRules} 条规则误报率超 50%</div>
+                        <div>· {lowHitRules} 条规则命中率低于 50%</div>
+                        <div>· {needReviewRules} 条规则需人工复核</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
+                      <p className="text-[10px] text-[#7C3AED] font-medium">
+                        建议优先优化高误报与待优化规则，并结合人工复核与处置闭环结果持续校准规则质量。
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
+                      <p className="text-[10px] text-[#475569]">{activeRule.needOptimize ? '规则优化' : activeRule.needConfirm ? '人工复核' : '继续观察'}</p>
+                    </div>
+
+                    {activeRule.needConfirm && (
+                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
+                        该规则存在边界判断项或评估争议，建议人工复核后再决定是否优化。
+                      </div>
+                    )}
                   </div>
-                ))}
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full"><Settings size={10} />发起规则优化</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full"><Eye size={10} />继续观察</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full"><UserCheck size={10} />发起人工复核</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><Plus size={10} />加入优化清单</Button>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <AiNote action="优化低效规则">
-              "授信使用骤降" 规则准确率仅 42%，建议调整阈值或增加复合触发条件以降低误报率。
-            </AiNote>
 
             {active && <ActionBar />}
           </div>
         );
+      }
     }
   };
 

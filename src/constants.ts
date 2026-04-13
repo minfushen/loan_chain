@@ -16,10 +16,11 @@ export const SCENES: Scene[] = [
     title: '今日工作台',
     icon: Blocks,
     modules: [
-      { id: 'overview', title: '工作首页' },
-      { id: 'todo', title: '待办任务' },
-      { id: 'risk-alert', title: '风险提醒' },
-      { id: 'my-customers', title: '我的客户' },
+      { id: 'overview', title: '今日总览' },
+      { id: 'task-center', title: '任务中心' },
+      { id: 'notifications', title: '消息通知' },
+      { id: 'my-focus', title: '我的关注' },
+      { id: 'ai-brief', title: 'AI 建议' },
     ],
   },
   {
@@ -27,7 +28,8 @@ export const SCENES: Scene[] = [
     title: '智能识别',
     icon: ScanSearch,
     modules: [
-      { id: 'import', title: '名单导入' },
+      { id: 'file-import', title: '文件导入' },
+      { id: 'api-access', title: 'API 接入' },
       { id: 'feed', title: '智能推荐流' },
       { id: 'filter-flow', title: '条件筛选流' },
       { id: 'list', title: '候选资产列表' },
@@ -40,11 +42,10 @@ export const SCENES: Scene[] = [
     title: '智能尽调',
     icon: FileSearch,
     modules: [
-      { id: 'field-entry', title: '外勤录入' },
-      { id: 'material', title: '材料采集' },
+      { id: 'material', title: '材料解析' },
       { id: 'evidence', title: '证据核验' },
-      { id: 'dd-report', title: '智能尽调' },
-      { id: 'report-gen', title: '报告生成' },
+      { id: 'dd-report', title: '尽调报告' },
+      { id: 'report-center', title: '报告中心' },
     ],
   },
   {
@@ -63,10 +64,10 @@ export const SCENES: Scene[] = [
     title: '授信资产池',
     icon: DatabaseZap,
     modules: [
-      { id: 'pipeline', title: '转化看板' },
-      { id: 'activated', title: '在营资产列表' },
-      { id: 'risk-assets', title: '风险资产' },
-      { id: 'repayment', title: '还款状态看板' },
+      { id: 'dashboard', title: '资产经营看板' },
+      { id: 'activated', title: '在营资产' },
+      { id: 'risk-assets', title: '风险监控' },
+      { id: 'repayment', title: '还款表现' },
     ],
   },
   {
@@ -75,10 +76,10 @@ export const SCENES: Scene[] = [
     icon: ChartNetwork,
     modules: [
       { id: 'warning', title: '预警总览' },
-      { id: 'signals', title: '监控指标' },
-      { id: 'probe', title: '风险探针' },
-      { id: 'actions', title: '处置任务' },
-      { id: 'quality', title: '规则效果' },
+      { id: 'signals', title: '指标监测' },
+      { id: 'probe', title: '风险识别' },
+      { id: 'actions', title: '处置作业' },
+      { id: 'quality', title: '规则评估' },
     ],
   },
   {
@@ -88,9 +89,9 @@ export const SCENES: Scene[] = [
     modules: [
       { id: 'operations', title: '经营总览' },
       { id: 'layers', title: '客户分层' },
-      { id: 'revenue', title: '增收动作' },
-      { id: 'recovery', title: '恢复经营' },
-      { id: 'playbook', title: '动作模板' },
+      { id: 'revenue', title: '经营动作' },
+      { id: 'recovery', title: '客户恢复' },
+      { id: 'playbook', title: '经营模板' },
     ],
   },
   {
@@ -98,11 +99,12 @@ export const SCENES: Scene[] = [
     title: '策略与配置',
     icon: Settings2,
     modules: [
-      { id: 'standard', title: '标准规则' },
-      { id: 'long-tail', title: '场景规则' },
-      { id: 'product-config', title: '产品配置' },
-      { id: 'approval-rules', title: '审批规则' },
-      { id: 'data-source', title: '数据源管理' },
+      { id: 'standard', title: '基础规则' },
+      { id: 'long-tail', title: '场景策略' },
+      { id: 'product-config', title: '产品策略配置' },
+      { id: 'approval-rules', title: '审批策略' },
+      { id: 'report-template', title: '报告模板配置' },
+      { id: 'data-source', title: '数据源配置' },
     ],
   },
 ];
