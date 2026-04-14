@@ -1,0 +1,340 @@
+{
+  "meta": {
+    "taxpayerId": "91320400MA1XXXXX2X",
+    "taxpayerName": "常州衡远包装材料有限公司",
+    "taxpayerType": "小规模纳税人",
+    "enterpriseType": "小型微利企业",
+    "filingYear": 2025,
+    "currency": "CNY",
+    "note": "本数据为POC演示用途，企业信息为虚构示例"
+  },
+  "annualSummary": {
+    "totalRevenue": 6800000.00,
+    "totalVATSales_3pct": 2400000.00,
+    "totalExemptSales": 4400000.00,
+    "totalVATPaid": 14520.00,
+    "totalVATReduced": 9680.00,
+    "totalCITPaid": 25500.00,
+    "totalCITReduced": 7650.00,
+    "totalTaxPaid": 40020.00,
+    "taxRevenueRatio": "0.59%",
+    "aiFlag": "纳税规模与申报销售额匹配，税负率处于同行业正常区间（0.4%-0.8%），无异常"
+  },
+  "filings": [
+    {
+      "recordId": "SB2025Q1-VAT-001",
+      "period": { "start": "2025-01-01", "end": "2025-03-31" },
+      "submitDate": "2025-04-09",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "VAT_SMALL",
+      "formName": "增值税及附加税费申报表（小规模纳税人适用）",
+      "taxType": "增值税",
+      "mainTable": {
+        "line1_sales_3pct": 72000.00,
+        "line2_agency_vat_invoice": 18000.00,
+        "line3_pos_invoice": 54000.00,
+        "line9_total_exempt_sales": 428000.00,
+        "line10_small_micro_exempt_sales": 428000.00,
+        "line15_tax_payable": 2160.00,
+        "line16_tax_reduction": 1440.00,
+        "line17_tax_exempt": 12840.00,
+        "line18_small_micro_exempt_tax": 12840.00,
+        "line20_tax_due": 720.00,
+        "line21_prepaid": 0.00,
+        "line22_tax_to_pay": 720.00
+      },
+      "summary": {
+        "taxPayable": 2160.00,
+        "taxReduced": 1440.00,
+        "taxExempt": 12840.00,
+        "taxActualPaid": 2160.00
+      },
+      "aiAnalysis": {
+        "salesMatchInvoice": true,
+        "exemptRatioNormal": true,
+        "flag": "Q1销售额偏低，符合淡季特征，与流水数据吻合"
+      }
+    },
+    {
+      "recordId": "SB2025Q2-VAT-002",
+      "period": { "start": "2025-04-01", "end": "2025-06-30" },
+      "submitDate": "2025-07-10",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "VAT_SMALL",
+      "formName": "增值税及附加税费申报表（小规模纳税人适用）",
+      "taxType": "增值税",
+      "mainTable": {
+        "line1_sales_3pct": 104000.00,
+        "line2_agency_vat_invoice": 26000.00,
+        "line3_pos_invoice": 78000.00,
+        "line9_total_exempt_sales": 496000.00,
+        "line10_small_micro_exempt_sales": 496000.00,
+        "line15_tax_payable": 3120.00,
+        "line16_tax_reduction": 2080.00,
+        "line17_tax_exempt": 14880.00,
+        "line18_small_micro_exempt_tax": 14880.00,
+        "line20_tax_due": 1040.00,
+        "line21_prepaid": 0.00,
+        "line22_tax_to_pay": 1040.00
+      },
+      "summary": {
+        "taxPayable": 3120.00,
+        "taxReduced": 2080.00,
+        "taxExempt": 14880.00,
+        "taxActualPaid": 3120.00
+      },
+      "aiAnalysis": {
+        "salesMatchInvoice": true,
+        "exemptRatioNormal": true,
+        "flag": "Q2销售额环比Q1增长44%，与订单数据趋势一致"
+      }
+    },
+    {
+      "recordId": "SB2025Q3-VAT-003",
+      "period": { "start": "2025-07-01", "end": "2025-09-30" },
+      "submitDate": "2025-10-13",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "VAT_SMALL",
+      "formName": "增值税及附加税费申报表（小规模纳税人适用）",
+      "taxType": "增值税",
+      "mainTable": {
+        "line1_sales_3pct": 140000.00,
+        "line2_agency_vat_invoice": 35000.00,
+        "line3_pos_invoice": 105000.00,
+        "line9_total_exempt_sales": 660000.00,
+        "line10_small_micro_exempt_sales": 660000.00,
+        "line15_tax_payable": 4200.00,
+        "line16_tax_reduction": 2800.00,
+        "line17_tax_exempt": 19800.00,
+        "line18_small_micro_exempt_tax": 19800.00,
+        "line20_tax_due": 1400.00,
+        "line21_prepaid": 0.00,
+        "line22_tax_to_pay": 1400.00
+      },
+      "summary": {
+        "taxPayable": 4200.00,
+        "taxReduced": 2800.00,
+        "taxExempt": 19800.00,
+        "taxActualPaid": 4200.00
+      },
+      "aiAnalysis": {
+        "salesMatchInvoice": true,
+        "exemptRatioNormal": true,
+        "flag": "Q3旺季，销售额环比Q2增长35%，与农业银行流水收款记录吻合"
+      }
+    },
+    {
+      "recordId": "SB2025Q4-VAT-004",
+      "period": { "start": "2025-10-01", "end": "2025-12-31" },
+      "submitDate": "2026-01-09",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "VAT_SMALL",
+      "formName": "增值税及附加税费申报表（小规模纳税人适用）",
+      "taxType": "增值税",
+      "mainTable": {
+        "line1_sales_3pct": 168000.00,
+        "line2_agency_vat_invoice": 42000.00,
+        "line3_pos_invoice": 126000.00,
+        "line9_total_exempt_sales": 832000.00,
+        "line10_small_micro_exempt_sales": 832000.00,
+        "line15_tax_payable": 5040.00,
+        "line16_tax_reduction": 3360.00,
+        "line17_tax_exempt": 24960.00,
+        "line18_small_micro_exempt_tax": 24960.00,
+        "line20_tax_due": 1680.00,
+        "line21_prepaid": 0.00,
+        "line22_tax_to_pay": 1680.00
+      },
+      "summary": {
+        "taxPayable": 5040.00,
+        "taxReduced": 3360.00,
+        "taxExempt": 24960.00,
+        "taxActualPaid": 5040.00
+      },
+      "aiAnalysis": {
+        "salesMatchInvoice": true,
+        "exemptRatioNormal": true,
+        "flag": "Q4年末订单集中交付，销售额全年最高，与交通银行流水12月大额货款收入吻合"
+      }
+    },
+    {
+      "recordId": "SB2025Q1-CIT-001",
+      "period": { "start": "2025-01-01", "end": "2025-03-31" },
+      "submitDate": "2025-04-09",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "CIT_SMALL_PROFIT_Q",
+      "formName": "企业所得税月（季）度预缴纳税申报表（A类）",
+      "taxType": "企业所得税",
+      "mainTable": {
+        "line2_revenue": 500000.00,
+        "line3_cost": 380000.00,
+        "line4_profit_total": 75000.00,
+        "line5_non_taxable": 0.00,
+        "line6_exempt_income": 0.00,
+        "line8_loss_carryforward": 0.00,
+        "line9_taxable_income": 75000.00,
+        "line10_tax_rate": 0.25,
+        "line11_tax_payable": 18750.00,
+        "line12_tax_reduced": 5625.00,
+        "line15_1_small_profit_reduced": 5625.00,
+        "line16_prepaid": 10000.00,
+        "line17_tax_to_pay": 3125.00
+      },
+      "summary": {
+        "profitTotal": 75000.00,
+        "taxableIncome": 75000.00,
+        "taxPayable": 18750.00,
+        "taxReduced": 5625.00,
+        "taxPaid": 10000.00,
+        "taxToPay": 3125.00
+      },
+      "aiAnalysis": {
+        "profitMargin": "15%",
+        "flag": "Q1利润率15%，处于包装材料行业正常区间（12%-18%）"
+      }
+    },
+    {
+      "recordId": "SB2025Q2-CIT-002",
+      "period": { "start": "2025-04-01", "end": "2025-06-30" },
+      "submitDate": "2025-07-10",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "CIT_SMALL_PROFIT_Q",
+      "formName": "企业所得税月（季）度预缴纳税申报表（A类）",
+      "taxType": "企业所得税",
+      "mainTable": {
+        "line2_revenue": 600000.00,
+        "line3_cost": 450000.00,
+        "line4_profit_total": 105000.00,
+        "line5_non_taxable": 0.00,
+        "line6_exempt_income": 0.00,
+        "line8_loss_carryforward": 0.00,
+        "line9_taxable_income": 105000.00,
+        "line10_tax_rate": 0.25,
+        "line11_tax_payable": 26250.00,
+        "line12_tax_reduced": 7875.00,
+        "line15_1_small_profit_reduced": 7875.00,
+        "line16_prepaid": 13125.00,
+        "line17_tax_to_pay": 5250.00
+      },
+      "summary": {
+        "profitTotal": 105000.00,
+        "taxableIncome": 105000.00,
+        "taxPayable": 26250.00,
+        "taxReduced": 7875.00,
+        "taxPaid": 13125.00,
+        "taxToPay": 5250.00
+      },
+      "aiAnalysis": {
+        "profitMargin": "17.5%",
+        "flag": "Q2利润率小幅提升，规模效应显现，与订单量增长一致"
+      }
+    },
+    {
+      "recordId": "SB2025Q3-CIT-003",
+      "period": { "start": "2025-07-01", "end": "2025-09-30" },
+      "submitDate": "2025-10-13",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "CIT_SMALL_PROFIT_Q",
+      "formName": "企业所得税月（季）度预缴纳税申报表（A类）",
+      "taxType": "企业所得税",
+      "mainTable": {
+        "line2_revenue": 800000.00,
+        "line3_cost": 590000.00,
+        "line4_profit_total": 150000.00,
+        "line5_non_taxable": 0.00,
+        "line6_exempt_income": 0.00,
+        "line8_loss_carryforward": 0.00,
+        "line9_taxable_income": 150000.00,
+        "line10_tax_rate": 0.25,
+        "line11_tax_payable": 37500.00,
+        "line12_tax_reduced": 11250.00,
+        "line15_1_small_profit_reduced": 11250.00,
+        "line16_prepaid": 18750.00,
+        "line17_tax_to_pay": 7500.00
+      },
+      "summary": {
+        "profitTotal": 150000.00,
+        "taxableIncome": 150000.00,
+        "taxPayable": 37500.00,
+        "taxReduced": 11250.00,
+        "taxPaid": 18750.00,
+        "taxToPay": 7500.00
+      },
+      "aiAnalysis": {
+        "profitMargin": "18.75%",
+        "flag": "Q3旺季利润率最高，与农业银行流水大额货款收入时间节点吻合"
+      }
+    },
+    {
+      "recordId": "SB2025Q4-CIT-004",
+      "period": { "start": "2025-10-01", "end": "2025-12-31" },
+      "submitDate": "2026-01-09",
+      "status": "FILED",
+      "amended": false,
+      "voided": false,
+      "formType": "CIT_SMALL_PROFIT_Q",
+      "formName": "企业所得税月（季）度预缴纳税申报表（A类）",
+      "taxType": "企业所得税",
+      "mainTable": {
+        "line2_revenue": 900000.00,
+        "line3_cost": 660000.00,
+        "line4_profit_total": 180000.00,
+        "line5_non_taxable": 0.00,
+        "line6_exempt_income": 0.00,
+        "line8_loss_carryforward": 0.00,
+        "line9_taxable_income": 180000.00,
+        "line10_tax_rate": 0.25,
+        "line11_tax_payable": 45000.00,
+        "line12_tax_reduced": 13500.00,
+        "line15_1_small_profit_reduced": 13500.00,
+        "line16_prepaid": 22500.00,
+        "line17_tax_to_pay": 9000.00
+      },
+      "summary": {
+        "profitTotal": 180000.00,
+        "taxableIncome": 180000.00,
+        "taxPayable": 45000.00,
+        "taxReduced": 13500.00,
+        "taxPaid": 22500.00,
+        "taxToPay": 9000.00
+      },
+      "aiAnalysis": {
+        "profitMargin": "20%",
+        "flag": "Q4利润率20%，年末大单集中结算，与交通银行流水12月27日119.7万大额货款收入直接对应"
+      }
+    }
+  ],
+  "crossVerification": {
+    "vatSalesVsInvoiceCSV": {
+      "result": "一致",
+      "detail": "全年增值税申报含税销售额合计约680万，与发票数据CSV中E1企业全年开票金额吻合，偏差<2%"
+    },
+    "vatSalesVsBankFlow": {
+      "result": "基本一致",
+      "detail": "Q4申报销售额100万与交通银行流水12月货款收入（含12月27日119.7万大额回款）匹配，回款周期约34天"
+    },
+    "citRevenueVsBankFlow": {
+      "result": "一致",
+      "detail": "全年企业所得税申报营业收入280万（含税口径约680万），与农业银行+交通银行双账户流水收入合计吻合"
+    },
+    "taxPaymentRecord": {
+      "result": "正常",
+      "detail": "全年4个季度均按时申报，无逾期、无更正、无作废，申报连续性满足授信准入要求"
+    },
+    "aiConclusion": "纳税申报数据与发票CSV、银行流水三方交叉验证通过。申报连续、税负率正常、无异常更正，可作为税票发票贷和供应链订单微贷的核心证据引用。"
+  }
+}

@@ -26,7 +26,7 @@ import {
   Star,
   Users,
 } from 'lucide-react';
-import { SampleSwitcher, StatusPill, MetricCard, WorkbenchPanel } from '../ProductPrimitives';
+import { SampleSwitcher, StatusPill, MetricCard, WorkbenchPanel, AiInsight } from '../ProductPrimitives';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { ActionBar } from '../../demo/DemoComponents';
 import { CHAIN_LOAN_STAGE_LABELS, SAMPLES, type ChainLoanSample } from '../../demo/chainLoan/data';
@@ -116,14 +116,14 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
   })();
 
   const nextActions: { label: string; target: SceneId }[] = (() => {
-    if (!active) return [{ label: '开始演示', target: 'strategy-config' as SceneId }];
+    if (!active) return [{ label: '开始演示', target: 'smart-identify' as SceneId }];
     if (recoveryComplete) return [{ label: '查看智能经营', target: 'smart-operation' as SceneId }, { label: '查看智能识别', target: 'smart-identify' as SceneId }];
     if (riskSimulated) return [{ label: '查看恢复经营', target: 'smart-operation' as SceneId }, { label: '查看智能监控', target: 'smart-monitor' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('approved')) return [{ label: '进入智能监控', target: 'smart-monitor' as SceneId }, { label: '查看资产池', target: 'asset-pool' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('manual_review')) return [{ label: '进入补审', target: 'smart-approval' as SceneId }];
-    if (stageIndex >= STAGE_ORDER.indexOf('pre_credit')) return [{ label: '进入资产池', target: 'asset-pool' as SceneId }];
+    if (stageIndex >= STAGE_ORDER.indexOf('pre_credit')) return [{ label: '进入智能尽调', target: 'smart-due-diligence' as SceneId }];
     if (stageIndex >= STAGE_ORDER.indexOf('identified')) return [{ label: '查看智能识别', target: 'smart-identify' as SceneId }];
-    return [{ label: '进入策略与配置', target: 'strategy-config' as SceneId }];
+    return [{ label: '进入智能识别', target: 'smart-identify' as SceneId }];
   })();
 
   /* ── Computed tasks ── */
@@ -392,19 +392,16 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
               </div>
             </div>
 
-            {/* AI insight strip */}
-            <div className="flex items-center gap-3 rounded-lg border border-[#D6E4FF] bg-[#FAFBFF] px-4 py-2.5">
-              <div className="flex items-center justify-center w-5 h-5 rounded bg-[#2563EB] shrink-0"><Sparkles size={10} className="text-white" /></div>
-              <p className="flex-1 text-xs leading-5 text-[#334155]">
-                <span className="font-medium text-[#2563EB]">今日建议：</span>
-                {highStrengthReview > 0 ? `补审队列中 ${highStrengthReview} 户关系强度 > 80%，建议优先处理。` : ''}
-                {receivableRiskCount > 0 ? ` ${riskCount} 笔预警中回款延迟类 ${receivableRiskCount} 笔占比最高。` : ` ${SAMPLES.length} 个样本经营状态总体稳定。`}
-              </p>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#7C3AED] hover:bg-[#F5F3FF]" onClick={() => onModuleChange('ai-brief')}>AI 建议<ArrowRight size={10} className="ml-0.5" /></Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#2563EB] hover:bg-[#EFF6FF]" onClick={() => navigate('smart-identify')}>识别<ArrowRight size={10} className="ml-0.5" /></Button>
-              </div>
-            </div>
+            {/* AI insight */}
+            <AiInsight
+              message={highStrengthReview > 0 ? `补审队列中 ${highStrengthReview} 户关系强度 > 80%，建议优先处理。${receivableRiskCount > 0 ? ` ${riskCount} 笔预警中回款延迟类 ${receivableRiskCount} 笔占比最高。` : ` ${SAMPLES.length} 个样本经营状态总体稳定。`}` : `${SAMPLES.length} 个样本经营状态总体稳定。${receivableRiskCount > 0 ? ` 当前 ${riskCount} 笔预警中回款延迟类 ${receivableRiskCount} 笔。` : ''}`}
+              tone={riskCount > 0 ? 'warning' : 'info'}
+              action={
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#7C3AED] hover:bg-[#F5F3FF]" onClick={() => onModuleChange('ai-brief')}>AI 建议<ArrowRight size={10} className="ml-0.5" /></Button>
+                </div>
+              }
+            />
 
             {/* Quick entries + Donut */}
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_240px] gap-4">
@@ -474,6 +471,14 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
               </div>
               <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE] shrink-0" onClick={() => navigate('smart-monitor', 'warning')}>智能监控 <ArrowRight size={9} /></Button>
             </div>
+
+            <AiInsight
+              message={`当前共 ${unifiedTaskRows.length} 类待办，涉及 ${totalUnits} 个业务单元。${filteredRows.filter(r => r.priority === '高').length > 0 ? `其中 ${filteredRows.filter(r => r.priority === '高').length} 项高优先级任务建议今日处理。` : '暂无高优先级任务，可按顺序推进。'}`}
+              tone={filteredRows.some(r => r.priority === '高') ? 'warning' : 'info'}
+              action={
+                <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#7C3AED] hover:bg-[#F5F3FF]" onClick={() => onModuleChange('ai-brief')}>AI 建议<ArrowRight size={10} className="ml-0.5" /></Button>
+              }
+            />
 
             <div className="flex flex-wrap gap-1.5">
               {tagFilters.map(tag => (
@@ -584,6 +589,11 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
               </Button>
             </div>
 
+            <AiInsight
+              message={`您有 ${unreadCount} 条未读通知。${unreadCount > 0 ? 'AI 和预警类消息通常需要您在对应模块做出响应，建议优先处理。' : '所有消息已读，暂无待处理通知。'}`}
+              tone={unreadCount > 0 ? 'warning' : 'success'}
+            />
+
             <div className="rounded-lg border border-[#E2E8F0] bg-white divide-y divide-[#F1F5F9]">
               {COCKPIT_NOTIFICATIONS.map(n => {
                 const unread = !readNotificationIds.has(n.id);
@@ -639,6 +649,14 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
                 在营全量 <ArrowRight size={9} />
               </Button>
             </div>
+
+            <AiInsight
+              message={`当前星标 ${focusStarred.length} 户、AI 推荐 ${focusAiPicks.length} 户。${focusAiPicks.length > 0 ? 'AI 推荐的客户按置信度排序，建议优先关注高置信度客户的变化动态。' : '暂无 AI 推荐，系统将根据业务变化自动推荐。'}`}
+              tone="info"
+              action={
+                <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#7C3AED] hover:bg-[#F5F3FF]" onClick={() => onModuleChange('ai-brief')}>AI 建议<ArrowRight size={10} className="ml-0.5" /></Button>
+              }
+            />
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <MetricCard label="星标" value={`${focusStarred.length} 户`} detail="重点盯盘" icon={Star} tone="amber" />
@@ -707,6 +725,14 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
               </Button>
             </div>
 
+            <AiInsight
+              message={`共 ${aiBriefItems.length} 条 AI 建议，按优先级和置信度排序。高置信度建议可直接采纳执行，低置信度建议建议结合人工判断后决策。`}
+              tone="info"
+              action={
+                <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#2563EB] hover:bg-[#EFF6FF]" onClick={() => onModuleChange('task-center')}>任务中心<ArrowRight size={10} className="ml-0.5" /></Button>
+              }
+            />
+
             <div className="space-y-3">
               {aiBriefItems.map((item, idx) => (
                 <div key={item.id} className="rounded-xl border border-[#E8E0FF] bg-gradient-to-br from-[#FAF5FF]/80 to-white px-4 py-3 shadow-sm">
@@ -750,8 +776,53 @@ export default function CockpitScene({ activeModule, onModuleChange }: Props) {
     }
   };
 
+  /* ── Floating AI panel ── */
+  const renderAiPanel = () => {
+    const titles: Record<string, string> = {
+      overview: 'AI 工作台引导',
+      'task-center': 'AI 任务引导',
+      notifications: 'AI 消息引导',
+      'my-focus': 'AI 关注引导',
+      'ai-brief': 'AI 建议引导',
+    };
+    const guides: Record<string, string> = {
+      overview: '这是您的工作台总览。系统根据当前演示阶段，为您汇总待办任务、重点客户和 AI 建议。点击右上角"开始演示"推进案例流程，或从快捷入口直达各模块。',
+      'task-center': '任务中心汇集了来自预警引擎、规则引擎和识别引擎的待办事项。高优先级任务建议当日处理，中优先级可排入本周计划。点击"处理"直达对应模块。',
+      notifications: '消息通知实时推送审批流转、AI 作业完成、预警触发和演示推进等事件。关注 AI 和预警类消息，通常需要您在对应模块做出响应。',
+      'my-focus': '我的关注展示您星标、最近处理和 AI 推荐的客户。AI 会根据置信度和优先级推荐可能需要您关注的客户，建议定期查看 AI 推荐区。',
+      'ai-brief': 'AI 建议按优先级和模型置信度排序，每条建议包含客户概况、AI 摘要和推荐动作。高置信度的建议可直接采纳，低置信度的建议建议人工复核后再决策。',
+    };
+    const nextSteps: Record<string, { label: string; target: string }[]> = {
+      overview: [{ label: '查看任务中心', target: 'task-center' }, { label: 'AI 建议', target: 'ai-brief' }],
+      'task-center': [{ label: '我的关注', target: 'my-focus' }, { label: 'AI 建议', target: 'ai-brief' }],
+      notifications: [{ label: '任务中心', target: 'task-center' }, { label: '返回总览', target: 'overview' }],
+      'my-focus': [{ label: 'AI 建议', target: 'ai-brief' }, { label: '返回总览', target: 'overview' }],
+      'ai-brief': [{ label: '任务中心', target: 'task-center' }, { label: '我的关注', target: 'my-focus' }],
+    };
+    const steps = nextSteps[activeModule] ?? [];
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-1.5">
+          <Sparkles size={12} className="text-primary" />
+          <span className="text-[11px] font-semibold">{titles[activeModule] ?? 'AI 引导'}</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{guides[activeModule] ?? ''}</p>
+        {steps.length > 0 && (
+          <div className="space-y-1.5 pt-2 border-t border-border">
+            <span className="text-[10px] text-muted-foreground">快捷导航</span>
+            {steps.map(s => (
+              <Button key={s.target} variant="outline" size="sm" className="h-7 text-[10px] gap-1 w-full" onClick={() => onModuleChange(s.target)}>
+                <ArrowRight size={10} />{s.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <SceneLayout title={scene.title} modules={scene.modules} activeModule={activeModule} onModuleChange={onModuleChange}>
+    <SceneLayout title={scene.title} modules={scene.modules} activeModule={activeModule} onModuleChange={onModuleChange} aiPanel={renderAiPanel()}>
       {renderContent()}
     </SceneLayout>
   );

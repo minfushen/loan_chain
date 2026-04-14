@@ -28,13 +28,11 @@ export const SCENES: Scene[] = [
     title: '智能识别',
     icon: ScanSearch,
     modules: [
-      { id: 'file-import', title: '文件导入' },
-      { id: 'api-access', title: 'API 接入' },
-      { id: 'feed', title: '智能推荐流' },
-      { id: 'filter-flow', title: '条件筛选流' },
-      { id: 'list', title: '候选资产列表' },
+      { id: 'file-import', title: '名单导入' },
+      { id: 'feed', title: '智能筛选' },
+      { id: 'list', title: '候选资产' },
       { id: 'graph', title: '关系图谱' },
-      { id: 'linked', title: '公私联动验证' },
+      { id: 'linked', title: '公私联动' },
     ],
   },
   {

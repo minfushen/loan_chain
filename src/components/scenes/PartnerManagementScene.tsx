@@ -1241,8 +1241,8 @@ export default function PartnerManagementScene({ activeModule, onModuleChange, s
       case 'due-diligence': {
         const DD_REPORTS = [
           { id: 'dd1', company: '常州衡远包装材料有限公司', shortName: '衡远包装', status: 'completed' as const, createdAt: '今天 09:45', creator: '张三经理', source: '候选资产池', confidence: 96, highlights: ['订单-物流-回款三流匹配', '关系强度87%', '置信度92%'], riskFlags: [] as string[] },
-          { id: 'dd2', company: '溧阳佳利包装材料有限公司', shortName: '佳利包装', status: 'processing' as const, createdAt: '今天 10:20', creator: '系统自动', source: '智能推荐流', confidence: 0, highlights: [], riskFlags: [] as string[] },
-          { id: 'dd3', company: '苏州锐信新材料有限公司', shortName: '锐信新材', status: 'completed' as const, createdAt: '昨天 16:30', creator: '李四经理', source: '条件筛选流', confidence: 88, highlights: ['二级辅料供应商', '交易真实', '集中度偏高62%'], riskFlags: ['客户集中度偏高'] },
+          { id: 'dd2', company: '溧阳佳利包装材料有限公司', shortName: '佳利包装', status: 'processing' as const, createdAt: '今天 10:20', creator: '系统自动', source: '智能筛选', confidence: 0, highlights: [], riskFlags: [] as string[] },
+          { id: 'dd3', company: '苏州锐信新材料有限公司', shortName: '锐信新材', status: 'completed' as const, createdAt: '昨天 16:30', creator: '李四经理', source: '智能筛选', confidence: 88, highlights: ['二级辅料供应商', '交易真实', '集中度偏高62%'], riskFlags: ['客户集中度偏高'] },
           { id: 'dd4', company: '无锡驰远物流服务有限公司', shortName: '驰远物流', status: 'completed' as const, createdAt: '昨天 14:10', creator: '张三经理', source: '外勤录入', confidence: 81, highlights: ['运单频次高', '结算周期短21天'], riskFlags: ['法人征信待补全'] },
           { id: 'dd5', company: '昆山瑞丰辅料有限公司', shortName: '瑞丰辅料', status: 'failed' as const, createdAt: '2天前', creator: '王五经理', source: '候选资产池', confidence: 0, highlights: [], riskFlags: ['外数接口超时，请重试'] },
         ];
@@ -1284,7 +1284,7 @@ export default function PartnerManagementScene({ activeModule, onModuleChange, s
                 <Button size="sm" className="h-9 px-5 text-[12px] gap-1.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-white shrink-0"><Zap size={12} />一键生成尽调报告</Button>
               </div>
               <div className="mt-3 flex items-center gap-4 text-[10px] text-[#94A3B8]">
-                <span>支持来源: 候选资产池 · 智能推荐流 · 条件筛选流 · 外勤录入 · 手动输入</span>
+                <span>支持来源: 候选资产池 · 智能筛选 · 外勤录入 · 手动输入</span>
                 <span>·</span>
                 <span>AI将自动调用工商、税务、司法、征信等外数接口</span>
               </div>

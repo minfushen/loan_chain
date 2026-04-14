@@ -1,0 +1,386 @@
+{
+  "meta": {
+    "company": "常州衡远包装材料有限公司",
+    "period": "2025-01-01 至 2025-12-31",
+    "generateTime": "2026-04-09 14:35:00",
+    "engine": "百慧AI-三流交叉验证引擎 v2.1",
+    "note": "POC演示数据，订单/物流/回款三流时序对齐，可直接驱动可视化图表"
+  },
+  "summary": {
+    "totalOrders": 48,
+    "totalOrderAmount": 2800000,
+    "totalInvoices": 48,
+    "totalInvoiceAmount": 2800000,
+    "totalShipments": 48,
+    "totalReceivables": 2998537.42,
+    "matchRate": {
+      "orderToInvoice": "100%",
+      "orderToLogistics": "100%",
+      "invoiceToSettlement": "98.6%",
+      "overall": "98.6%"
+    },
+    "avgReceivableCycle": 34,
+    "maxReceivableCycle": 38,
+    "minReceivableCycle": 30,
+    "anomalies": 1,
+    "anomalyDesc": "Q4末单（ORD-2025120024）跨年签收，回款周期36天，属正常范围",
+    "aiConclusion": "三流匹配度98.6%，订单-物流-回款时序高度一致，经营真实性验证通过。全年无断单、无断票、无异常回款，符合A级授信主体特征。"
+  },
+  "monthlyStats": [
+    {
+      "month": "2025-01",
+      "orderCount": 4,
+      "orderAmount": 85000,
+      "invoiceAmount": 85000,
+      "settlementAmount": 85000,
+      "avgCycle": 33,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-02",
+      "orderCount": 3,
+      "orderAmount": 75000,
+      "invoiceAmount": 75000,
+      "settlementAmount": 75000,
+      "avgCycle": 34,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-03",
+      "orderCount": 4,
+      "orderAmount": 115000,
+      "invoiceAmount": 115000,
+      "settlementAmount": 115000,
+      "avgCycle": 33,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-04",
+      "orderCount": 4,
+      "orderAmount": 130000,
+      "invoiceAmount": 130000,
+      "settlementAmount": 130000,
+      "avgCycle": 34,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-05",
+      "orderCount": 4,
+      "orderAmount": 130000,
+      "invoiceAmount": 130000,
+      "settlementAmount": 130000,
+      "avgCycle": 34,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-06",
+      "orderCount": 4,
+      "orderAmount": 150000,
+      "invoiceAmount": 150000,
+      "settlementAmount": 150000,
+      "avgCycle": 33,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-07",
+      "orderCount": 4,
+      "orderAmount": 175000,
+      "invoiceAmount": 175000,
+      "settlementAmount": 175000,
+      "avgCycle": 34,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-08",
+      "orderCount": 4,
+      "orderAmount": 190000,
+      "invoiceAmount": 190000,
+      "settlementAmount": 190000,
+      "avgCycle": 34,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-09",
+      "orderCount": 4,
+      "orderAmount": 210000,
+      "invoiceAmount": 210000,
+      "settlementAmount": 210000,
+      "avgCycle": 34,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-10",
+      "orderCount": 4,
+      "orderAmount": 225000,
+      "invoiceAmount": 225000,
+      "settlementAmount": 225000,
+      "avgCycle": 35,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-11",
+      "orderCount": 4,
+      "orderAmount": 240000,
+      "invoiceAmount": 240000,
+      "settlementAmount": 240000,
+      "avgCycle": 35,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技"
+    },
+    {
+      "month": "2025-12",
+      "orderCount": 5,
+      "orderAmount": 440000,
+      "invoiceAmount": 440000,
+      "settlementAmount": 1197177.42,
+      "avgCycle": 36,
+      "matchStatus": "完全匹配",
+      "keyBuyer": "盛拓模组科技",
+      "note": "12月含年末大单120万，12月27日大额回款1197177.42元（含Q4累计结算）"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "TXN-001",
+      "orderNo": "ORD-2025010003",
+      "orderDate": "2025-01-05",
+      "orderAmount": 20000,
+      "buyer": "盛拓模组科技有限公司",
+      "product": "可循环周转箱",
+      "invoiceNo": "HY2025010001",
+      "invoiceDate": "2025-01-08",
+      "invoiceAmount": 20000,
+      "invoiceDaysAfterOrder": 3,
+      "shipmentNo": "YUN-HY-20250110-001",
+      "shipDate": "2025-01-10",
+      "signDate": "2025-01-12",
+      "shipDaysAfterOrder": 5,
+      "settlementDate": "2025-02-11",
+      "settlementAmount": 20000,
+      "receivableCycleDays": 34,
+      "matchStatus": "完全匹配",
+      "anomaly": false
+    },
+    {
+      "id": "TXN-002",
+      "orderNo": "ORD-2025010007",
+      "orderDate": "2025-01-12",
+      "orderAmount": 30000,
+      "buyer": "盛拓模组科技有限公司",
+      "product": "缓冲包装材料",
+      "invoiceNo": "HY2025010002",
+      "invoiceDate": "2025-01-15",
+      "invoiceAmount": 30000,
+      "invoiceDaysAfterOrder": 3,
+      "shipmentNo": "YUN-HY-20250117-001",
+      "shipDate": "2025-01-17",
+      "signDate": "2025-01-19",
+      "shipDaysAfterOrder": 5,
+      "settlementDate": "2025-02-18",
+      "settlementAmount": 30000,
+      "receivableCycleDays": 34,
+      "matchStatus": "完全匹配",
+      "anomaly": false
+    },
+    {
+      "id": "TXN-003",
+      "orderNo": "ORD-2025010012",
+      "orderDate": "2025-01-19",
+      "orderAmount": 25000,
+      "buyer": "盛拓模组科技有限公司",
+      "product": "可循环周转箱",
+      "invoiceNo": "HY2025010003",
+      "invoiceDate": "2025-01-22",
+      "invoiceAmount": 25000,
+      "invoiceDaysAfterOrder": 3,
+      "shipmentNo": "YUN-HY-20250124-001",
+      "shipDate": "2025-01-24",
+      "signDate": "2025-01-26",
+      "shipDaysAfterOrder": 5,
+      "settlementDate": "2025-02-25",
+      "settlementAmount": 25000,
+      "receivableCycleDays": 34,
+      "matchStatus": "完全匹配",
+      "anomaly": false
+    },
+    {
+      "id": "TXN-004",
+      "orderNo": "ORD-2025010018",
+      "orderDate": "2025-01-25",
+      "orderAmount": 10000,
+      "buyer": "锐信新材料有限公司",
+      "product": "回收包装箱",
+      "invoiceNo": "HY2025010004",
+      "invoiceDate": "2025-01-28",
+      "invoiceAmount": 10000,
+      "invoiceDaysAfterOrder": 3,
+      "shipmentNo": "YUN-HY-20250130-001",
+      "shipDate": "2025-01-30",
+      "signDate": "2025-02-01",
+      "shipDaysAfterOrder": 5,
+      "settlementDate": "2025-03-03",
+      "settlementAmount": 10000,
+      "receivableCycleDays": 33,
+      "matchStatus": "完全匹配",
+      "anomaly": false
+    },
+    {
+      "id": "TXN-045",
+      "orderNo": "ORD-2025120019",
+      "orderDate": "2025-12-22",
+      "orderAmount": 90000,
+      "buyer": "盛拓模组科技有限公司",
+      "product": "缓冲包装材料",
+      "invoiceNo": "HY2025120004",
+      "invoiceDate": "2025-12-24",
+      "invoiceAmount": 90000,
+      "invoiceDaysAfterOrder": 2,
+      "shipmentNo": "YUN-HY-20251227-001",
+      "shipDate": "2025-12-27",
+      "signDate": "2025-12-29",
+      "shipDaysAfterOrder": 5,
+      "settlementDate": "2026-01-28",
+      "settlementAmount": 90000,
+      "receivableCycleDays": 35,
+      "matchStatus": "完全匹配",
+      "anomaly": false
+    },
+    {
+      "id": "TXN-046",
+      "orderNo": "ORD-2025120024",
+      "orderDate": "2025-12-25",
+      "orderAmount": 120000,
+      "buyer": "盛拓模组科技有限公司",
+      "product": "可循环周转箱",
+      "invoiceNo": "HY2025120005",
+      "invoiceDate": "2025-12-27",
+      "invoiceAmount": 120000,
+      "invoiceDaysAfterOrder": 2,
+      "shipmentNo": "YUN-HY-20251230-001",
+      "shipDate": "2025-12-30",
+      "signDate": "2026-01-02",
+      "shipDaysAfterOrder": 5,
+      "settlementDate": "2026-01-30",
+      "settlementAmount": 120000,
+      "receivableCycleDays": 36,
+      "matchStatus": "完全匹配",
+      "anomaly": false,
+      "note": "年末大单，跨年签收，回款周期36天，属正常范围"
+    }
+  ],
+  "keyAnchorPoints": [
+    {
+      "label": "Q4大额回款锚点",
+      "date": "2025-12-27",
+      "type": "settlement",
+      "amount": 1197177.42,
+      "source": "交通银行流水",
+      "linkedOrder": "ORD-2025120024等Q4多笔订单",
+      "linkedInvoice": "HY2025120005等",
+      "linkedShipment": "YUN-HY-20251230-001等",
+      "desc": "交通银行流水12月27日大额货款1197177.42元，对应Q4多笔订单累计结算，三流完全闭环"
+    },
+    {
+      "label": "Q3旺季收款锚点",
+      "date": "2025-08-09",
+      "type": "settlement",
+      "amount": 118459.62,
+      "source": "农业银行流水",
+      "linkedOrder": "ORD-2025080004等",
+      "linkedInvoice": "HY2025080001等",
+      "linkedShipment": "YUN-HY-20250810-001等",
+      "desc": "农业银行流水8月9日广州神山支行货款，对应Q3旺季订单回款，三流吻合"
+    },
+    {
+      "label": "工资发放验证点",
+      "date": "2025-12-15",
+      "type": "payroll",
+      "amount": 291249.16,
+      "source": "交通银行流水",
+      "desc": "批量发薪记录，员工27人，与工商信息社保人数24人基本吻合，经营真实性佐证"
+    },
+    {
+      "label": "贷款利息支付点",
+      "date": "2025-12-21",
+      "type": "financing",
+      "amount": 15208.33,
+      "source": "交通银行流水",
+      "desc": "贷款利息支出，与财务报表财务费用6.3万（Q4单季1.5万）吻合"
+    }
+  ],
+  "buyerConcentration": [
+    {
+      "buyer": "盛拓模组科技有限公司",
+      "orderCount": 36,
+      "orderAmount": 2020000,
+      "ratio": "72.1%",
+      "isMainChain": true,
+      "riskLevel": "可接受",
+      "note": "主链核心买方，关系强度92，交易稳定"
+    },
+    {
+      "buyer": "锐信新材料有限公司",
+      "orderCount": 8,
+      "orderAmount": 430000,
+      "ratio": "15.4%",
+      "isMainChain": false,
+      "riskLevel": "正常",
+      "note": "次要买方，交易规律"
+    },
+    {
+      "buyer": "无锡创达电气有限公司",
+      "orderCount": 4,
+      "orderAmount": 350000,
+      "ratio": "12.5%",
+      "isMainChain": false,
+      "riskLevel": "正常",
+      "note": "补充买方，季节性采购"
+    }
+  ],
+  "receivableCycleDistribution": {
+    "30天以内": 8,
+    "31-35天": 32,
+    "36-40天": 7,
+    "40天以上": 1,
+    "avgDays": 34,
+    "trend": "全年回款周期稳定在30-36天，Q4略有拉长（35-36天）属季节性正常"
+  },
+  "sixDimensionVerification": {
+    "continuity": {
+      "score": 100,
+      "desc": "全年12个月连续开票，无断月，连续性满分"
+    },
+    "periodicity": {
+      "score": 95,
+      "desc": "每月4-5笔订单，节奏规律，Q4略有集中属正常旺季特征"
+    },
+    "correspondence": {
+      "score": 99,
+      "desc": "订单-发票-物流三方对应率99%，仅年末大单跨年签收导致轻微偏差"
+    },
+    "semantics": {
+      "score": 98,
+      "desc": "摘要字段含义清晰（材料款/货款/运费），无异常摘要"
+    },
+    "concentration": {
+      "score": 82,
+      "desc": "最大客户盛拓模组占比72.1%，超过55%阈值，需持续监控但不构成一票否决"
+    },
+    "volatility": {
+      "score": 94,
+      "desc": "月度金额波动可解释（Q1淡季→Q4旺季），无异常突增突降"
+    },
+    "overallScore": 95,
+    "aiConclusion": "六维验证综合得分95分，经营真实性高。集中度维度略低（82分）已在授信方案中通过额度控制处理，不影响整体判断。"
+  }
+}

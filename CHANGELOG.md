@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.7.5 — 浮动 AI Copilot 全场景统一改造 (2026-04-14)
+
+### 浮动 AI Copilot
+- **智能尽调**（4 模块）：移除固定 AI 列，grid 布局从 3/4 列缩减为 2/3 列，新增 `renderAiPanel()` 浮动引导
+- **智能识别**（5 模块）：移除固定 AI 列，grid 布局调整，新增 `renderAiPanel()` 浮动引导
+- **智能监控**（5 模块）：移除固定 AI 列，grid 布局调整，新增 `renderAiPanel()` 浮动引导
+- **今日工作台**（5 模块）：新增 `renderAiPanel()` 浮动引导 + `AiInsight` 上下文提示条（每个模块根据业务状态动态切换 tone）
+
+### 流程驱动组件
+- `ProductPrimitives` 新增 `FlowProgress`（水平步骤条）、`AiInsight`（AI 提示条）、`DecisionCard`（决策卡片）、`ChecklistPanel`（检查清单）
+- `SceneLayout` 新增浮动 AI 侧栏机制：右下角 Brain 图标触发，AnimatePresence 滑入面板（380px）
+
+### 布局优化
+- 所有改造场景的 AI 内容不再参与 grid 布局，内容区获得完整宽度
+- 移除约 2100 行重复的固定 AI 列代码
+
+---
+
 ## v0.7.4 — 智能审批四页工作台与 SceneLayout 深度集成 (2026-04-13)
 
 - **智能审批**（产品匹配 / 预审与推单 / 补审作业 / 审批摘要）：`ProductApprovalScene` 通过 `SceneLayout` 槽位接入 **KPI 条**、**Sticky 底部动作**、**页内 AI 面板**、**副标题覆盖**

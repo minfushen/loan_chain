@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Brain, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ const VARIANT_RING: Record<string, string> = {
   adjudication: 'from-emerald-500/15 to-primary/15 border-emerald-500/25',
 };
 
-/** 中部 AI 引导卡 — 文档四页分别：收敛 / 门槛 / 边界 / 裁决 */
+/** 中部 AI 引导卡 — 默认折叠为摘要行，点击展开完整内容 */
 export function AiMiddleGuideCard({
   variant,
   title,
@@ -61,24 +61,42 @@ export function AiMiddleGuideCard({
   children: React.ReactNode;
   className?: string;
 }) {
+  const [expanded, setExpanded] = React.useState(false);
+
   return (
     <div
       className={cn(
-        'rounded-xl border bg-gradient-to-br p-3.5 space-y-2 shadow-sm',
+        'rounded-xl border bg-gradient-to-br shadow-sm overflow-hidden transition-all duration-200',
+        expanded ? 'p-4 space-y-2.5' : 'p-2.5',
         VARIANT_RING[variant],
         className,
       )}
     >
-      <div className="flex items-center gap-2">
-        <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-sm">
-          <Sparkles className="size-4 text-primary-foreground" aria-hidden />
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between gap-2"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="size-6 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-sm shrink-0">
+            <Sparkles className="size-3 text-primary-foreground" aria-hidden />
+          </div>
+          <div className="text-left min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">AI 引导</div>
+            <div className="text-[12px] font-semibold text-foreground leading-tight truncate">{title}</div>
+          </div>
         </div>
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">AI 引导</div>
-          <div className="text-[12px] font-semibold text-foreground leading-tight">{title}</div>
-        </div>
-      </div>
-      <div className="text-[11px] leading-relaxed text-foreground/90 pl-0.5">{children}</div>
+        <ChevronDown
+          size={14}
+          className={cn(
+            'text-muted-foreground shrink-0 transition-transform duration-200',
+            expanded && 'rotate-180',
+          )}
+        />
+      </button>
+      {expanded && (
+        <div className="text-[11px] leading-relaxed text-foreground/90 pl-0.5">{children}</div>
+      )}
     </div>
   );
 }
@@ -97,7 +115,7 @@ export function ApprovalAiDock({
 }) {
   return (
     <div className="flex flex-col h-full min-h-[200px]">
-      <div className="flex items-center justify-between gap-2 pb-2 border-b border-border">
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border">
         <div className="flex items-center gap-1.5 min-w-0">
           <Brain className="size-4 text-primary shrink-0" />
           <span className="text-[11px] font-semibold truncate">AI 建议</span>
@@ -115,12 +133,12 @@ export function ApprovalAiDock({
         </Button>
       </div>
       {!expanded && (
-        <p className="text-[10px] text-muted-foreground leading-snug mt-3 line-clamp-6" title={collapsedSummary}>
+        <p className="text-[10px] text-muted-foreground leading-snug mt-4 line-clamp-8" title={collapsedSummary}>
           {collapsedSummary}
         </p>
       )}
       {expanded && (
-        <div className="flex-1 overflow-y-auto mt-3 space-y-3 pr-0.5">
+        <div className="flex-1 overflow-y-auto mt-4 space-y-4 pr-1">
           <TypewriterText text={fullText} active />
           <p className="text-[9px] text-muted-foreground border-t border-border pt-2">
             中部为任务引导，此处为完整解释与可采纳动作参考。

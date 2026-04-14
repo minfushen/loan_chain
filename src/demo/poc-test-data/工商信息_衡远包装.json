@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "dataSource": "模拟工商信息（POC演示用）",
+    "queryTime": "2026-04-09 14:20:15",
+    "queryEngine": "百慧AI-外数模拟层",
+    "note": "本数据为POC演示用途。真实场景下此数据由天眼查/企查查/国家企业信用信息公示系统API返回。企业名称为虚构示例。"
+  },
+  "basicInfo": {
+    "companyName": "常州衡远包装材料有限公司",
+    "creditCode": "91320400MA1XXXXX2X",
+    "companyType": "有限责任公司（自然人独资）",
+    "legalPerson": "周海峰",
+    "registeredCapital": "500万元人民币",
+    "paidInCapital": "500万元人民币",
+    "establishDate": "2018-03-15",
+    "approvalDate": "2026-03-10",
+    "operatingStatus": "存续（在营）",
+    "registrationAuthority": "常州市新北区市场监督管理局",
+    "registeredAddress": "江苏省常州市新北区孟河镇工业园区衡远路8号",
+    "businessAddress": "江苏省常州市新北区孟河镇工业园区衡远路8号",
+    "addressConsistent": true,
+    "businessScope": "包装材料的生产、销售；可循环周转箱、缓冲包装材料、回收包装箱的研发与制造；货物运输代理；普通货物仓储",
+    "industry": "制造业",
+    "industryCode": "C2290",
+    "industryDesc": "其他纸和纸板容器制造",
+    "employeeCount": 27,
+    "socialInsuranceCount": 24,
+    "taxRegistrationStatus": "正常",
+    "vatType": "小规模纳税人"
+  },
+  "shareholders": [
+    {
+      "name": "周海峰",
+      "type": "自然人",
+      "shareholdingRatio": "100%",
+      "subscriptionAmount": "500万元",
+      "paidInAmount": "500万元",
+      "isActualController": true
+    }
+  ],
+  "management": [
+    { "name": "周海峰", "position": "执行董事/总经理", "startDate": "2018-03-15" },
+    { "name": "陈静", "position": "监事", "startDate": "2018-03-15" }
+  ],
+  "branchOffices": [],
+  "qualifications": [
+    {
+      "name": "营业执照",
+      "issuer": "常州市新北区市场监督管理局",
+      "validUntil": "长期",
+      "status": "有效"
+    },
+    {
+      "name": "一般纳税人资格证",
+      "issuer": "常州市税务局",
+      "validUntil": "长期",
+      "status": "小规模纳税人，无需此证"
+    }
+  ],
+  "intellectualProperty": {
+    "trademarks": 1,
+    "patents": 0,
+    "softwareCopyrights": 0
+  },
+  "riskInfo": {
+    "judicialRisk": {
+      "lawsuits": 0,
+      "asDefendant": 0,
+      "asPlaintiff": 0,
+      "executionCases": 0,
+      "dishonestExecutee": false,
+      "conclusion": "未发现司法风险"
+    },
+    "administrativePenalty": {
+      "count": 0,
+      "taxViolation": false,
+      "environmentalViolation": false,
+      "conclusion": "未发现行政处罚记录"
+    },
+    "abnormalOperation": {
+      "onList": false,
+      "reason": null,
+      "conclusion": "未列入经营异常名录"
+    },
+    "seriousViolation": {
+      "onList": false,
+      "conclusion": "未列入严重违法失信名单"
+    },
+    "publicSentiment": {
+      "negativeNews": 0,
+      "riskKeywords": [],
+      "conclusion": "未发现负面舆情"
+    }
+  },
+  "changeHistory": [
+    {
+      "date": "2022-06-20",
+      "changeType": "注册资本变更",
+      "before": "200万元",
+      "after": "500万元",
+      "remark": "增资扩股，经营规模扩大"
+    },
+    {
+      "date": "2020-09-15",
+      "changeType": "经营范围变更",
+      "before": "包装材料的生产、销售",
+      "after": "包装材料的生产、销售；可循环周转箱、缓冲包装材料、回收包装箱的研发与制造；货物运输代理；普通货物仓储",
+      "remark": "业务扩展，新增研发和仓储业务"
+    }
+  ],
+  "annualReports": [
+    { "year": 2025, "status": "已公示", "submitDate": "2026-03-28" },
+    { "year": 2024, "status": "已公示", "submitDate": "2025-04-10" },
+    { "year": 2023, "status": "已公示", "submitDate": "2024-04-08" },
+    { "year": 2022, "status": "已公示", "submitDate": "2023-04-12" },
+    { "year": 2021, "status": "已公示", "submitDate": "2022-04-09" }
+  ],
+  "relatedCompanies": [
+    {
+      "name": "常州衡远物流有限公司",
+      "relation": "法人周海峰持股60%",
+      "creditCode": "91320400MA1YYYYY3Y",
+      "status": "存续",
+      "remark": "关联企业，主营货运，与本公司存在业务往来"
+    }
+  ],
+  "aiAnalysis": {
+    "companyAge": "7年1个月",
+    "meetsAgeRequirement": true,
+    "capitalAdequacy": "注册资本500万，实缴到位，资本充足",
+    "shareholderStructure": "单一自然人股东，结构清晰，无代持嫌疑",
+    "riskSummary": "无司法风险、无行政处罚、无经营异常、无负面舆情，风险扫描全部通过",
+    "changeAnalysis": "历史变更2次，均为正向扩张（增资+扩大经营范围），无异常变更",
+    "annualReportCompliance": "近5年年报全部按时公示，合规性良好",
+    "relatedRisk": "存在1家关联企业（衡远物流），与本公司有业务往来，需关注关联交易但不构成风险",
+    "conclusion": "工商信息完整，企业存续状态正常，无任何风险标记。成立年限、资本规模、合规记录均满足授信准入要求，建议通过主体真实性核验。"
+  }
+}

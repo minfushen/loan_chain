@@ -132,15 +132,17 @@ function AppShell() {
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-1.5 pl-1 pr-1 h-7 hover:bg-white/10">
-                <Avatar className="w-5 h-5">
-                  <AvatarImage src="https://picsum.photos/seed/product-owner/200" />
-                  <AvatarFallback className="text-[8px] bg-[#2563EB] text-white">王</AvatarFallback>
-                </Avatar>
-                <span className="text-[10px] font-medium text-white hidden lg:inline">王敏</span>
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" className="flex items-center gap-1.5 pl-1 pr-1 h-7 hover:bg-white/10">
+                  <Avatar className="w-5 h-5">
+                    <AvatarImage src="https://picsum.photos/seed/product-owner/200" />
+                    <AvatarFallback className="text-[8px] bg-[#2563EB] text-white">王</AvatarFallback>
+                  </Avatar>
+                  <span className="text-[10px] font-medium text-white hidden lg:inline">王敏</span>
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuLabel>工作台</DropdownMenuLabel>
               <DropdownMenuSeparator />

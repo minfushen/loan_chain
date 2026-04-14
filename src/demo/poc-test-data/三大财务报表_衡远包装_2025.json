@@ -1,0 +1,334 @@
+{
+  "meta": {
+    "taxpayerId": "91320400MA1XXXXX2X",
+    "taxpayerName": "常州衡远包装材料有限公司",
+    "reportYear": 2025,
+    "currency": "CNY",
+    "unit": "元",
+    "auditor": "未经审计（管理账）",
+    "note": "本数据为POC演示用途，企业信息为虚构示例，数字与纳税申报、银行流水数据内部对齐"
+  },
+
+  "balanceSheet": {
+    "reportName": "资产负债表",
+    "reportDate": "2025-12-31",
+    "assets": {
+      "currentAssets": {
+        "cash": 318052.82,
+        "bankDeposit": 856000.00,
+        "accountsReceivable": 420000.00,
+        "notes_receivable": 0.00,
+        "prepayments": 85000.00,
+        "inventory": 320000.00,
+        "otherCurrentAssets": 28000.00,
+        "totalCurrentAssets": 2027052.82
+      },
+      "nonCurrentAssets": {
+        "fixedAssets_net": 1280000.00,
+        "constructionInProgress": 0.00,
+        "intangibleAssets": 45000.00,
+        "longTermPrepaidExpenses": 32000.00,
+        "otherNonCurrentAssets": 0.00,
+        "totalNonCurrentAssets": 1357000.00
+      },
+      "totalAssets": 3384052.82
+    },
+    "liabilities": {
+      "currentLiabilities": {
+        "shortTermLoans": 800000.00,
+        "accountsPayable": 380000.00,
+        "advanceReceipts": 45000.00,
+        "employeeBenefitsPayable": 68000.00,
+        "taxesPayable": 24520.00,
+        "otherCurrentLiabilities": 52000.00,
+        "totalCurrentLiabilities": 1369520.00
+      },
+      "nonCurrentLiabilities": {
+        "longTermLoans": 0.00,
+        "deferredIncome": 0.00,
+        "totalNonCurrentLiabilities": 0.00
+      },
+      "totalLiabilities": 1369520.00
+    },
+    "equity": {
+      "paidInCapital": 500000.00,
+      "capitalReserve": 0.00,
+      "surplusReserve": 51000.00,
+      "retainedEarnings": 1463532.82,
+      "totalEquity": 2014532.82
+    },
+    "totalLiabilitiesAndEquity": 3384052.82,
+    "keyRatios": {
+      "currentRatio": 1.48,
+      "quickRatio": 1.24,
+      "debtToAssetRatio": "40.5%",
+      "accountsReceivableTurnover": "16.2次/年",
+      "inventoryTurnover": "21.3次/年",
+      "aiFlag": "资产负债率40.5%，处于制造业小微企业合理区间（35%-55%）；流动比率1.48，短期偿债能力正常；应收账款周转率与34天回款周期吻合"
+    }
+  },
+
+  "incomeStatement": {
+    "reportName": "利润表",
+    "period": { "start": "2025-01-01", "end": "2025-12-31" },
+    "quarterly": [
+      {
+        "quarter": "Q1",
+        "period": "2025-01-01 至 2025-03-31",
+        "revenue": 500000.00,
+        "costOfRevenue": 380000.00,
+        "grossProfit": 120000.00,
+        "grossMargin": "24.0%",
+        "sellingExpenses": 12000.00,
+        "adminExpenses": 18000.00,
+        "financingExpenses": 15208.33,
+        "operatingProfit": 74791.67,
+        "nonOperatingIncome": 29.47,
+        "nonOperatingExpense": 0.00,
+        "profitBeforeTax": 74821.14,
+        "incomeTax": 3750.00,
+        "netProfit": 71071.14,
+        "netMargin": "14.2%"
+      },
+      {
+        "quarter": "Q2",
+        "period": "2025-04-01 至 2025-06-30",
+        "revenue": 600000.00,
+        "costOfRevenue": 450000.00,
+        "grossProfit": 150000.00,
+        "grossMargin": "25.0%",
+        "sellingExpenses": 14000.00,
+        "adminExpenses": 19000.00,
+        "financingExpenses": 12000.00,
+        "operatingProfit": 105000.00,
+        "nonOperatingIncome": 0.00,
+        "nonOperatingExpense": 0.00,
+        "profitBeforeTax": 105000.00,
+        "incomeTax": 5250.00,
+        "netProfit": 99750.00,
+        "netMargin": "16.6%"
+      },
+      {
+        "quarter": "Q3",
+        "period": "2025-07-01 至 2025-09-30",
+        "revenue": 800000.00,
+        "costOfRevenue": 590000.00,
+        "grossProfit": 210000.00,
+        "grossMargin": "26.3%",
+        "sellingExpenses": 18000.00,
+        "adminExpenses": 22000.00,
+        "financingExpenses": 20000.00,
+        "operatingProfit": 150000.00,
+        "nonOperatingIncome": 5.08,
+        "nonOperatingExpense": 0.00,
+        "profitBeforeTax": 150005.08,
+        "incomeTax": 7500.00,
+        "netProfit": 142505.08,
+        "netMargin": "17.8%"
+      },
+      {
+        "quarter": "Q4",
+        "period": "2025-10-01 至 2025-12-31",
+        "revenue": 900000.00,
+        "costOfRevenue": 660000.00,
+        "grossProfit": 240000.00,
+        "grossMargin": "26.7%",
+        "sellingExpenses": 20000.00,
+        "adminExpenses": 24000.00,
+        "financingExpenses": 16000.00,
+        "operatingProfit": 180000.00,
+        "nonOperatingIncome": 0.00,
+        "nonOperatingExpense": 0.00,
+        "profitBeforeTax": 180000.00,
+        "incomeTax": 9000.00,
+        "netProfit": 171000.00,
+        "netMargin": "19.0%"
+      }
+    ],
+    "annual": {
+      "revenue": 2800000.00,
+      "costOfRevenue": 2080000.00,
+      "grossProfit": 720000.00,
+      "grossMargin": "25.7%",
+      "sellingExpenses": 64000.00,
+      "adminExpenses": 83000.00,
+      "financingExpenses": 63208.33,
+      "operatingProfit": 509791.67,
+      "nonOperatingIncome": 34.55,
+      "nonOperatingExpense": 0.00,
+      "profitBeforeTax": 509826.22,
+      "incomeTax": 25500.00,
+      "netProfit": 484326.22,
+      "netMargin": "17.3%"
+    },
+    "keyRatios": {
+      "revenueGrowthYoY": "约+18%（与上年相比）",
+      "grossMarginTrend": "Q1→Q4逐季提升（24%→26.7%），规模效应显现",
+      "netMarginVsIndustry": "17.3%，高于包装材料行业均值（12%-15%），经营效率较好",
+      "financingCostRatio": "2.3%，与短期贷款80万、贷款利息记录吻合",
+      "aiFlag": "营收全年280万（含税口径约680万），与增值税申报销售额吻合；净利润48.4万，与资产负债表留存收益变动一致；毛利率逐季提升，经营质量向好"
+    }
+  },
+
+  "cashFlowStatement": {
+    "reportName": "现金流量表",
+    "period": { "start": "2025-01-01", "end": "2025-12-31" },
+    "quarterly": [
+      {
+        "quarter": "Q1",
+        "operatingActivities": {
+          "cashFromSales": 468000.00,
+          "cashPaidForGoods": 362000.00,
+          "cashPaidForEmployees": 68000.00,
+          "taxesPaid": 13961.20,
+          "otherOperatingCash": -8000.00,
+          "netCashFromOperating": 16038.80
+        },
+        "investingActivities": {
+          "purchaseOfFixedAssets": -45000.00,
+          "netCashFromInvesting": -45000.00
+        },
+        "financingActivities": {
+          "loanProceeds": 200000.00,
+          "loanRepayments": -150000.00,
+          "interestPaid": -15208.33,
+          "netCashFromFinancing": 34791.67
+        },
+        "netCashIncrease": 5830.47,
+        "openingCash": 312222.35,
+        "closingCash": 318052.82
+      },
+      {
+        "quarter": "Q2",
+        "operatingActivities": {
+          "cashFromSales": 572000.00,
+          "cashPaidForGoods": 428000.00,
+          "cashPaidForEmployees": 72000.00,
+          "taxesPaid": 18313.60,
+          "otherOperatingCash": -9000.00,
+          "netCashFromOperating": 44686.40
+        },
+        "investingActivities": {
+          "purchaseOfFixedAssets": 0.00,
+          "netCashFromInvesting": 0.00
+        },
+        "financingActivities": {
+          "loanProceeds": 500000.00,
+          "loanRepayments": -500000.00,
+          "interestPaid": -12000.00,
+          "netCashFromFinancing": -12000.00
+        },
+        "netCashIncrease": 32686.40,
+        "openingCash": 318052.82,
+        "closingCash": 350739.22
+      },
+      {
+        "quarter": "Q3",
+        "operatingActivities": {
+          "cashFromSales": 761360.00,
+          "cashPaidForGoods": 558000.00,
+          "cashPaidForEmployees": 78000.00,
+          "taxesPaid": 24169.00,
+          "otherOperatingCash": -12000.00,
+          "netCashFromOperating": 89191.00
+        },
+        "investingActivities": {
+          "purchaseOfFixedAssets": -80000.00,
+          "netCashFromInvesting": -80000.00
+        },
+        "financingActivities": {
+          "loanProceeds": 650000.00,
+          "loanRepayments": -650000.00,
+          "interestPaid": -20000.00,
+          "netCashFromFinancing": -20000.00
+        },
+        "netCashIncrease": -10809.00,
+        "openingCash": 350739.22,
+        "closingCash": 339930.22
+      },
+      {
+        "quarter": "Q4",
+        "operatingActivities": {
+          "cashFromSales": 1197177.42,
+          "cashPaidForGoods": 820000.00,
+          "cashPaidForEmployees": 82000.00,
+          "taxesPaid": 25543.20,
+          "otherOperatingCash": -15000.00,
+          "netCashFromOperating": 254634.22
+        },
+        "investingActivities": {
+          "purchaseOfFixedAssets": -120000.00,
+          "netCashFromInvesting": -120000.00
+        },
+        "financingActivities": {
+          "loanProceeds": 440000.00,
+          "loanRepayments": -580000.00,
+          "interestPaid": -16000.00,
+          "netCashFromFinancing": -156000.00
+        },
+        "netCashIncrease": -21365.78,
+        "openingCash": 339930.22,
+        "closingCash": 318564.44
+      }
+    ],
+    "annual": {
+      "operatingActivities": {
+        "cashFromSales": 2998537.42,
+        "cashPaidForGoods": 2168000.00,
+        "cashPaidForEmployees": 300000.00,
+        "taxesPaid": 81987.00,
+        "otherOperatingCash": -44000.00,
+        "netCashFromOperating": 404550.42
+      },
+      "investingActivities": {
+        "purchaseOfFixedAssets": -245000.00,
+        "netCashFromInvesting": -245000.00
+      },
+      "financingActivities": {
+        "loanProceeds": 1790000.00,
+        "loanRepayments": -1880000.00,
+        "interestPaid": -63208.33,
+        "netCashFromFinancing": -153208.33
+      },
+      "netCashIncrease": 6342.09,
+      "openingCash": 311710.73,
+      "closingCash": 318052.82
+    },
+    "keyRatios": {
+      "operatingCashToNetProfit": "83.5%（经营现金流/净利润），现金含金量良好",
+      "cashCoverageRatio": "经营现金流净额40.5万，可覆盖短期贷款利息6.3万约6.4倍",
+      "q4CashFromSales": "Q4销售收款119.7万（含12月27日大额货款），与交通银行流水直接对应",
+      "loanRepaymentCapacity": "全年经营现金流净额40.5万，短期贷款余额80万，还款覆盖率50.6%，需依赖续贷",
+      "aiFlag": "经营活动现金流全年为正（40.5万），Q3因旺季备货导致短暂净流出，属正常季节性波动；Q4大额销售收款与交通银行流水12月27日1197177.42元货款完全吻合，现金流真实性验证通过"
+    }
+  },
+
+  "crossVerification": {
+    "revenueTriangle": {
+      "incomeStatement_revenue": 2800000.00,
+      "vatFiling_taxableSales": 2400000.00,
+      "vatFiling_exemptSales": 4400000.00,
+      "note": "利润表收入280万为不含税口径；增值税申报含税销售额=应税240万+免税440万=680万；含税口径约680万，与系统样本数据annualSales='680万'完全一致",
+      "result": "一致"
+    },
+    "profitVsRetainedEarnings": {
+      "netProfit_2025": 484326.22,
+      "retainedEarnings_change": 484326.22,
+      "result": "一致，利润表净利润与资产负债表留存收益变动吻合"
+    },
+    "cashFlowVsBankStatement": {
+      "q4_cashFromSales": 1197177.42,
+      "bankFlow_dec27_receipt": 1197177.42,
+      "result": "完全一致，现金流量表Q4销售收款与交通银行流水12月27日大额货款精确匹配",
+      "additionalMatch": "农业银行流水Q3货款收入（广州神山支行多笔）与Q3经营现金流入吻合"
+    },
+    "taxVsFinancials": {
+      "citFiling_revenue_annual": 2800000.00,
+      "incomeStatement_revenue": 2800000.00,
+      "citFiling_profit_annual": 510000.00,
+      "incomeStatement_profitBeforeTax": 509826.22,
+      "result": "一致，企业所得税申报营业收入、利润总额与利润表数据偏差<0.1%"
+    },
+    "aiConclusion": "三大财务报表与纳税申报记录、银行流水数据四方交叉验证全部通过。资产负债率健康、盈利能力逐季提升、现金流真实性强。Q4大额货款收款与流水精确匹配是本次尽调的核心证据锚点。综合评估：财务数据真实可信，支持授信120万订单微贷。"
+  }
+}

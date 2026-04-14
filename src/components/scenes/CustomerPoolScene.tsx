@@ -943,7 +943,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange, sceneO
         return (
           <div className="space-y-4">
             <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
-              <div className="flex items-center gap-2"><Filter size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">条件筛选流</span><span className="text-[10px] text-[#86909C]">基于规则主动筛选候选线索</span></div>
+              <div className="flex items-center gap-2"><Filter size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">智能筛选</span><span className="text-[10px] text-[#86909C]">基于规则主动筛选候选线索</span></div>
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { name: '储能方案摸排', count: 50, rule: '注册资本≥500万 + 成立≥5年 + 储能行业', status: '运行中' },
@@ -1141,7 +1141,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange, sceneO
                           )}
                           {task.status === 'pooled' && (
                             <div className="flex items-center gap-2">
-                              <Badge className="bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[9px]">已进入候选资产列表</Badge>
+                              <Badge className="bg-[#ECFDF3] text-[#047857] border-[#A7F3D0] text-[9px]">已进入候选资产</Badge>
                               <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#4E5969]"><Eye size={9} /> 查看详情</Button>
                             </div>
                           )}
@@ -1195,7 +1195,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange, sceneO
                   <div className="text-[12px] font-semibold text-[#1D2129]">下游功能衔接</div>
                   <div className="space-y-1.5">
                     {[
-                      { label: '候选资产列表', desc: '查看全部候选企业', moduleId: 'list' },
+                      { label: '候选资产', desc: '查看全部候选企业', moduleId: 'list' },
                       { label: '预授信池', desc: '查看已通过预授信', moduleId: 'pre-credit' },
                       { label: '补审队列', desc: '查看待补审企业', moduleId: 'review-queue' },
                     ].map(entry => (
@@ -1291,7 +1291,7 @@ export default function CustomerPoolScene({ activeModule, onModuleChange, sceneO
       case 'linked':
         return (
           <div className="rounded-xl border border-[#E5E6EB] bg-white p-5 space-y-4">
-            <div className="flex items-center gap-2"><Link2 size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">公私联动验证</span></div>
+            <div className="flex items-center gap-2"><Link2 size={15} className="text-[#1677FF]" /><span className="text-[14px] font-semibold text-[#1D2129]">公私联动</span></div>
             <div className="text-[12px] text-[#4E5969] leading-5">将企业对公信息与法人个人信息交叉验证，发现以私带公切入点和经营真实性信号。</div>
             <div className="grid grid-cols-2 gap-4">
               {CANDIDATES.filter(c => c.bizScore >= 4 && c.personScore >= 3).slice(0, 4).map(c => (

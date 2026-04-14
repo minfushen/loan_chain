@@ -1,5 +1,5 @@
 import React from 'react';
-import { LucideIcon, ChevronDown, Building2, ArrowRight, Sparkles } from 'lucide-react';
+import { LucideIcon, ChevronDown, ChevronRight, Building2, ArrowRight, Sparkles, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1093,9 +1093,12 @@ export function KpiBar({
     muted:  'text-foreground',
   };
   return (
-    <div className={cn('grid gap-3', className)} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+    <div
+      className={cn('grid gap-4 scrollbar-thin overflow-x-auto pb-0.5', className)}
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(140px, 1fr))` }}
+    >
       {items.map((item) => (
-        <div key={item.label} className="rounded-lg border border-border bg-card px-4 py-3 group transition-shadow hover:shadow-sm cursor-default">
+        <div key={item.label} className="rounded-lg border border-border bg-card px-5 py-4 group transition-shadow hover:shadow-sm cursor-default min-w-0">
           <div className="flex items-center gap-1 mb-1">
             <div className="text-[10px] text-muted-foreground">{item.label}</div>
             {item.hint && (
@@ -1126,8 +1129,8 @@ export function Stepper({
 }) {
   const currentIdx = steps.findIndex((s) => s.id === current);
   return (
-    <div className={cn('rounded-lg border border-border bg-card px-4 py-3', className)}>
-      <div className="flex items-center gap-0">
+    <div className={cn('rounded-lg border border-border bg-card px-5 py-4', className)}>
+      <div className="flex items-center gap-2">
         {steps.map((step, idx) => {
           const done = idx < currentIdx;
           const active = idx === currentIdx;
@@ -1160,7 +1163,7 @@ export function Stepper({
                 stepBody
               )}
               {idx < steps.length - 1 && (
-                <div className={cn('flex-1 h-px mx-3', idx < currentIdx ? 'bg-success' : 'bg-border')} />
+                <div className={cn('flex-1 h-px mx-4 min-w-[12px]', idx < currentIdx ? 'bg-success' : 'bg-border')} />
               )}
             </React.Fragment>
           );
@@ -1412,6 +1415,247 @@ export function PageShell({
 
       {/* 5. 固定动作层 */}
       {stickyBar}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   FlowProgress — 流程进度条：水平步骤指示器
+   ──────────────────────────────────────────────────────────────── */
+export interface FlowStep {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export function FlowProgress({
+  steps,
+  currentStepId,
+  onStepClick,
+}: {
+  steps: FlowStep[];
+  currentStepId: string;
+  onStepClick?: (id: string) => void;
+}) {
+  const currentIndex = steps.findIndex((s) => s.id === currentStepId);
+
+  return (
+    <div className="flex items-center gap-0 w-full">
+      {steps.map((step, i) => {
+        const isCompleted = i < currentIndex;
+        const isCurrent = i === currentIndex;
+        const isUpcoming = i > currentIndex;
+
+        return (
+          <React.Fragment key={step.id}>
+            <button
+              type="button"
+              disabled={!onStepClick}
+              onClick={() => onStepClick?.(step.id)}
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-left',
+                isCurrent && 'bg-primary/10',
+                isCompleted && 'opacity-80 hover:opacity-100',
+                isUpcoming && 'opacity-40',
+                onStepClick && 'cursor-pointer',
+              )}
+            >
+              <div
+                className={cn(
+                  'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-all',
+                  isCurrent && 'bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20',
+                  isCompleted && 'bg-primary/20 text-primary',
+                  isUpcoming && 'bg-muted text-muted-foreground',
+                )}
+              >
+                {isCompleted ? <CheckCircle2 size={14} /> : i + 1}
+              </div>
+              <div className="min-w-0">
+                <div className={cn('text-[11px] font-semibold leading-tight truncate', isCurrent ? 'text-foreground' : 'text-muted-foreground')}>
+                  {step.label}
+                </div>
+                {step.description && <div className="text-[9px] text-muted-foreground/70 truncate">{step.description}</div>}
+              </div>
+            </button>
+            {i < steps.length - 1 && (
+              <div className={cn('flex-1 h-[2px] rounded-full mx-1', i < currentIndex ? 'bg-primary/40' : 'bg-border')} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   AiInsight — AI 主动提示条
+   ──────────────────────────────────────────────────────────────── */
+export function AiInsight({
+  message,
+  tone = 'info',
+  action,
+}: {
+  message: string;
+  tone?: 'success' | 'warning' | 'info' | 'danger';
+  action?: React.ReactNode;
+}) {
+  const toneStyle = {
+    success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+    warning: 'bg-amber-50 border-amber-200 text-amber-800',
+    info: 'bg-blue-50 border-blue-200 text-blue-800',
+    danger: 'bg-red-50 border-red-200 text-red-800',
+  };
+  const iconColor = { success: 'text-emerald-500', warning: 'text-amber-500', info: 'text-blue-500', danger: 'text-red-500' };
+
+  return (
+    <div className={cn('flex items-center gap-2.5 px-4 py-3 rounded-xl border', toneStyle[tone])}>
+      <Sparkles size={16} className={cn('shrink-0', iconColor[tone])} />
+      <p className="text-[11px] leading-relaxed flex-1">{message}</p>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   DecisionCard — 决策卡片：产品对比/选择
+   ──────────────────────────────────────────────────────────────── */
+export function DecisionCard({
+  title,
+  subtitle,
+  confidence,
+  reasons,
+  blockCount,
+  badge,
+  badgeStyle,
+  isSelected,
+  onSelect,
+  primaryAction,
+  secondaryAction,
+}: React.PropsWithChildren<{
+  title: string;
+  subtitle?: string;
+  confidence: number;
+  reasons: string[];
+  blockCount: number;
+  badge?: string;
+  badgeStyle?: string;
+  isSelected: boolean;
+  onSelect: () => void;
+  primaryAction?: React.ReactNode;
+  secondaryAction?: React.ReactNode;
+}>) {  const confColor = confidence >= 80 ? 'text-emerald-600' : confidence >= 60 ? 'text-amber-600' : 'text-red-500';
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        'w-full text-left rounded-xl border-2 p-5 transition-all duration-200',
+        'hover:shadow-lg hover:-translate-y-0.5',
+        isSelected ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20' : 'border-border bg-card hover:border-primary/30',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <h3 className="text-[14px] font-semibold text-foreground">{title}</h3>
+          {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
+        </div>
+        {badge && <Badge className={cn('text-[9px] border shrink-0', badgeStyle)}>{badge}</Badge>}
+      </div>
+      <div className="flex items-center gap-4 mb-3">
+        <div className="relative w-14 h-14 shrink-0">
+          <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/30" />
+            <circle cx="28" cy="28" r="24" fill="none" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(confidence / 100) * 150.8} 150.8`} className={confColor} style={{ stroke: 'currentColor' }} />
+          </svg>
+          <span className={cn('absolute inset-0 flex items-center justify-center text-[13px] font-bold', confColor)}>{confidence}%</span>
+        </div>
+        <div className="flex-1 space-y-1">
+          {reasons.map((r, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-[10px]">
+              <div className="w-1 h-1 rounded-full bg-primary shrink-0" />
+              <span className="text-foreground/80">{r}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {blockCount > 0 && (
+        <div className="flex items-center gap-1.5 text-[10px] text-amber-600 mb-3">
+          <AlertCircle size={12} />
+          <span>{blockCount} 项阻塞需处理</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+        {primaryAction}
+        {secondaryAction}
+      </div>
+    </button>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ChecklistPanel — 核查清单：准入条件逐项检查
+   ──────────────────────────────────────────────────────────────── */
+export interface ChecklistItem {
+  condition: string;
+  met: boolean;
+  reason: string;
+  impact: string;
+  suggestion: string;
+  blocksPreReview: boolean;
+}
+
+export function ChecklistPanel({ items, title }: { items: ChecklistItem[]; title?: string }) {
+  const [expandedIdx, setExpandedIdx] = React.useState<number | null>(null);
+  const metCount = items.filter((i) => i.met).length;
+  const totalCount = items.length;
+  const blockedCount = items.filter((i) => i.blocksPreReview).length;
+  const pct = totalCount > 0 ? Math.round((metCount / totalCount) * 100) : 0;
+
+  return (
+    <div className="space-y-3">
+      {title && (
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] font-semibold text-foreground">{title}</span>
+          <div className="flex items-center gap-2">
+            {blockedCount > 0 && <span className="text-[10px] text-amber-600 font-medium">{blockedCount} 项阻塞</span>}
+            <span className={cn('text-[11px] font-bold', pct >= 80 ? 'text-emerald-600' : 'text-amber-600')}>
+              {metCount}/{totalCount} 已满足
+            </span>
+          </div>
+        </div>
+      )}
+      <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+        <div className={cn('h-full rounded-full transition-all duration-500', pct >= 80 ? 'bg-emerald-500' : 'bg-amber-500')} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="space-y-1.5">
+        {items.map((item, i) => {
+          const isExpanded = expandedIdx === i;
+          return (
+            <div key={i} className={cn('rounded-lg border transition-all', item.met ? 'border-emerald-200 bg-emerald-50/50' : item.blocksPreReview ? 'border-amber-300 bg-amber-50/50' : 'border-border bg-card')}>
+              <button type="button" onClick={() => setExpandedIdx(isExpanded ? null : i)} className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left">
+                <div className={cn('w-5 h-5 rounded-full flex items-center justify-center shrink-0', item.met ? 'bg-emerald-500' : item.blocksPreReview ? 'bg-amber-500' : 'bg-muted')}>
+                  {item.met ? <CheckCircle2 size={12} className="text-white" /> : item.blocksPreReview ? <AlertTriangle size={12} className="text-white" /> : <span className="text-[9px] text-muted-foreground font-bold">{i + 1}</span>}
+                </div>
+                <span className="text-[11px] font-medium flex-1 text-foreground">{item.condition}</span>
+                <span className={cn('text-[9px] px-2 py-0.5 rounded-full shrink-0', item.met ? 'bg-emerald-100 text-emerald-700' : item.blocksPreReview ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground')}>
+                  {item.met ? '已满足' : item.blocksPreReview ? '阻塞' : '未满足'}
+                </span>
+                <ChevronRight size={12} className={cn('text-muted-foreground shrink-0 transition-transform', isExpanded && 'rotate-90')} />
+              </button>
+              {isExpanded && (
+                <div className="px-3.5 pb-3 pt-0 ml-8 space-y-1.5">
+                  <div className="text-[10px]"><span className="text-muted-foreground">结果：</span><span className="text-foreground font-medium">{item.reason}</span></div>
+                  <div className="text-[10px]"><span className="text-muted-foreground">影响：</span><span className={cn('font-medium', item.impact === '高' ? 'text-red-500' : item.impact === '中' ? 'text-amber-600' : 'text-foreground')}>{item.impact}级</span></div>
+                  {!item.met && item.suggestion !== '—' && (
+                    <div className="text-[10px]"><span className="text-muted-foreground">建议：</span><span className="text-primary font-medium">{item.suggestion}</span></div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

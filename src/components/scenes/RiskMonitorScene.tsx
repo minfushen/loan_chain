@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Bell,
-  Brain,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -28,6 +27,7 @@ import {
   Settings,
   Shield,
   ShieldAlert,
+  Sparkles,
   Star,
   Trash2,
   TrendingDown,
@@ -274,7 +274,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
             </div>
 
             {/* 3-column: Objects + Anomalies + AI */}
-            <div className="grid grid-cols-[240px_1fr_250px] gap-3" style={{ minHeight: 460 }}>
+            <div className="grid grid-cols-[240px_1fr] gap-3" style={{ minHeight: 460 }}>
 
               {/* COL 1: Key alert objects */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -403,80 +403,6 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* COL 3: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        当前监控整体处于可控范围内，但部分高优先级预警与新增异常对象正在上升，建议优先下钻处理。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">预警摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        一般预警数量整体稳定，重点预警与待处理事项集中在少数对象与特定异常类型上，当前已出现局部风险升级迹象。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">监控整体结论</div>
-                      {(() => {
-                        const health = 62;
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${health}%`, backgroundColor: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }}>健康度 {health}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要关注提示</div>
-                      <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                        <div>· 高优先级预警 {highPriCount} 条需优先处理</div>
-                        <div>· 还款预警集中上升，涉及 8 个对象</div>
-                        <div>· 待处理任务存在 48 小时积压</div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        建议优先查看高优先级预警对象与待处理积压项，并结合指标监测与风险识别结果判断是否需要进入处置作业。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeAlert.alertLevel === '高优先级预警' || activeAlert.alertLevel === '已升级风险' ? '处置作业' : '指标监测'}</p>
-                    </div>
-
-                    {activeAlert.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该预警存在边界判断或冲突信号，建议人工确认。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" onClick={() => onModuleChange('signals')}><Activity size={10} />进入指标监测</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full" onClick={() => onModuleChange('probe')}><Shield size={10} />进入风险识别</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('actions')}><Send size={10} />进入处置作业</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full"><UserCheck size={10} />人工确认</Button>
                   </div>
                 </div>
               </div>
@@ -615,7 +541,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
             </div>
 
             {/* 3-column: List + Detail + AI */}
-            <div className="grid grid-cols-[230px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
+            <div className="grid grid-cols-[230px_1fr] gap-3" style={{ minHeight: 480 }}>
 
               {/* COL 1: Metric list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -727,80 +653,6 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
                   </div>
                 </div>
               </div>
-
-              {/* COL 3: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        当前监测体系整体较稳定，但少数关键指标已出现集中偏离，需优先关注其后续变化。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">指标监测摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        大多数指标处于正常区间，当前异常主要集中在预警增长、风险信号波动与处置积压相关指标上。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">指标健康度</div>
-                      {(() => {
-                        const health = 58;
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${health}%`, backgroundColor: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: health >= 70 ? '#047857' : health >= 40 ? '#F59E0B' : '#DC2626' }}>{health}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要波动提示</div>
-                      <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                        <div>· 预警增长率 +18.5%，远超阈值</div>
-                        <div>· 规则命中集中度 72%，疑似冗余</div>
-                        <div>· 回款周期偏离 +38%，连续上升</div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        建议优先查看高关注异常指标的历史趋势与影响范围，并联动风险识别与处置作业判断是否需要进一步干预。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeMt.toRiskIdent ? '风险识别' : activeMt.toRuleEval ? '规则评估' : '处置作业'}</p>
-                    </div>
-
-                    {activeMt.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该指标当前存在边界波动，建议人工确认后再决定是否升级处理。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full" onClick={() => onModuleChange('probe')}><Shield size={10} />进入风险识别</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('actions')}><Send size={10} />进入处置作业</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full" onClick={() => onModuleChange('quality')}><Settings size={10} />进入规则评估</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {active && <ActionBar />}
@@ -880,7 +732,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
             ]} />
 
             {/* 3-column: Task List + Detail/Follow-up + AI */}
-            <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 500 }}>
+            <div className="grid grid-cols-[220px_1fr] gap-3" style={{ minHeight: 500 }}>
 
               {/* COL 1: Task list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1013,80 +865,6 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
                     )) : (
                       <div className="text-center py-3 text-[9px] text-[#94A3B8]">暂无跟进记录</div>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              {/* COL 3: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        当前任务已具备初步处理基础，但异常影响仍未完全消除，建议持续跟进并结合结果判断是否升级。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">处置摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        该任务来源于近期异常信号上升与风险识别结果，当前已进入处理流程，但仍需补充说明或进一步确认。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">处置优先级</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: activeDisp.priority === '高' ? '85%' : activeDisp.priority === '中' ? '55%' : '25%', backgroundColor: activeDisp.priority === '高' ? '#DC2626' : activeDisp.priority === '中' ? '#F59E0B' : '#64748B' }} /></div>
-                        <span className="text-[10px] font-bold" style={{ color: activeDisp.priority === '高' ? '#DC2626' : activeDisp.priority === '中' ? '#F59E0B' : '#64748B' }}>{activeDisp.priority}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要阻塞提示</div>
-                      <div className={cn('rounded px-2 py-1.5 text-[9px] space-y-0.5', activeDisp.blocking ? 'bg-[#FEF2F2] text-[#DC2626]' : 'bg-[#F8FAFC] text-[#64748B]')}>
-                        {activeDisp.blocking ? (
-                          <>
-                            <div>· 当前任务阻塞后续监控判断</div>
-                            <div>· 建议优先完成处理或升级</div>
-                          </>
-                        ) : (
-                          <div>· 当前任务未阻塞后续动作</div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        建议优先完成当前跟进动作，并在异常未缓和时发起升级处置；如相关信号已确认误报，可标记闭环并进入规则评估。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeDisp.toRuleEval ? '规则评估' : activeDisp.needConfirm ? '人工确认' : '继续跟进'}</p>
-                    </div>
-
-                    {activeDisp.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该任务存在边界判断项，建议人工复核后再决定是否关闭。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full"><ArrowRight size={10} />继续跟进</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full"><UserCheck size={10} />发起人工确认</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full"><TrendingUp size={10} />升级处置</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" onClick={() => onModuleChange('quality')}><Settings size={10} />进入规则评估</Button>
                   </div>
                 </div>
               </div>
@@ -1226,7 +1004,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
             </div>
 
             {/* 3-column: List + Detail + AI */}
-            <div className="grid grid-cols-[230px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
+            <div className="grid grid-cols-[230px_1fr] gap-3" style={{ minHeight: 480 }}>
 
               {/* COL 1: Risk object list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1336,80 +1114,6 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => onModuleChange('quality')}><Settings size={9} />查看关联规则</Button>
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FCA5A5] text-[#DC2626]" onClick={() => onModuleChange('actions')}><Send size={9} />进入处置作业</Button>
                     {activeRO.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />标记人工确认</Button>}
-                  </div>
-                </div>
-              </div>
-
-              {/* COL 3: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        当前风险识别结果显示，少数对象已进入风险上升阶段，需优先关注其信号变化与处理状态。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">风险识别摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        当前风险主要集中在经营波动、履约异常与规则集中命中对象上，部分对象已表现出多维信号叠加趋势。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">风险等级结论</div>
-                      {(() => {
-                        const score = 45;
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${100 - score}%`, backgroundColor: score <= 30 ? '#047857' : score <= 60 ? '#F59E0B' : '#DC2626' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: score <= 30 ? '#047857' : score <= 60 ? '#F59E0B' : '#DC2626' }}>风险度 {score}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要关注提示</div>
-                      <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                        <div>· 高风险对象 {highRiskCount} 个，含多信号叠加</div>
-                        <div>· 中度关注对象上升趋势明显</div>
-                        <div>· {needConfirmRisk} 个对象需人工确认</div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        建议优先处理高风险与多信号叠加对象，并结合规则评估判断当前识别结果是否需要进一步优化或人工确认。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeRO.toDisposal ? '处置作业' : activeRO.needConfirm ? '人工确认' : '规则评估'}</p>
-                    </div>
-
-                    {activeRO.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该对象处于边界状态，信号不充分或存在冲突，建议人工复核后再决定处置。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full" onClick={() => onModuleChange('actions')}><Send size={10} />进入处置作业</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full" onClick={() => onModuleChange('quality')}><Settings size={10} />进入规则评估</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full"><Star size={10} />继续风险跟踪</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
                   </div>
                 </div>
               </div>
@@ -1530,7 +1234,7 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
             </div>
 
             {/* 3-column: Rule List + Detail + AI */}
-            <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
+            <div className="grid grid-cols-[220px_1fr] gap-3" style={{ minHeight: 480 }}>
 
               {/* COL 1: Rule list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1658,77 +1362,6 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
                   </div>
                 </div>
               </div>
-
-              {/* COL 3: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        当前规则体系整体可支撑基础监控目标，但部分规则在误报控制与边界识别上仍存在优化空间。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">规则成效摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        大多数规则表现基本稳定，当前主要问题集中在少量高误报规则与低命中规则上，部分场景反馈闭环仍不充分。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">规则质量评分</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
-                          <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${Math.round((highEffRules / totalRules) * 100)}%` }} />
-                        </div>
-                        <span className="text-[10px] font-bold text-[#2563EB]">{Math.round((highEffRules / totalRules) * 100)}分</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">主要问题提示</div>
-                      <div className="rounded px-2 py-1.5 bg-[#FEF2F2] text-[9px] text-[#DC2626] space-y-0.5">
-                        <div>· {highFpRules} 条规则误报率超 50%</div>
-                        <div>· {lowHitRules} 条规则命中率低于 50%</div>
-                        <div>· {needReviewRules} 条规则需人工复核</div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        建议优先优化高误报与待优化规则，并结合人工复核与处置闭环结果持续校准规则质量。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeRule.needOptimize ? '规则优化' : activeRule.needConfirm ? '人工复核' : '继续观察'}</p>
-                    </div>
-
-                    {activeRule.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该规则存在边界判断项或评估争议，建议人工复核后再决定是否优化。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626] w-full"><Settings size={10} />发起规则优化</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full"><Eye size={10} />继续观察</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#DDD6FE] text-[#7C3AED] w-full"><UserCheck size={10} />发起人工复核</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><Plus size={10} />加入优化清单</Button>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {active && <ActionBar />}
@@ -1738,8 +1371,52 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
     }
   };
 
+  const renderAiPanel = () => {
+    const titles: Record<string, string> = {
+      warning: 'AI 预警规则引导',
+      signals: 'AI 信号捕获引导',
+      actions: 'AI 风险处置引导',
+      probe: 'AI 风险探针引导',
+      quality: 'AI 质量巡检引导',
+    };
+    const guides: Record<string, string> = {
+      warning: '当前步骤：预警规则。配置和管理风险预警规则，系统实时监控触发条件。关注高优先级预警，及时响应阻断信号。',
+      signals: '当前步骤：信号捕获。实时捕获来自工商、司法、舆情等多维度风险信号，自动关联至存量客户。重点处理强关联信号。',
+      actions: '当前步骤：风险处置。对触发预警的主体执行风险排查与处置动作，生成处置方案。优先处理阻断类预警。',
+      probe: '当前步骤：风险探针。通过深度探针对目标主体进行穿透式风险扫描，识别隐蔽关联和交叉违约风险。',
+      quality: '当前步骤：质量巡检。定期巡检存量资产质量，监控逾期、违约和评级变动。关注批量异常指标。',
+    };
+    const nextSteps: Record<string, { label: string; target: string }[]> = {
+      warning: [{ label: '查看信号捕获', target: 'signals' }, { label: '风险处置', target: 'actions' }],
+      signals: [{ label: '风险处置', target: 'actions' }, { label: '风险探针', target: 'probe' }],
+      actions: [{ label: '风险探针', target: 'probe' }, { label: '质量巡检', target: 'quality' }],
+      probe: [{ label: '质量巡检', target: 'quality' }, { label: '返回信号捕获', target: 'signals' }],
+      quality: [{ label: '返回预警规则', target: 'warning' }, { label: '风险探针', target: 'probe' }],
+    };
+    const steps = nextSteps[activeModule] ?? [];
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-1.5">
+          <Sparkles size={12} className="text-primary" />
+          <span className="text-[11px] font-semibold">{titles[activeModule] ?? 'AI 引导'}</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{guides[activeModule] ?? ''}</p>
+        {steps.length > 0 && (
+          <div className="space-y-1.5 pt-2 border-t border-border">
+            <span className="text-[10px] text-muted-foreground">快捷导航</span>
+            {steps.map(s => (
+              <Button key={s.target} variant="outline" size="sm" className="h-7 text-[10px] gap-1 w-full" onClick={() => onModuleChange(s.target)}>
+                <ArrowRight size={10} />{s.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <SceneLayout title={scene.title} modules={scene.modules} activeModule={activeModule} onModuleChange={onModuleChange}>
+    <SceneLayout title={scene.title} modules={scene.modules} activeModule={activeModule} onModuleChange={onModuleChange} aiPanel={renderAiPanel()}>
       {renderContent()}
     </SceneLayout>
   );

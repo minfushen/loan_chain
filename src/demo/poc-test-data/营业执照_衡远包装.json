@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "fileType": "营业执照",
+    "parseEngine": "百慧AI-OCR v2.3",
+    "parseTime": "2026-04-09 14:18:32",
+    "confidence": 96,
+    "imageQuality": "清晰",
+    "usableForVerify": true,
+    "note": "本数据为POC演示用途，企业信息为虚构示例"
+  },
+  "fields": {
+    "企业名称": {
+      "value": "常州衡远包装材料有限公司",
+      "confidence": 99,
+      "status": "已核验"
+    },
+    "统一社会信用代码": {
+      "value": "91320400MA1XXXXX2X",
+      "confidence": 98,
+      "status": "已核验",
+      "remark": "18位，格式校验通过"
+    },
+    "类型": {
+      "value": "有限责任公司（自然人独资）",
+      "confidence": 97,
+      "status": "已核验"
+    },
+    "住所": {
+      "value": "江苏省常州市新北区孟河镇工业园区衡远路8号",
+      "confidence": 95,
+      "status": "已核验"
+    },
+    "法定代表人": {
+      "value": "周海峰",
+      "confidence": 99,
+      "status": "已核验"
+    },
+    "注册资本": {
+      "value": "500万元人民币",
+      "confidence": 98,
+      "status": "已核验"
+    },
+    "成立日期": {
+      "value": "2018年03月15日",
+      "confidence": 99,
+      "status": "已核验"
+    },
+    "营业期限": {
+      "value": "2018年03月15日至长期",
+      "confidence": 97,
+      "status": "已核验"
+    },
+    "经营范围": {
+      "value": "包装材料的生产、销售；可循环周转箱、缓冲包装材料、回收包装箱的研发与制造；货物运输代理；普通货物仓储。（依法须经批准的项目，经相关部门批准后方可开展经营活动）",
+      "confidence": 94,
+      "status": "已核验"
+    },
+    "登记机关": {
+      "value": "常州市新北区市场监督管理局",
+      "confidence": 96,
+      "status": "已核验"
+    },
+    "核准日期": {
+      "value": "2026年03月10日",
+      "confidence": 95,
+      "status": "已核验"
+    }
+  },
+  "crossVerification": {
+    "nameMatchSample": true,
+    "codeFormat": "通过",
+    "addressMatchField": true,
+    "legalPersonMatchIdCard": true,
+    "establishedYears": 7.1,
+    "meetsMinYearRequirement": true,
+    "aiConclusion": "营业执照信息完整，企业名称、统一社会信用代码、法人姓名均已核验通过。成立年限7年，满足授信准入≥2年要求。经营范围与贷款用途（包装材料采购）高度匹配。"
+  }
+}

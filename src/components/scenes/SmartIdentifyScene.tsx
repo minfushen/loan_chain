@@ -53,7 +53,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SAMPLES, type ChainLoanSample } from '../../demo/chainLoan/data';
 import { useDemo } from '../../demo/DemoContext';
-import { MetricCard, AiNote } from '../ProductPrimitives';
+import { MetricCard, AiNote, FlowProgress, AiInsight } from '../ProductPrimitives';
 
 /* ══════════════════════════════════════════════════════════════════
    文件导入 — 批次数据
@@ -224,7 +224,7 @@ const API_BATCH_STATUS_STYLE: Record<ApiStatus, string> = {
 };
 
 /* ══════════════════════════════════════════════════════════════════
-   智能推荐流 — 推荐数据
+   智能筛选 — 推荐数据
    ══════════════════════════════════════════════════════════════════ */
 
 type RecommendLevel = '优先推荐' | '建议关注' | '待人工确认';
@@ -271,7 +271,7 @@ const RECOMMEND_ITEMS: RecommendItem[] = SAMPLES.map(s => ({
     ? `存在 ${s.riskFlags.length} 项风险标识：${s.riskFlags.join('、')}`
     : '当前未发现明显风险信号',
   nextAction: s.nextAction,
-  suggestedPage: s.agentHints.confidence >= 80 ? '智能尽调' : s.agentHints.confidence >= 60 ? '条件筛选流' : '人工确认',
+  suggestedPage: s.agentHints.confidence >= 80 ? '智能尽调' : s.agentHints.confidence >= 60 ? '智能筛选' : '人工确认',
   recommendTime: '2026-04-09 09:30',
   sourceBatch: 'BATCH-20260409-001',
 }));
@@ -284,6 +284,21 @@ interface Props { activeModule: string; onModuleChange: (id: string) => void }
 
 export default function SmartIdentifyScene({ activeModule, onModuleChange }: Props) {
   const scene = SCENES.find(s => s.id === 'smart-identify')!;
+
+  const IDENTIFY_FLOW_STEPS = [
+    { id: 'file-import', label: '名单导入', description: '文件上传与 API 接入' },
+    { id: 'feed', label: '智能筛选', description: 'AI推荐与条件筛选' },
+    { id: 'graph', label: '图谱验证', description: '候选资产与关系图谱' },
+  ];
+
+  // Map activeModule to flow step for progress bar
+  const getFlowStepId = (mod: string) => {
+    if (mod === 'file-import') return 'file-import';
+    if (mod === 'feed' || mod === 'list') return 'feed';
+    if (mod === 'graph' || mod === 'linked') return 'graph';
+    return 'file-import';
+  };
+
   const { navigate } = useDemo();
   const [selectedBatch, setSelectedBatch] = React.useState<string | null>(null);
   const [drawerTab, setDrawerTab] = React.useState<'info' | 'validate' | 'sample' | 'timeline'>('info');
@@ -302,7 +317,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
     switch (activeModule) {
 
       /* ═══════════════════════════════════════════════════════════
-         PAGE 1: 文件导入 — 批次管理台
+         PAGE 1: 名单导入 — 文件上传 + API接入合并页
          ═══════════════════════════════════════════════════════════ */
       case 'file-import': {
         const batch = IMPORT_BATCHES.find(b => b.id === selectedBatch);
@@ -418,6 +433,29 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
 
         return (
           <div className="space-y-4">
+            {/* 顶部 Tab：文件上传 | API接入 */}
+            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-1 w-fit">
+              {[
+                { id: 'upload', label: '文件上传', icon: Upload },
+                { id: 'api', label: 'API 接入', icon: Plug },
+              ].map(t => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setApiSection(t.id === 'api' ? 'overview' : 'overview')}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all',
+                      (t.id === 'upload' && apiSection !== 'api-tab') || (t.id === 'api' && apiSection === 'api-tab')
+                        ? 'bg-white text-[#0F172A] shadow-sm border border-[#E2E8F0]'
+                        : 'text-[#64748B] hover:text-[#334155]',
+                    )}
+                  >
+                    <Icon size={10} />{t.label}
+                  </button>
+                );
+              })}
+            </div>
             {/* Header */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -501,221 +539,15 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
       }
 
       /* ═══════════════════════════════════════════════════════════
-         PAGE 2: API 接入 — 接口 + 批次 + 映射管理台
+         PAGE 2: API 接入 — 已合并至名单导入，重定向
          ═══════════════════════════════════════════════════════════ */
-      case 'api-access': {
-        const sections = [
-          { id: 'overview' as const, label: '接口概览' },
-          { id: 'batches' as const, label: '运行批次' },
-          { id: 'mapping' as const, label: '字段映射' },
-        ];
-
-        return (
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F3E8FF] flex items-center justify-center"><Plug size={15} className="text-[#7C3AED]" /></div>
-                <div>
-                  <h3 className="text-sm font-semibold text-[#0F172A]">API 接入</h3>
-                  <p className="text-[11px] text-[#94A3B8]">通过行内 ESB 总线接入企业名单批次，管理接口状态、字段映射与运行结果。</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] border-[#E2E8F0]"><BookOpen size={10} />查看接口文档</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]"><Play size={10} />发起测试</Button>
-                <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Plug size={10} />新建接入</Button>
-              </div>
-            </div>
-
-            {/* Section tabs */}
-            <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-1">
-              {sections.map(t => (
-                <button key={t.id} onClick={() => setApiSection(t.id)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-all', apiSection === t.id ? 'bg-white text-[#0F172A] shadow-sm border border-[#E2E8F0]' : 'text-[#64748B] hover:text-[#334155]')}>{t.label}</button>
-              ))}
-            </div>
-
-            {apiSection === 'overview' && (
-              <div className="space-y-4">
-                {/* Status overview */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <MetricCard label="已连接接口" value={`${API_INTERFACES.length} 套`} detail="当前已建立的名单接入接口数量" tone="blue" />
-                  <MetricCard label="运行中批次" value={`${API_BATCHES.filter(b => b.status === '运行中').length}`} detail="正在校验、生成或等待流转" tone="slate" />
-                  <MetricCard label="失败批次" value={`${API_BATCHES.filter(b => b.status === '失败').length}`} detail="接入异常或字段映射失败" tone="red" />
-                  <MetricCard label="待重试批次" value={`${API_BATCHES.filter(b => b.status === '待重试').length}`} detail="可重新处理的失败批次" tone="amber" />
-                  <MetricCard label="最近成功" value="09:42" detail="最近一次成功完成接入" tone="green" />
-                </div>
-
-                {/* Interface cards */}
-                <div className="space-y-2">
-                  <div className="text-[12px] font-semibold text-[#0F172A] px-1">接入接口</div>
-                  {API_INTERFACES.map(intf => (
-                    <div key={intf.id} className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden hover:border-[#BFDBFE] transition-all">
-                      <div className="px-4 py-3 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#F3E8FF] flex items-center justify-center shrink-0"><Cable size={14} className="text-[#7C3AED]" /></div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-semibold text-[#0F172A]">{intf.name}</span>
-                            <Badge className={cn('text-[9px] border', intf.status === '已连接' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]')}>{intf.status}</Badge>
-                            <Badge className="text-[9px] bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]">{intf.type}</Badge>
-                          </div>
-                          <div className="text-[10px] text-[#94A3B8] mt-0.5">{intf.desc}</div>
-                        </div>
-                        <div className="flex items-center gap-4 text-[10px] text-[#64748B] shrink-0">
-                          <span>成功率 <b className="text-[#047857]">{intf.successRate}</b></span>
-                          <span>最近调用 <b>{intf.lastCall}</b></span>
-                          <span>近期 <b>{intf.recentBatches}</b> 批次</span>
-                          <span>均耗 <b>{intf.avgDuration}</b></span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-2 bg-[#FAFBFC] border-t border-[#F1F5F9] flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[10px] text-[#94A3B8]">
-                          <span>编码: <code className="font-mono">{intf.code}</code></span>
-                          <span>·</span>
-                          <span>影响: {intf.affectedModules.join(' / ')}</span>
-                          {intf.exceptionCount > 0 && <><span>·</span><span className="text-[#DC2626]">异常 {intf.exceptionCount}</span></>}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#64748B] border-[#E2E8F0]">查看配置</Button>
-                          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#2563EB] border-[#BFDBFE]">测试连接</Button>
-                          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#64748B] border-[#E2E8F0]" onClick={() => setApiSection('batches')}>查看批次</Button>
-                          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#64748B] border-[#E2E8F0]" onClick={() => setApiSection('mapping')}>查看映射</Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {apiSection === 'batches' && (
-              <div className="space-y-4">
-                {/* Running batches */}
-                {(() => {
-                  const running = API_BATCHES.filter(b => b.status === '运行中');
-                  return running.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="px-1"><span className="text-[12px] font-semibold text-[#0F172A]">运行中批次</span><span className="text-[10px] text-[#94A3B8] ml-2">当前正在接收、校验或生成样本的 API 批次</span></div>
-                      {running.map(b => (
-                        <div key={b.id} className="rounded-lg border border-[#BFDBFE] bg-white px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2"><code className="text-[12px] font-mono font-semibold text-[#0F172A]">{b.id}</code><Badge className={cn('text-[9px] border', API_BATCH_STATUS_STYLE[b.status])}>{b.status}</Badge></div>
-                              <div className="text-[10px] text-[#94A3B8] mt-0.5">来源：{b.sourceInterface}</div>
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] text-[#64748B]">
-                              <span>接收 <b>{b.totalCount}</b> 户</span>
-                              <span>已校验 <b>{b.validatedCount}</b></span>
-                              {b.exceptionCount > 0 && <span>异常 <b className="text-[#DC2626]">{b.exceptionCount}</b></span>}
-                            </div>
-                            <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#2563EB] border-[#BFDBFE]"><Eye size={9} className="mr-1" />查看详情</Button>
-                          </div>
-                          <div className="text-[10px] text-[#94A3B8] mt-1.5">当前步骤：{b.currentStep}</div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Failed / retry batches */}
-                {(() => {
-                  const failed = API_BATCHES.filter(b => b.status === '失败' || b.status === '待重试');
-                  return failed.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="px-1"><span className="text-[12px] font-semibold text-[#0F172A]">失败 / 待重试批次</span><span className="text-[10px] text-[#94A3B8] ml-2">接口异常、字段缺失或映射失败的批次</span></div>
-                      {failed.map(b => (
-                        <div key={b.id} className={cn('rounded-lg border bg-white px-4 py-3', b.status === '失败' ? 'border-[#FCA5A5]' : 'border-[#FED7AA]')}>
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2"><code className="text-[12px] font-mono font-semibold text-[#0F172A]">{b.id}</code><Badge className={cn('text-[9px] border', API_BATCH_STATUS_STYLE[b.status])}>{b.status}</Badge></div>
-                              <div className="text-[10px] text-[#94A3B8] mt-0.5">来源：{b.sourceInterface} · {b.receiveTime}</div>
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] text-[#64748B]">
-                              <span>接收 <b>{b.totalCount}</b> 户</span>
-                              <span>异常 <b className="text-[#DC2626]">{b.exceptionCount}</b></span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#DC2626] border-[#FCA5A5]"><AlertCircle size={9} className="mr-1" />查看问题</Button>
-                              {b.canRetry && <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#2563EB] border-[#BFDBFE]"><RefreshCw size={9} className="mr-1" />重新处理</Button>}
-                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-[#64748B]"><Send size={9} className="mr-1" />通知上游</Button>
-                            </div>
-                          </div>
-                          {b.failReason && <div className="mt-2 rounded bg-[#FEF2F2] border border-[#FCA5A5] px-3 py-1.5 text-[10px] text-[#DC2626]">失败原因：{b.failReason}</div>}
-                          {b.affectedAction && <div className="text-[10px] text-[#94A3B8] mt-1">影响：{b.affectedAction}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Completed batches */}
-                {(() => {
-                  const completed = API_BATCHES.filter(b => b.status === '已完成');
-                  return completed.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="px-1"><span className="text-[12px] font-semibold text-[#0F172A]">已完成批次</span></div>
-                      {completed.map(b => (
-                        <div key={b.id} className="rounded-lg border border-[#A7F3D0] bg-white px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2"><code className="text-[12px] font-mono font-semibold text-[#0F172A]">{b.id}</code><Badge className={cn('text-[9px] border', API_BATCH_STATUS_STYLE[b.status])}>{b.status}</Badge></div>
-                              <div className="text-[10px] text-[#94A3B8] mt-0.5">来源：{b.sourceInterface} · {b.receiveTime}</div>
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] text-[#64748B]">
-                              <span>接收 <b>{b.totalCount}</b> 户</span>
-                              <span>已生成 <b className="text-[#047857]">{b.generatedSamples}</b> 样本</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 text-[#047857] border-[#A7F3D0]"><CheckCircle2 size={9} className="mr-1" />查看结果</Button>
-                              <Button size="sm" className="h-6 text-[10px] px-2 gap-1 bg-[#047857] hover:bg-[#065F46] text-white"><ArrowRight size={9} />进入识别</Button>
-                            </div>
-                          </div>
-                          <div className="text-[10px] text-[#94A3B8] mt-1.5">当前步骤：{b.currentStep}</div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {apiSection === 'mapping' && (
-              <div className="space-y-4">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <div className="text-[12px] font-semibold text-[#0F172A]">字段映射概览</div>
-                    <div className="text-[10px] text-[#94A3B8] mt-0.5">查看上游字段与中台标准字段的映射关系及当前状态</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] border-[#E2E8F0]"><Download size={10} />导出映射模板</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]"><ExternalLink size={10} />查看完整映射规则</Button>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
-                  <div className="grid grid-cols-[120px_120px_1fr_60px_1fr_60px] gap-0 px-4 py-2 bg-[#F8FAFC] text-[9px] font-medium text-[#94A3B8] uppercase tracking-wider border-b border-[#E2E8F0]">
-                    <div>上游字段</div><div>中台字段</div><div>字段说明</div><div>必填</div><div>转换规则</div><div>状态</div>
-                  </div>
-                  {FIELD_MAPPINGS.map(m => (
-                    <div key={m.upstream} className="grid grid-cols-[120px_120px_1fr_60px_1fr_60px] gap-0 px-4 py-2.5 border-b border-[#F1F5F9] last:border-b-0 items-center hover:bg-[#FAFBFF] transition-colors">
-                      <code className="text-[10px] text-[#7C3AED] font-mono">{m.upstream}</code>
-                      <span className="text-[11px] font-medium text-[#0F172A]">{m.local}</span>
-                      <span className="text-[10px] text-[#64748B]">{m.desc}</span>
-                      <span>{m.required ? <CheckCircle2 size={10} className="text-[#047857]" /> : <span className="text-[10px] text-[#CBD5E1]">—</span>}</span>
-                      <span className="text-[10px] text-[#475569]">{m.transform}</span>
-                      <Badge className={cn('text-[9px] border', m.status === '正常' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]')}>{m.status}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      }
+      case 'api-access':
+        return null; // 已合并至 file-import，constants.ts 中已移除此菜单
 
       /* ═══════════════════════════════════════════════════════════
-         PAGE 3: 智能推荐流 — 三栏工作流
+         PAGE 3: 智能筛选 — 推荐流 + 条件筛选合并页
          ═══════════════════════════════════════════════════════════ */
+      case 'filter-flow': // 已合并至 feed，保留 case 做兼容跳转
       case 'feed': {
         const levels: RecommendLevel[] = ['优先推荐', '建议关注', '待人工确认'];
         const currentItem = RECOMMEND_ITEMS.find(r => r.sampleId === selectedRecommend);
@@ -724,43 +556,27 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
         const overviewCards = [
           { label: '今日新增推荐', value: RECOMMEND_ITEMS.length, desc: '系统今日新识别出的推荐企业', icon: Sparkles, color: 'text-[#2563EB]' },
           { label: '高置信度推荐', value: RECOMMEND_ITEMS.filter(r => r.level === '优先推荐').length, desc: '关系与证据覆盖较强，建议优先处理', icon: Star, color: 'text-[#F59E0B]' },
-          { label: '待进入筛选', value: RECOMMEND_ITEMS.filter(r => r.suggestedPage === '条件筛选流').length, desc: '推荐已生成，待进一步筛选确认', icon: Filter, color: 'text-[#7C3AED]' },
+          { label: '待进入筛选', value: RECOMMEND_ITEMS.filter(r => r.suggestedPage === '智能筛选').length, desc: '推荐已生成，待进一步筛选确认', icon: Filter, color: 'text-[#7C3AED]' },
           { label: '待进入尽调', value: RECOMMEND_ITEMS.filter(r => r.suggestedPage === '智能尽调').length, desc: '已具备基础条件，可推进尽调作业', icon: FileSearch, color: 'text-[#047857]' },
           { label: '待人工确认', value: RECOMMEND_ITEMS.filter(r => r.level === '待人工确认').length, desc: '存在边界情况，建议人工补充判断', icon: UserCheck, color: 'text-[#64748B]' },
         ];
 
         return (
           <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">智能推荐流</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">基于导入名单、规则命中与关系识别结果，自动推荐优先关注的候选企业。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><RefreshCw size={10} />刷新推荐</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Filter size={10} />批量进入筛选</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><FileSearch size={10} />批量进入尽调</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><BookOpen size={10} />查看规则依据</Button>
-              </div>
-            </div>
-
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {overviewCards.map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <c.icon size={12} className={c.color} />
-                    <span className="text-[10px] text-[#64748B]">{c.label}</span>
-                  </div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
+            {/* AI Insight replacing KPI cards */}
+            <AiInsight
+              message={`今日新增 ${RECOMMEND_ITEMS.length} 条推荐，其中 ${RECOMMEND_ITEMS.filter(r => r.level === '优先推荐').length} 条高置信度可优先处理，${RECOMMEND_ITEMS.filter(r => r.suggestedPage === '智能尽调').length} 条已具备进入尽调条件。`}
+              tone="info"
+              action={
+                <div className="flex items-center gap-1.5">
+                  <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1"><RefreshCw size={9} />刷新</Button>
+                  <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1" onClick={() => navigate('smart-due-diligence')}><FileSearch size={9} />进入尽调</Button>
                 </div>
-              ))}
-            </div>
+              }
+            />
 
             {/* Three-column layout */}
-            <div className="grid grid-cols-[280px_1fr_280px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[280px_1fr] gap-3" style={{ minHeight: 520 }}>
 
               {/* LEFT: Recommendation list grouped by level */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -832,7 +648,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] font-semibold text-[#0F172A]">当前推荐详情</span>
                         <div className="flex items-center gap-1.5">
-                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'filter-flow')}><Filter size={9} />进入条件筛选</Button>
+                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'feed')}><Filter size={9} />条件筛选</Button>
                           <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'list')}><Layers size={9} />加入候选池</Button>
                           <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={9} />进入尽调</Button>
                           <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'graph')}><Network size={9} />关系图谱</Button>
@@ -966,562 +782,16 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                   </div>
                 )}
               </div>
-
-              {/* RIGHT: AI suggestions & actions */}
-              <div className="space-y-3">
-                {currentSample && currentItem ? (
-                  <>
-                    {/* AI suggestion card */}
-                    <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Lightbulb size={10} className="text-white" /></div>
-                        <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                          <p className="text-[10px] text-[#0F172A] leading-4 font-medium">{currentSample.aiSummary}</p>
-                        </div>
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">推荐理由</div>
-                          <ul className="space-y-1">
-                            {currentItem.reasons.map(r => (
-                              <li key={r} className="text-[10px] text-[#475569] flex items-start gap-1"><ChevronRight size={9} className="text-[#2563EB] mt-0.5 shrink-0" />{r}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">建议下一步</div>
-                          <p className="text-[10px] text-[#2563EB] font-medium">{currentItem.nextAction}</p>
-                        </div>
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                          <p className="text-[10px] text-[#7C3AED] font-medium">{currentItem.suggestedPage}</p>
-                        </div>
-                        {currentSample.riskFlags.length > 0 && (
-                          <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
-                            <AlertCircle size={10} className="shrink-0 mt-0.5" />
-                            当前推荐依据不足，请人工确认
-                          </div>
-                        )}
-                        <div className="text-[8px] text-[#CBD5E1]">推荐生成时间 {currentItem.recommendTime}</div>
-                      </div>
-                      <div className="flex flex-col gap-1.5 pt-1">
-                        <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                        <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] w-full"><Eye size={10} />查看更多依据</Button>
-                      </div>
-                    </div>
-
-                    {/* Confidence card */}
-                    <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                      <div className="text-[11px] font-semibold text-[#0F172A]">置信度概览</div>
-                      <div className="space-y-2">
-                        {[
-                          { label: 'AI 置信度', value: currentSample.agentHints.confidence },
-                          { label: '关系强度', value: currentSample.relationStrength },
-                          { label: '证据覆盖度', value: currentSample.evidenceCoverage },
-                        ].map(m => (
-                          <div key={m.label} className="space-y-0.5">
-                            <div className="flex justify-between text-[9px]">
-                              <span className="text-[#64748B]">{m.label}</span>
-                              <span className="font-medium text-[#0F172A]">{m.value}%</span>
-                            </div>
-                            <div className="w-full h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-                              <div className="h-full rounded-full transition-all" style={{
-                                width: `${m.value}%`,
-                                backgroundColor: m.value >= 80 ? '#047857' : m.value >= 60 ? '#F59E0B' : '#DC2626',
-                              }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Quick actions */}
-                    <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                      <div className="text-[11px] font-semibold text-[#0F172A]">快捷操作</div>
-                      <div className="space-y-1">
-                        <button onClick={() => navigate('smart-identify', 'filter-flow')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Filter size={10} className="text-[#7C3AED]" />进入筛选</button>
-                        <button onClick={() => navigate('smart-due-diligence', 'dd-report')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><FileSearch size={10} className="text-[#047857]" />进入尽调</button>
-                        <button className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Eye size={10} className="text-[#F59E0B]" />标记观察</button>
-                        <button className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><X size={10} className="text-[#DC2626]" />忽略推荐</button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 text-center">
-                    <div className="text-[11px] text-[#94A3B8]">当前暂无高置信度推荐企业。</div>
-                    <div className="text-[10px] text-[#CBD5E1] mt-1">建议查看"待人工确认"分组，或进入条件筛选流进一步处理。</div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         );
       }
 
       /* ═══════════════════════════════════════════════════════════
-         PAGE 4: 条件筛选流 — 半自动筛选工作流
-         ═══════════════════════════════════════════════════════════ */
-      case 'filter-flow': {
-        type FilterAction = '优先进入候选池' | '建议进入尽调' | '待人工确认';
-
-        const getFilterAction = (s: ChainLoanSample): FilterAction => {
-          if (s.agentHints.confidence >= 80 && s.evidenceCoverage >= 80) return '优先进入候选池';
-          if (s.agentHints.confidence >= 60) return '建议进入尽调';
-          return '待人工确认';
-        };
-
-        const FILTER_ACTION_STYLE: Record<FilterAction, { bg: string; text: string; border: string }> = {
-          '优先进入候选池': { bg: 'bg-[#EFF6FF]', text: 'text-[#2563EB]', border: 'border-[#BFDBFE]' },
-          '建议进入尽调': { bg: 'bg-[#ECFDF3]', text: 'text-[#047857]', border: 'border-[#A7F3D0]' },
-          '待人工确认': { bg: 'bg-[#F8FAFC]', text: 'text-[#64748B]', border: 'border-[#E2E8F0]' },
-        };
-
-        const filterActions: FilterAction[] = ['优先进入候选池', '建议进入尽调', '待人工确认'];
-        const filteredSamples = SAMPLES;
-        const currentFilterSample = filteredSamples.find(s => s.id === selectedFilter);
-
-        const overviewCards = [
-          { label: '总待筛选企业', value: SAMPLES.length, desc: '当前进入筛选流的企业总数', icon: Layers, color: 'text-[#475569]' },
-          { label: '当前命中结果', value: filteredSamples.length, desc: '在当前筛选条件下命中的企业数量', icon: Search, color: 'text-[#2563EB]' },
-          { label: '建议进入候选池', value: filteredSamples.filter(s => getFilterAction(s) === '优先进入候选池').length, desc: '已具备进入候选池条件的企业', icon: Star, color: 'text-[#F59E0B]' },
-          { label: '建议进入尽调', value: filteredSamples.filter(s => getFilterAction(s) === '建议进入尽调').length, desc: '具备继续补强与核验价值的企业', icon: FileSearch, color: 'text-[#047857]' },
-          { label: '待人工确认', value: filteredSamples.filter(s => getFilterAction(s) === '待人工确认').length, desc: '存在边界条件或证据不足的企业', icon: UserCheck, color: 'text-[#64748B]' },
-        ];
-
-        const hitConditions = (s: ChainLoanSample) => {
-          const hits: string[] = [];
-          const misses: string[] = [];
-          if (s.relationStrength >= 70) hits.push('关系强度达标'); else misses.push('关系强度不足');
-          if (s.evidenceCoverage >= 70) hits.push('证据覆盖度达标'); else misses.push('证据覆盖度不足');
-          if (s.authenticityScore >= 70) hits.push('真实性评分达标'); else misses.push('真实性评分偏低');
-          if (s.orderCount90d >= 10) hits.push('订单频次充足'); else misses.push('订单频次偏低');
-          if (s.invoiceContinuityMonths >= 8) hits.push('开票连续性良好'); else misses.push('开票连续性不足');
-          return { hits, misses };
-        };
-
-        return (
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">条件筛选流</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">基于行业、规模、链条与证据条件，对候选企业进行进一步收敛与流转筛选。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />保存筛选方案</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><RefreshCw size={10} />重置条件</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><RefreshCw size={10} />刷新结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出结果</Button>
-              </div>
-            </div>
-
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {overviewCards.map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <c.icon size={12} className={c.color} />
-                    <span className="text-[10px] text-[#64748B]">{c.label}</span>
-                  </div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Filter conditions area (collapsible) */}
-            <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
-              <button onClick={() => setFilterExpanded(!filterExpanded)} className="w-full px-4 py-2.5 flex items-center justify-between bg-[#F8FAFC] border-b border-[#F1F5F9]">
-                <div className="flex items-center gap-2">
-                  <Filter size={12} className="text-[#7C3AED]" />
-                  <span className="text-[11px] font-semibold text-[#0F172A]">筛选条件</span>
-                  <span className="text-[9px] text-[#94A3B8]">建议优先收敛行业、规模与链条条件，再结合识别强度决定是否进入尽调。</span>
-                </div>
-                <ChevronRight size={12} className={cn('text-[#94A3B8] transition-transform', filterExpanded && 'rotate-90')} />
-              </button>
-              {filterExpanded && (
-                <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-4 gap-4">
-                    {/* A. 基础属性 */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-semibold text-[#0F172A]">基础属性</div>
-                      {[
-                        { label: '所属行业', options: ['全部', '新能源', '储能', '包装材料', '物流', '化工'] },
-                        { label: '所在地区', options: ['全部', '江苏', '广东', '浙江', '上海', '安徽'] },
-                        { label: '链条归属', options: ['全部', '新能源电池产业链', '储能产业链', '化工产业链'] },
-                        { label: '年销售额', options: ['全部', '≥100万', '≥500万', '≥1000万'] },
-                      ].map(f => (
-                        <div key={f.label} className="flex items-center gap-2">
-                          <span className="text-[9px] text-[#64748B] w-14 shrink-0">{f.label}</span>
-                          <select className="flex-1 h-6 rounded border border-[#E2E8F0] px-1.5 text-[9px] text-[#0F172A] bg-white">{f.options.map(o => <option key={o}>{o}</option>)}</select>
-                        </div>
-                      ))}
-                    </div>
-                    {/* B. 经营状态 */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-semibold text-[#0F172A]">经营状态</div>
-                      {[
-                        { label: '经营状态', options: ['全部', '正常经营', '风险观察', '恢复中'] },
-                        { label: '是否本行客户', options: ['全部', '是', '否'] },
-                        { label: '有对公账户', options: ['全部', '是', '否'] },
-                      ].map(f => (
-                        <div key={f.label} className="flex items-center gap-2">
-                          <span className="text-[9px] text-[#64748B] w-14 shrink-0">{f.label}</span>
-                          <select className="flex-1 h-6 rounded border border-[#E2E8F0] px-1.5 text-[9px] text-[#0F172A] bg-white">{f.options.map(o => <option key={o}>{o}</option>)}</select>
-                        </div>
-                      ))}
-                    </div>
-                    {/* C. 识别强度 */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-semibold text-[#0F172A]">识别强度</div>
-                      {[
-                        { label: '关系强度', options: ['全部', '≥80%', '≥60%', '≥40%'] },
-                        { label: '真实性评分', options: ['全部', '≥80%', '≥60%', '≥40%'] },
-                        { label: '证据覆盖度', options: ['全部', '≥80%', '≥60%', '≥40%'] },
-                      ].map(f => (
-                        <div key={f.label} className="flex items-center gap-2">
-                          <span className="text-[9px] text-[#64748B] w-14 shrink-0">{f.label}</span>
-                          <select className="flex-1 h-6 rounded border border-[#E2E8F0] px-1.5 text-[9px] text-[#0F172A] bg-white">{f.options.map(o => <option key={o}>{o}</option>)}</select>
-                        </div>
-                      ))}
-                    </div>
-                    {/* D. 流转条件 */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-semibold text-[#0F172A]">流转条件</div>
-                      {[
-                        { label: '当前阶段', options: ['全部', '已识别', '预授信', '补审', '已批准', '恢复中'] },
-                        { label: '推荐场景', options: ['全部', '订单微贷', '运费贷', '服务贷'] },
-                        { label: '待人工确认', options: ['全部', '是', '否'] },
-                      ].map(f => (
-                        <div key={f.label} className="flex items-center gap-2">
-                          <span className="text-[9px] text-[#64748B] w-14 shrink-0">{f.label}</span>
-                          <select className="flex-1 h-6 rounded border border-[#E2E8F0] px-1.5 text-[9px] text-[#0F172A] bg-white">{f.options.map(o => <option key={o}>{o}</option>)}</select>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#F1F5F9]">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Search size={10} />应用条件</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><X size={10} />清空条件</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />保存为方案</Button>
-                    <div className="flex-1" />
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Layers size={10} />批量加入候选池</Button>
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857]"><FileSearch size={10} />批量进入尽调</Button>
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#64748B]"><Eye size={10} />批量标记观察</Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Three-column: result list + detail + AI panel */}
-            <div className="grid grid-cols-[280px_1fr_280px] gap-3" style={{ minHeight: 480 }}>
-
-              {/* LEFT: Filtered result list grouped by action */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                <div className="px-3 py-2.5 border-b border-[#F1F5F9] bg-[#F8FAFC]">
-                  <span className="text-[11px] font-semibold text-[#0F172A]">筛选结果</span>
-                  <span className="text-[9px] text-[#94A3B8] ml-2">{filteredSamples.length} 家企业</span>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  {filterActions.map(action => {
-                    const items = filteredSamples.filter(s => getFilterAction(s) === action);
-                    if (items.length === 0) return null;
-                    const as = FILTER_ACTION_STYLE[action];
-                    return (
-                      <div key={action}>
-                        <div className="px-3 py-1.5 bg-[#FAFBFF] border-b border-[#F1F5F9] flex items-center gap-1.5">
-                          <span className={cn('text-[10px] font-semibold', as.text)}>{action}</span>
-                          <span className="text-[9px] text-[#94A3B8]">{items.length}</span>
-                        </div>
-                        {items.map(sample => {
-                          const isActive = selectedFilter === sample.id;
-                          const conds = hitConditions(sample);
-                          return (
-                            <div
-                              key={sample.id}
-                              onClick={() => setSelectedFilter(sample.id)}
-                              className={cn(
-                                'px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all',
-                                isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]',
-                              )}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[12px] font-semibold text-[#0F172A] truncate">{sample.shortName}</span>
-                                <Badge className={cn('text-[8px] border', as.bg, as.text, as.border)}>{action === '优先进入候选池' ? '进候选池' : action === '建议进入尽调' ? '进尽调' : '待确认'}</Badge>
-                              </div>
-                              <div className="text-[9px] text-[#64748B] mb-1.5">{sample.roleInChain} · {sample.chainName}</div>
-                              <div className="flex items-center gap-1 flex-wrap mb-1.5">
-                                {conds.hits.slice(0, 2).map(h => (
-                                  <span key={h} className="text-[8px] px-1.5 py-0.5 rounded bg-[#ECFDF3] text-[#047857] border border-[#A7F3D0]">{h}</span>
-                                ))}
-                                {conds.misses.length > 0 && (
-                                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-[#FFF7ED] text-[#C2410C] border border-[#FED7AA]">{conds.misses.length} 项未达</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-3 text-[9px]">
-                                <span className="text-[#64748B]">关系 <span className="font-medium text-[#0F172A]">{sample.relationStrength}%</span></span>
-                                <span className="text-[#64748B]">真实性 <span className="font-medium text-[#0F172A]">{sample.authenticityScore}%</span></span>
-                                <span className="text-[#64748B]">覆盖 <span className="font-medium text-[#0F172A]">{sample.evidenceCoverage}%</span></span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                  {filteredSamples.length === 0 && (
-                    <div className="p-6 text-center">
-                      <Search size={24} className="text-[#CBD5E1] mx-auto mb-2" />
-                      <div className="text-[11px] text-[#64748B]">当前条件下暂无命中企业。</div>
-                      <div className="text-[9px] text-[#94A3B8] mt-1">建议放宽筛选条件，或返回智能推荐流查看原始推荐结果。</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* CENTER: Current filter object detail */}
-              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                {currentFilterSample ? (() => {
-                  const conds = hitConditions(currentFilterSample);
-                  const action = getFilterAction(currentFilterSample);
-                  const fas = FILTER_ACTION_STYLE[action];
-                  return (
-                    <>
-                      <div className="px-4 py-3 border-b border-[#F1F5F9] bg-[#F8FAFC]">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[12px] font-semibold text-[#0F172A]">当前对象详情</span>
-                          <div className="flex items-center gap-1.5">
-                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]" onClick={() => navigate('smart-identify', 'list')}><Layers size={9} />加入候选池</Button>
-                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#A7F3D0] text-[#047857]" onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={9} />进入尽调</Button>
-                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'graph')}><Network size={9} />关系图谱</Button>
-                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'linked')}><Link2 size={9} />公私联动</Button>
-                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#64748B]"><UserCheck size={9} />标记人工确认</Button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {/* Entity info */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[15px] font-bold text-[#0F172A]">{currentFilterSample.companyName}</span>
-                            <Badge className={cn('text-[9px] border', fas.bg, fas.text, fas.border)}>{action}</Badge>
-                          </div>
-                          <div className="flex items-center gap-3 text-[10px] text-[#64748B]">
-                            <span>{currentFilterSample.roleInChain}</span>
-                            <span className="text-[#CBD5E1]">·</span>
-                            <span>{currentFilterSample.chainName}</span>
-                            <span className="text-[#CBD5E1]">·</span>
-                            <span>年销售 {currentFilterSample.annualSales}</span>
-                            <span className="text-[#CBD5E1]">·</span>
-                            <span>{currentFilterSample.productType}</span>
-                          </div>
-                        </div>
-
-                        {/* Filter conclusion */}
-                        <div className="rounded-lg border border-[#E2E8F0] p-3 space-y-2">
-                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><Brain size={12} className="text-[#7C3AED]" />筛选结论</div>
-                          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                            <div className="flex items-center justify-between text-[10px]"><span className="text-[#64748B]">当前筛选结论</span><Badge className={cn('text-[8px] border', fas.bg, fas.text, fas.border)}>{action}</Badge></div>
-                            <div className="flex items-center justify-between text-[10px]"><span className="text-[#64748B]">推荐场景</span><span className="font-medium text-[#0F172A]">{currentFilterSample.productType}</span></div>
-                            <div className="flex items-center justify-between text-[10px]"><span className="text-[#64748B]">推荐阶段</span><span className="font-medium text-[#0F172A]">{currentFilterSample.nextAction}</span></div>
-                            <div className="flex items-center justify-between text-[10px]"><span className="text-[#64748B]">建议进入候选池</span><span className="font-medium" style={{ color: action === '优先进入候选池' ? '#047857' : '#64748B' }}>{action === '优先进入候选池' ? '是' : '待确认'}</span></div>
-                          </div>
-                          <p className="text-[10px] text-[#475569] bg-[#F8FAFC] rounded px-2.5 py-1.5 leading-4">
-                            {action === '优先进入候选池'
-                              ? '该企业已满足当前筛选条件，建议进入候选池并继续跟踪识别结果。'
-                              : action === '建议进入尽调'
-                                ? '该企业具备一定识别价值，但关键证据尚不充分，建议进入尽调进一步补强。'
-                                : '当前证据覆盖度接近阈值边界，建议人工确认后再决定是否推进。'}
-                          </p>
-                        </div>
-
-                        {/* Hit detail */}
-                        <div className="rounded-lg border border-[#E2E8F0] p-3 space-y-2">
-                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><CheckCircle2 size={12} className="text-[#047857]" />条件命中明细</div>
-                          <div className="space-y-2">
-                            <div>
-                              <div className="text-[9px] text-[#94A3B8] mb-1">已命中条件（{conds.hits.length}）</div>
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {conds.hits.map(h => (
-                                  <span key={h} className="text-[9px] px-2 py-0.5 rounded bg-[#ECFDF3] text-[#047857] border border-[#A7F3D0] flex items-center gap-1"><CheckCircle2 size={8} />{h}</span>
-                                ))}
-                              </div>
-                            </div>
-                            {conds.misses.length > 0 && (
-                              <div>
-                                <div className="text-[9px] text-[#94A3B8] mb-1">未命中条件（{conds.misses.length}）</div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  {conds.misses.map(m => (
-                                    <span key={m} className="text-[9px] px-2 py-0.5 rounded bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5] flex items-center gap-1"><AlertCircle size={8} />{m}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-3 gap-3 mt-2">
-                            {[
-                              { label: '关系强度', value: currentFilterSample.relationStrength },
-                              { label: '真实性评分', value: currentFilterSample.authenticityScore },
-                              { label: '证据覆盖度', value: currentFilterSample.evidenceCoverage },
-                            ].map(m => (
-                              <div key={m.label} className="text-center p-2 rounded-lg bg-[#F8FAFC]">
-                                <div className="text-[9px] text-[#64748B] mb-1">{m.label}</div>
-                                <div className="text-[18px] font-bold" style={{ color: m.value >= 70 ? '#047857' : '#C2410C' }}>{m.value}%</div>
-                                <div className="w-full h-1.5 rounded-full bg-[#E2E8F0] mt-1 overflow-hidden">
-                                  <div className="h-full rounded-full" style={{ width: `${m.value}%`, backgroundColor: m.value >= 70 ? '#047857' : '#C2410C' }} />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Risk & restrictions */}
-                        <div className="rounded-lg border border-[#E2E8F0] p-3 space-y-2">
-                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><AlertTriangle size={12} className="text-[#F59E0B]" />风险与限制</div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={cn('text-[9px] border',
-                              currentFilterSample.riskStatus === '正常' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' :
-                              currentFilterSample.riskStatus === '观察' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' :
-                              'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
-                            )}>{currentFilterSample.riskStatus}</Badge>
-                            {currentFilterSample.riskFlags.map(f => (
-                              <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5]">{f}</span>
-                            ))}
-                          </div>
-                          {conds.misses.length > 0 && (
-                            <p className="text-[10px] text-[#C2410C] leading-4">不建议直接推进原因：{conds.misses.join('、')}</p>
-                          )}
-                          {currentFilterSample.reviewReason && (
-                            <p className="text-[10px] text-[#475569] leading-4">{currentFilterSample.reviewReason}</p>
-                          )}
-                        </div>
-
-                        {/* Source info */}
-                        <div className="rounded-lg border border-[#E2E8F0] p-3">
-                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5 mb-2"><Clock size={12} className="text-[#64748B]" />来源信息</div>
-                          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">来源批次</span><span className="text-[#0F172A]">BATCH-20260409-001</span></div>
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">进入筛选时间</span><span className="text-[#0F172A]">2026-04-09 09:30</span></div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })() : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                    <Search size={28} className="text-[#CBD5E1] mb-3" />
-                    <div className="text-[13px] font-medium text-[#64748B]">当前暂无待筛选企业。</div>
-                    <div className="text-[10px] text-[#94A3B8] mt-1">您可以先完成文件导入或 API 接入，再进入筛选流。</div>
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT: AI suggestion panel */}
-              <div className="space-y-3">
-                {currentFilterSample ? (() => {
-                  const action = getFilterAction(currentFilterSample);
-                  return (
-                    <>
-                      {/* AI suggestion card */}
-                      <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Lightbulb size={10} className="text-white" /></div>
-                          <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                            <p className="text-[10px] text-[#0F172A] leading-4 font-medium">{currentFilterSample.aiSummary}</p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">筛选依据</div>
-                            <p className="text-[10px] text-[#475569] leading-4">
-                              {`${currentFilterSample.shortName}在行业、链条归属上符合当前场景要求，关系强度 ${currentFilterSample.relationStrength}%${currentFilterSample.relationStrength >= 70 ? '，高于平均水平' : '，低于平均水平'}。`}
-                            </p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                            <p className="text-[10px] text-[#2563EB] font-medium">
-                              {action === '优先进入候选池'
-                                ? '建议先加入候选池，再结合关系图谱与公私联动结果决定是否进入尽调。'
-                                : action === '建议进入尽调'
-                                  ? '建议进入尽调，进一步补强证据链并生成尽调报告。'
-                                  : '该企业处于边界状态，建议人工确认后再推进。'}
-                            </p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                            <p className="text-[10px] text-[#7C3AED] font-medium">{action === '优先进入候选池' ? '候选资产列表' : action === '建议进入尽调' ? '智能尽调' : '人工确认'}</p>
-                          </div>
-                          {currentFilterSample.riskFlags.length > 0 && (
-                            <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
-                              <AlertCircle size={10} className="shrink-0 mt-0.5" />
-                              当前结果缺少关键识别信息，暂不建议推进
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-1.5 pt-1">
-                          <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full" onClick={() => navigate('smart-identify', 'list')}><Layers size={10} />加入候选池</Button>
-                          <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={10} />进入尽调</Button>
-                          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] w-full"><Eye size={10} />标记观察</Button>
-                          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 text-[#DC2626] w-full"><X size={10} />移出结果</Button>
-                        </div>
-                      </div>
-
-                      {/* Identification strength */}
-                      <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                        <div className="text-[11px] font-semibold text-[#0F172A]">识别强度</div>
-                        <div className="space-y-2">
-                          {[
-                            { label: 'AI 置信度', value: currentFilterSample.agentHints.confidence },
-                            { label: '关系强度', value: currentFilterSample.relationStrength },
-                            { label: '证据覆盖度', value: currentFilterSample.evidenceCoverage },
-                          ].map(m => (
-                            <div key={m.label} className="space-y-0.5">
-                              <div className="flex justify-between text-[9px]">
-                                <span className="text-[#64748B]">{m.label}</span>
-                                <span className="font-medium text-[#0F172A]">{m.value}%</span>
-                              </div>
-                              <div className="w-full h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-                                <div className="h-full rounded-full transition-all" style={{
-                                  width: `${m.value}%`,
-                                  backgroundColor: m.value >= 80 ? '#047857' : m.value >= 60 ? '#F59E0B' : '#DC2626',
-                                }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Quick navigation */}
-                      <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                        <div className="text-[11px] font-semibold text-[#0F172A]">快捷跳转</div>
-                        <div className="space-y-1">
-                          <button onClick={() => navigate('smart-identify', 'graph')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Network size={10} className="text-[#7C3AED]" />查看关系图谱</button>
-                          <button onClick={() => navigate('smart-identify', 'linked')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Link2 size={10} className="text-[#2563EB]" />查看公私联动</button>
-                          <button onClick={() => navigate('smart-identify', 'feed')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Sparkles size={10} className="text-[#F59E0B]" />返回智能推荐流</button>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })() : (
-                  <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 text-center">
-                    <div className="text-[11px] text-[#94A3B8]">请在左侧选择企业查看详情</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      }
+         PAGE 4: 智能筛选（条件筛选部分）— 半自动筛选工作流
 
       /* ═══════════════════════════════════════════════════════════
-         PAGE 5: 候选资产列表 — 候选管理与推进
+         PAGE 5: 候选资产 — 候选管理与推进
          ═══════════════════════════════════════════════════════════ */
       case 'list': {
         const SEGMENT_STYLE: Record<string, { bg: string; text: string; border: string; desc: string }> = {
@@ -1558,7 +828,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">候选资产列表</h2>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">候选资产</h2>
                 <p className="text-[11px] text-[#64748B] mt-0.5">统一管理已进入识别主链路的候选企业，支持分层、筛选与后续作业推进。</p>
               </div>
               <div className="flex items-center gap-2">
@@ -1569,19 +839,11 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
               </div>
             </div>
 
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {overviewCards.map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <c.icon size={12} className={c.color} />
-                    <span className="text-[10px] text-[#64748B]">{c.label}</span>
-                  </div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            {/* AI Insight */}
+            <AiInsight
+              message={`候选资产列表已加载，按候选等级分组展示，选择企业查看详细识别结论与依据。`}
+              tone="info"
+            />
 
             {/* Filter & sort bar */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2.5 flex items-center justify-between">
@@ -1606,7 +868,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
             </div>
 
             {/* Three-column: candidate list + detail + AI panel */}
-            <div className="grid grid-cols-[280px_1fr_280px] gap-3" style={{ minHeight: 480 }}>
+            <div className="grid grid-cols-[280px_1fr] gap-3" style={{ minHeight: 480 }}>
 
               {/* LEFT: Candidate list grouped by segment */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1663,7 +925,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                     <div className="p-6 text-center">
                       <Search size={24} className="text-[#CBD5E1] mx-auto mb-2" />
                       <div className="text-[11px] text-[#64748B]">当前暂无候选资产。</div>
-                      <div className="text-[9px] text-[#94A3B8] mt-1">您可以先完成名单导入、推荐或筛选后，再进入候选资产列表。</div>
+                      <div className="text-[9px] text-[#94A3B8] mt-1">您可以先完成名单导入、推荐或筛选后，再进入候选资产。</div>
                     </div>
                   )}
                 </div>
@@ -1800,104 +1062,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                     <Search size={28} className="text-[#CBD5E1] mb-3" />
                     <div className="text-[13px] font-medium text-[#64748B]">当前暂无候选资产。</div>
-                    <div className="text-[10px] text-[#94A3B8] mt-1">您可以先完成名单导入、推荐或筛选后，再进入候选资产列表。</div>
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT: AI judgment & actions */}
-              <div className="space-y-3">
-                {currentCandSample ? (() => {
-                  const seg = currentCandSample.segmentTag;
-                  return (
-                    <>
-                      {/* AI judgment card */}
-                      <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Lightbulb size={10} className="text-white" /></div>
-                          <span className="text-[11px] font-semibold text-[#0F172A]">AI 判断</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                            <p className="text-[10px] text-[#0F172A] leading-4 font-medium">{currentCandSample.aiSummary}</p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">推荐理由</div>
-                            <p className="text-[10px] text-[#475569] leading-4">
-                              {`${currentCandSample.shortName}在链条关系、经营稳定性与证据覆盖上${currentCandSample.agentHints.confidence >= 70 ? '均高于当前候选平均水平' : '存在部分不足'}。`}
-                            </p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">推进建议</div>
-                            <p className="text-[10px] text-[#2563EB] font-medium">
-                              {seg === 'A可授信'
-                                ? '建议先进入智能尽调补强证据，再决定是否进入审批前队列。'
-                                : seg === 'B可做但需处理'
-                                  ? '建议先补充关键证据，再决定下一步推进方向。'
-                                  : seg === 'C待观察'
-                                    ? '建议持续观察，暂不推进尽调。'
-                                    : '建议先关注风险变化，风险缓解后再评估。'}
-                            </p>
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                            <p className="text-[10px] text-[#7C3AED] font-medium">{seg === 'A可授信' || seg === 'B可做但需处理' ? '智能尽调' : '保持当前候选管理'}</p>
-                          </div>
-                          {currentCandSample.riskFlags.length > 0 && (
-                            <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
-                              <AlertCircle size={10} className="shrink-0 mt-0.5" />
-                              当前对象缺少关键识别信息，暂不能推进
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-1.5 pt-1">
-                          <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                          <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] w-full"><Eye size={10} />查看更多依据</Button>
-                        </div>
-                      </div>
-
-                      {/* Strength overview */}
-                      <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                        <div className="text-[11px] font-semibold text-[#0F172A]">识别强度</div>
-                        <div className="space-y-2">
-                          {[
-                            { label: 'AI 置信度', value: currentCandSample.agentHints.confidence },
-                            { label: '关系强度', value: currentCandSample.relationStrength },
-                            { label: '证据覆盖度', value: currentCandSample.evidenceCoverage },
-                          ].map(m => (
-                            <div key={m.label} className="space-y-0.5">
-                              <div className="flex justify-between text-[9px]">
-                                <span className="text-[#64748B]">{m.label}</span>
-                                <span className="font-medium text-[#0F172A]">{m.value}%</span>
-                              </div>
-                              <div className="w-full h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-                                <div className="h-full rounded-full transition-all" style={{
-                                  width: `${m.value}%`,
-                                  backgroundColor: m.value >= 80 ? '#047857' : m.value >= 60 ? '#F59E0B' : '#DC2626',
-                                }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Quick actions */}
-                      <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                        <div className="text-[11px] font-semibold text-[#0F172A]">快捷操作</div>
-                        <div className="space-y-1">
-                          <button onClick={() => navigate('smart-due-diligence', 'dd-report')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><FileSearch size={10} className="text-[#047857]" />进入尽调</button>
-                          <button onClick={() => navigate('smart-approval', 'product-match')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><ArrowRight size={10} className="text-[#2563EB]" />加入审批前队列</button>
-                          <button className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Eye size={10} className="text-[#F59E0B]" />标记观察</button>
-                          <button className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><X size={10} className="text-[#DC2626]" />移出候选</button>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })() : (
-                  <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 text-center">
-                    <div className="text-[11px] text-[#94A3B8]">请在左侧选择企业查看详情</div>
+                    <div className="text-[10px] text-[#94A3B8] mt-1">您可以先完成名单导入、推荐或筛选后，再进入候选资产。</div>
                   </div>
                 )}
               </div>
@@ -1976,25 +1141,13 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
               </div>
             </div>
 
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '核心节点数', value: coreCount, desc: '当前图谱中已识别出的关键主体数量', icon: Users, color: 'text-[#475569]' },
-                { label: '高强度关系', value: strongCount, desc: '已具备较强识别依据的关系链路', icon: Activity, color: 'text-[#047857]' },
-                { label: '待核验关系', value: pendingCount, desc: '存在关系线索，但仍需证据补强', icon: AlertTriangle, color: 'text-[#F59E0B]' },
-                { label: '公私联动命中', value: linkedCount, desc: '已命中法人或个人关联验证的主体数', icon: Link2, color: 'text-[#7C3AED]' },
-                { label: '可推进企业', value: pushableCount, desc: '建议继续推进进入尽调或候选池', icon: ArrowRight, color: 'text-[#2563EB]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Three-column: graph canvas + detail + AI */}
-            <div className="grid grid-cols-[1fr_300px] gap-3" style={{ minHeight: 460 }}>
+            {/* AI Insight */}
+            <AiInsight
+              message={`关系图谱已加载核心节点，点击节点查看链路详情与识别结论。`}
+              tone="info"
+            />
+{/* Three-column: graph canvas + detail + AI */}
+            <div className="grid grid-cols-1 gap-3" style={{ minHeight: 460 }}>
 
               {/* LEFT: Graph canvas + node detail below */}
               <div className="space-y-3">
@@ -2179,95 +1332,13 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                   </div>
                 )}
               </div>
-
-              {/* RIGHT: AI judgment & actions */}
-              <div className="space-y-3">
-                {/* AI judgment card */}
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 判断</span>
-                  </div>
-                  {selNode ? (
-                    <div className="space-y-2">
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                        <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                          {selNode.relationStrength >= 70
-                            ? `系统综合关系强度、连续交易表现与证据覆盖后，建议将${selNode.name}纳入候选池继续推进。`
-                            : `${selNode.name}当前关系证据不足，建议先补强后再决定推进方向。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">关系识别摘要</div>
-                        <p className="text-[10px] text-[#475569] leading-4">{`${selNode.name}为${selNode.chainRole}，${selNode.months}个月连续交易，${selNode.txCount}笔/${selNode.txAmount}，关系强度${selNode.relationStrength}%。`}</p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">图谱结论</div>
-                        <p className="text-[10px] text-[#2563EB] font-medium">
-                          {selNode.isMainChain
-                            ? `该主体位于核心企业上游链路，交易与回款关系较为稳定，具备进一步尽调价值。`
-                            : `该主体为辅助节点，需进一步验证关系稳定性。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                        <p className="text-[10px] text-[#7C3AED] font-medium">
-                          {selNode.linkedHit ? '建议直接进入尽调，进一步补强合同与物流证据。' : '建议先查看公私联动结果，再决定是否进入尽调。'}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                        <p className="text-[10px] text-[#475569]">{selNode.relationStrength >= 70 ? '智能尽调 / 候选资产列表' : '保持图谱观察'}</p>
-                      </div>
-                      {selNode.riskStatus !== '正常' && (
-                        <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
-                          <AlertCircle size={10} className="shrink-0 mt-0.5" />
-                          当前图谱关系存在边界节点，建议人工确认后再决定是否进入后续作业。
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-[#94A3B8] leading-4">选择节点后查看 AI 对该主体的关系判断与推进建议。</p>
-                  )}
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full" disabled={!selNode}><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" disabled={!selNode}><UserCheck size={10} />人工确认</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" disabled={!selNode} onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={10} />进入尽调</Button>
-                  </div>
-                </div>
-
-                {/* Node list sidebar */}
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                  <div className="text-[11px] font-semibold text-[#0F172A]">节点列表</div>
-                  <div className="space-y-1">
-                    {[...GRAPH_NODES].sort((a, b) => b.relationStrength - a.relationStrength).map(n => {
-                      const t = DIR_MAP[n.direction];
-                      return (
-                        <button key={n.id} onClick={() => setSelectedGraphNode(n.id)} className={cn('w-full text-left rounded px-2 py-1.5 text-[10px] transition-colors border', selectedGraphNode === n.id ? 'bg-[#EFF6FF] border-[#BFDBFE]' : 'border-transparent hover:bg-[#F8FAFC]')}>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.stroke }} />
-                            <span className="text-[#0F172A] font-medium flex-1 truncate">{n.name}</span>
-                            <span className="font-bold" style={{ color: strColor(n.relationStrength) }}>{n.relationStrength}</span>
-                            {n.isMainChain && <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] shrink-0" />}
-                            {n.linkedHit && <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] shrink-0" />}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5 ml-3.5 text-[9px] text-[#94A3B8]">
-                            <span>{t.label}</span><span>{n.txAmount}</span><span>{n.months}月</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         );
       }
 
       /* ═══════════════════════════════════════════════════════════
-         PAGE 7: 公私联动验证 — 主体真实性与关联关系补强工作台
+         PAGE 7: 公私联动 — 主体真实性与关联关系补强工作台
          ═══════════════════════════════════════════════════════════ */
       case 'linked': {
         interface LinkedEntity {
@@ -2282,11 +1353,11 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
         const LINKED_ENTITIES: LinkedEntity[] = [
           {
             id: 'le-1', companyName: '常州衡远包装材料有限公司', shortName: '衡远包装', uscc: '91320412MA1N****7X', industry: '包装材料', region: '常州', identifyStatus: '补审中',
-            legalPerson: '张建华', legalIdMasked: '3204****1234', controller: '张建华', managerName: '王敏',
+            legalPerson: '周海峰', legalIdMasked: '3204****0XXX', controller: '周海峰', managerName: '王敏',
             isBankClient: true, hasCorpAccount: true, hasPersonalClue: true, credibility: 88, conclusion: '公私联动验证通过，法人账户与企业回款存在连续命中',
             links: [
-              { type: '法人绑定企业', target: '张建华', relation: '法人代表', basis: '工商登记', hitTime: '2026-04-01', strength: 95, continuous: true, needConfirm: false },
-              { type: '法人个人账户与对公账户联动', target: '张建华个人账户', relation: '资金往来', basis: '行内流水匹配', hitTime: '2026-04-08', strength: 86, continuous: true, needConfirm: false },
+              { type: '法人绑定企业', target: '周海峰', relation: '法人代表', basis: '工商登记', hitTime: '2026-04-01', strength: 95, continuous: true, needConfirm: false },
+              { type: '法人个人账户与对公账户联动', target: '周海峰个人账户（工商银行）', relation: '资金往来', basis: '行内流水匹配', hitTime: '2026-04-08', strength: 86, continuous: true, needConfirm: false },
               { type: '个人回款与企业回款关联', target: '盛拓模组 → 衡远包装', relation: '回款路径吻合', basis: '回款记录比对', hitTime: '2026-04-07', strength: 82, continuous: true, needConfirm: false },
               { type: '个人交易对手与企业交易对手重合', target: '金利达新材料', relation: '交易对手重合', basis: '流水摘要比对', hitTime: '2026-03-28', strength: 74, continuous: false, needConfirm: true },
             ],
@@ -2384,7 +1455,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">公私联动验证</h2>
+                <h2 className="text-[15px] font-semibold text-[#0F172A]">公私联动</h2>
                 <p className="text-[11px] text-[#64748B] mt-0.5">验证企业主体与法人、实控人及关键个人线索之间的联动关系，辅助识别经营真实性与可推进价值。</p>
               </div>
               <div className="flex items-center gap-2">
@@ -2399,25 +1470,13 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
               </div>
             </div>
 
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '联动命中主体', value: hitTotal, desc: '当前已命中公私联动线索的企业主体数量', icon: Fingerprint, color: 'text-[#475569]' },
-                { label: '高可信联动', value: highCredCount, desc: '已具备较强联动依据、可用于识别补强的主体', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '待人工确认', value: needConfirmCount, desc: '存在联动线索，但仍需人工复核的主体', icon: UserCheck, color: 'text-[#F59E0B]' },
-                { label: '异常联动', value: anomalyCount, desc: '存在冲突、缺失或异常线索的主体', icon: AlertCircle, color: 'text-[#DC2626]' },
-                { label: '可推进主体', value: pushableLinkedCount, desc: '建议进入候选池、关系图谱或尽调的主体', icon: ArrowRight, color: 'text-[#2563EB]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Four-column layout */}
-            <div className="grid grid-cols-[220px_1fr_1fr_260px] gap-3" style={{ minHeight: 520 }}>
+            {/* AI Insight */}
+            <AiInsight
+              message={`公私联动已命中多家企业线索，交叉验证企业与法人维度后可确认推荐等级。`}
+              tone="info"
+            />
+{/* Four-column layout */}
+            <div className="grid grid-cols-[220px_1fr_1fr] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Entity list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -2584,89 +1643,6 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                   </div>
                 )}
               </div>
-
-              {/* COL 4: AI judgment & actions */}
-              <div className="space-y-3">
-                {/* AI judgment card */}
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 判断</span>
-                  </div>
-                  {activeLE ? (
-                    <div className="space-y-2">
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                        <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                          {activeLE.credibility >= 70
-                            ? `${activeLE.shortName}已形成较完整的公私联动线索，能够对经营真实性提供有效补强。`
-                            : `${activeLE.shortName}联动线索存在，但仍需对关键账户关系做进一步确认。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">公私联动摘要</div>
-                        <p className="text-[10px] text-[#475569] leading-4">
-                          {`法人${activeLE.legalPerson}与对公账户之间${activeLE.credibility >= 70 ? '存在连续命中' : '存在部分命中'}，${activeLE.links.filter(l => l.continuous).length}/${activeLE.links.length} 条联动连续。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">可信度结论</div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${activeLE.credibility}%`, backgroundColor: activeLE.credibility >= 70 ? '#047857' : activeLE.credibility >= 50 ? '#F59E0B' : '#DC2626' }} /></div>
-                          <span className="text-[11px] font-bold" style={{ color: activeLE.credibility >= 70 ? '#047857' : activeLE.credibility >= 50 ? '#F59E0B' : '#DC2626' }}>{activeLE.credibility}%</span>
-                        </div>
-                      </div>
-                      {activeLE.evidences.some(ev => ev.anomaly || ev.conflict) && (
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">主要风险提示</div>
-                          <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                            {activeLE.evidences.filter(ev => ev.anomaly).map((ev, i) => <div key={i}>· {ev.anomaly}</div>)}
-                            {activeLE.evidences.filter(ev => ev.conflict).map((ev, i) => <div key={i}>· {ev.source}: 存在冲突线索</div>)}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                        <p className="text-[10px] text-[#7C3AED] font-medium">
-                          {activeLE.credibility >= 70
-                            ? '建议进入关系图谱查看完整链路，并结合证据核验结果决定是否推进尽调。'
-                            : activeLE.credibility >= 50
-                              ? '建议先补充异常信息后再推进作业。'
-                              : '联动线索不足，暂无法形成可信结论，建议持续观察。'}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                        <p className="text-[10px] text-[#475569]">{activeLE.credibility >= 70 ? '关系图谱 / 智能尽调' : activeLE.credibility >= 50 ? '关系图谱' : '保持当前验证'}</p>
-                      </div>
-                      {activeLE.links.some(l => l.needConfirm) && (
-                        <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
-                          <AlertCircle size={10} className="shrink-0 mt-0.5" />
-                          存在待人工确认的联动关系，请核验后再做最终推进。
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-[#94A3B8]">选择主体后查看 AI 联动判断。</p>
-                  )}
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#7C3AED] hover:bg-[#6D28D9] text-white w-full" disabled={!activeLE}><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" disabled={!activeLE} onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={10} />进入尽调</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" disabled={!activeLE}><ArrowRight size={10} />加入候选池</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" disabled={!activeLE}><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-
-                {/* Quick navigation */}
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2">
-                  <div className="text-[11px] font-semibold text-[#0F172A]">快捷跳转</div>
-                  <div className="space-y-1">
-                    <button onClick={() => onModuleChange('graph')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Network size={10} className="text-[#2563EB]" />查看关系图谱</button>
-                    <button onClick={() => onModuleChange('list')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Layers size={10} className="text-[#047857]" />候选资产列表</button>
-                    <button onClick={() => onModuleChange('feed')} className="w-full text-left px-2 py-1.5 rounded text-[10px] text-[#475569] hover:bg-[#F8FAFC] flex items-center gap-2 transition-colors"><Sparkles size={10} className="text-[#F59E0B]" />智能推荐流</button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         );
@@ -2678,8 +1654,70 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
     }
   };
 
+  const renderAiPanel = () => {
+    const titles: Record<string, string> = {
+      'file-import': 'AI 名单导入引导',
+      feed: 'AI 智能筛选引导',
+      list: 'AI 候选资产判断',
+      graph: 'AI 关系图谱判断',
+      linked: 'AI 公私联动判断',
+    };
+    const guides: Record<string, string> = {
+      'file-import': '当前步骤：名单导入。通过文件上传或API接口导入企业名单，系统自动解析并生成推荐池。完成后进入智能筛选环节。',
+      feed: '当前步骤：智能筛选。基于多维度评分模型对企业进行筛选与排序，优先推荐高匹配度企业。关注识别判断中的风险提示。',
+      list: '当前步骤：候选资产管理。对筛选通过的企业进行详细尽调评估，查看AI判断结论，决定是否进入尽调流程。',
+      graph: '当前步骤：关系图谱。可视化展示企业间股权、担保、交易等关联关系，识别潜在风险传导路径。',
+      linked: '当前步骤：公私联动。打通对公与对私数据，交叉验证企业主个人信用与企业经营状况，补强尽调证据链。',
+    };
+    const nextSteps: Record<string, { label: string; target: string }[]> = {
+      'file-import': [{ label: '进入智能筛选', target: 'feed' }],
+      feed: [{ label: '查看候选资产', target: 'list' }, { label: '查看关系图谱', target: 'graph' }],
+      list: [{ label: '进入关系图谱', target: 'graph' }, { label: '公私联动', target: 'linked' }],
+      graph: [{ label: '进入候选资产', target: 'list' }, { label: '公私联动', target: 'linked' }],
+      linked: [{ label: '返回关系图谱', target: 'graph' }, { label: '返回候选资产', target: 'list' }],
+    };
+    const steps = nextSteps[activeModule] ?? [];
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-1.5">
+          <Sparkles size={12} className="text-primary" />
+          <span className="text-[11px] font-semibold">{titles[activeModule] ?? 'AI 引导'}</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{guides[activeModule] ?? ''}</p>
+        {steps.length > 0 && (
+          <div className="space-y-1.5 pt-2 border-t border-border">
+            <span className="text-[10px] text-muted-foreground">快捷导航</span>
+            {steps.map(s => (
+              <Button key={s.target} variant="outline" size="sm" className="h-7 text-[10px] gap-1 w-full" onClick={() => onModuleChange(s.target)}>
+                <ArrowRight size={10} />{s.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <SceneLayout title={scene.title} modules={scene.modules} activeModule={activeModule} onModuleChange={onModuleChange}>
+    <SceneLayout
+      title={scene.title}
+      modules={scene.modules}
+      activeModule={activeModule}
+      onModuleChange={onModuleChange}
+      contextSlot={
+        <FlowProgress
+          steps={IDENTIFY_FLOW_STEPS}
+          currentStepId={getFlowStepId(activeModule)}
+          onStepClick={(id) => {
+            // Map flow step back to actual module
+            if (id === 'file-import') onModuleChange('file-import');
+            else if (id === 'feed') onModuleChange('feed');
+            else if (id === 'graph') onModuleChange('graph');
+          }}
+        />
+      }
+      aiPanel={renderAiPanel()}
+    >
       {renderContent()}
     </SceneLayout>
   );

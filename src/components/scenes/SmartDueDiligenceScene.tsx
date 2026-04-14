@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ArrowRight,
   BookOpen,
-  Brain,
   Camera,
   CheckCircle2,
   ClipboardList,
@@ -67,7 +66,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
             status: '待确认', priority: '高', responsible: '王敏',
             materials: [
               { name: '营业执照_衡远包装.jpg', type: '营业执照', status: '已解析', fieldCount: 8, summary: '企业名称与统一社会信用代码已提取', confidence: 96, usableForVerify: true, needConfirm: false },
-              { name: '法人身份证_张建华.jpg', type: '法人身份证', status: '已解析', fieldCount: 5, summary: '法人姓名与身份证号码已识别', confidence: 94, usableForVerify: true, needConfirm: false },
+              { name: '法人身份证_周海峰.jpg', type: '法人身份证', status: '已解析', fieldCount: 5, summary: '法人姓名与身份证号码已识别', confidence: 94, usableForVerify: true, needConfirm: false },
               { name: '采购合同_盛拓模组.pdf', type: '合同影像', status: '已解析', fieldCount: 12, summary: '合同金额与签约双方已解析', confidence: 89, usableForVerify: true, needConfirm: false },
               { name: '增值税发票_202603.jpg', type: '发票材料', status: '已解析', fieldCount: 9, summary: '发票金额与开票时间已识别', confidence: 91, usableForVerify: true, needConfirm: false },
               { name: '经营场所_外景.jpg', type: '经营场所照片', status: '已解析', fieldCount: 3, summary: '场所地址与招牌信息已识别', confidence: 82, usableForVerify: true, needConfirm: false },
@@ -182,7 +181,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
             </div>
 
             {/* Four-column layout */}
-            <div className="grid grid-cols-[210px_1fr_1fr_250px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[210px_1fr_1fr] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Task list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -316,82 +315,6 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
                   </div>
                 )}
               </div>
-
-              {/* COL 4: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 判断</span>
-                  </div>
-                  {activeTask ? (
-                    <div className="space-y-2">
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                        <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                          {activeTask.anomalies.length === 0
-                            ? `${activeTask.shortName}的基础证照与经营材料已全部解析完成，具备进入证据核验条件。`
-                            : `${activeTask.shortName}的材料已完成部分解析，具备初步条件，但仍需对关键异常项进行补充确认。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">材料完整度</div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${(activeTask.parsedMat / activeTask.totalMat) * 100}%` }} /></div>
-                          <span className="text-[10px] font-bold text-[#0F172A]">{activeTask.parsedMat}/{activeTask.totalMat}</span>
-                        </div>
-                        <p className="text-[9px] text-[#475569] mt-1 leading-4">
-                          {activeTask.materials.filter(m => m.status === '已解析').map(m => m.type).filter((v, i, a) => a.indexOf(v) === i).join('、')}已解析完成
-                          {activeTask.materials.filter(m => m.status !== '已解析').length > 0 && `，${activeTask.materials.filter(m => m.status !== '已解析').map(m => m.type).join('、')}仍待处理`}。
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">解析可信度</div>
-                        {(() => {
-                          const parsed = activeTask.materials.filter(m => m.confidence > 0);
-                          const avg = parsed.length > 0 ? Math.round(parsed.reduce((s, m) => s + m.confidence, 0) / parsed.length) : 0;
-                          return (
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${avg}%`, backgroundColor: avg >= 80 ? '#047857' : avg >= 60 ? '#F59E0B' : '#DC2626' }} /></div>
-                              <span className="text-[10px] font-bold" style={{ color: avg >= 80 ? '#047857' : avg >= 60 ? '#F59E0B' : '#DC2626' }}>{avg}%</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      {activeTask.anomalies.length > 0 && (
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">主要异常</div>
-                          <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                            {activeTask.anomalies.map((a, i) => <div key={i}>· {a.type}: {a.reason}</div>)}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                        <p className="text-[10px] text-[#7C3AED] font-medium">
-                          {activeTask.anomalies.filter(a => a.blocking).length > 0
-                            ? '建议先处理异常材料，再进入证据核验。'
-                            : activeTask.anomalies.length > 0
-                              ? '如关键字段已满足要求，可直接推进尽调报告生成。'
-                              : '材料解析完整，建议直接进入证据核验。'}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                        <p className="text-[10px] text-[#475569]">{activeTask.anomalies.length === 0 ? '证据核验 / 尽调报告' : '当前材料解析（补充后推进）'}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-[#94A3B8]">选择主体后查看 AI 判断。</p>
-                  )}
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full" disabled={!activeTask}><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" disabled={!activeTask} onClick={() => onModuleChange('evidence')}><ArrowRight size={10} />进入证据核验</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" disabled={!activeTask} onClick={() => onModuleChange('dd-report')}><FileSearch size={10} />进入尽调报告</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" disabled={!activeTask}><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         );
@@ -445,7 +368,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
             ],
             evidences: [
               { name: '营业执照主体信息', type: '证照证据', verifyItem: '主体真实性核验', source: '营业执照_衡远包装.jpg', field: '企业名称/统一信用代码/注册地址', result: '一致', strength: '强', confidence: 96, citable: true, needConfirm: false },
-              { name: '法人身份信息', type: '证照证据', verifyItem: '法人与实控人核验', source: '法人身份证_张建华.jpg', field: '法人姓名/身份证号', result: '一致', strength: '强', confidence: 94, citable: true, needConfirm: false },
+              { name: '法人身份信息', type: '证照证据', verifyItem: '法人与实控人核验', source: '法人身份证_周海峰.jpg', field: '法人姓名/身份证号', result: '一致', strength: '强', confidence: 94, citable: true, needConfirm: false },
               { name: '采购合同交易方', type: '合同证据', verifyItem: '交易真实性核验', source: '采购合同_盛拓模组.pdf', field: '签约双方/合同金额/合同期限', result: '基本一致', strength: '中', confidence: 89, citable: true, needConfirm: false },
               { name: '增值税发票核对', type: '发票证据', verifyItem: '合同与发票一致性核验', source: '增值税发票_202603.jpg', field: '发票金额/开票主体/开票时间', result: '存疑', strength: '弱', confidence: 72, citable: false, needConfirm: true },
               { name: '经营场所实地信息', type: '现场采集证据', verifyItem: '经营资质核验', source: '经营场所_外景.jpg', field: '经营地址/招牌信息', result: '基本一致', strength: '中', confidence: 82, citable: true, needConfirm: false },
@@ -555,7 +478,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
             </div>
 
             {/* Four-column layout */}
-            <div className="grid grid-cols-[210px_1fr_1fr_250px] gap-3" style={{ minHeight: 540 }}>
+            <div className="grid grid-cols-[210px_1fr_1fr] gap-3" style={{ minHeight: 540 }}>
 
               {/* COL 1: Task & items list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -720,86 +643,6 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
                   </div>
                 )}
               </div>
-
-              {/* COL 4: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 判断</span>
-                  </div>
-                  {activeVE ? (
-                    <div className="space-y-2">
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                        <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                          {activeVE.conflicts.length === 0
-                            ? `${activeVE.shortName}的基础证据已全部完成核验，证据链完整，具备进入尽调报告条件。`
-                            : `${activeVE.shortName}的基础证据已形成初步核验结论，但关键交易与经营佐证仍需进一步确认。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">核验结论摘要</div>
-                        <p className="text-[9px] text-[#475569] leading-4">
-                          {(() => {
-                            const consistent = activeVE.evidences.filter(e => e.result === '一致' || e.result === '基本一致').length;
-                            const total = activeVE.evidences.length;
-                            return `${consistent}/${total} 项证据一致或基本一致，${activeVE.evidences.filter(e => e.citable).length} 项可直接引用报告${activeVE.conflicts.length > 0 ? `，${activeVE.conflicts.length} 项存在冲突或异常` : ''}。`;
-                          })()}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">证据充分性</div>
-                        {(() => {
-                          const citable = activeVE.evidences.filter(e => e.citable).length;
-                          const total = activeVE.evidences.length;
-                          const pct = total > 0 ? Math.round((citable / total) * 100) : 0;
-                          return (
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct >= 80 ? '#047857' : pct >= 50 ? '#F59E0B' : '#DC2626' }} /></div>
-                              <span className="text-[10px] font-bold" style={{ color: pct >= 80 ? '#047857' : pct >= 50 ? '#F59E0B' : '#DC2626' }}>{pct}%</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      {activeVE.conflicts.length > 0 && (
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">主要冲突</div>
-                          <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                            {activeVE.conflicts.map((c, i) => <div key={i}>· {c.type}: {c.reason.length > 30 ? c.reason.slice(0, 30) + '…' : c.reason}</div>)}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                        <p className="text-[10px] text-[#7C3AED] font-medium">
-                          {activeVE.conflicts.filter(c => c.blockReport).length > 0
-                            ? '建议优先处理冲突字段与缺失佐证，待关键证据闭环后再进入尽调报告生成。'
-                            : activeVE.conflicts.length > 0
-                              ? '部分边界项建议人工确认后推进尽调报告。'
-                              : '证据核验完整，建议直接进入尽调报告生成。'}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                        <p className="text-[10px] text-[#475569]">{activeVE.conflicts.filter(c => c.blockReport).length === 0 ? '尽调报告 / 报告中心' : '当前证据核验（补充后推进）'}</p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">人工确认提示</div>
-                        <p className="text-[9px] text-[#475569]">{activeVE.evidences.filter(e => e.needConfirm).length > 0 ? `${activeVE.evidences.filter(e => e.needConfirm).length} 项证据需人工确认` : '无需人工确认项'}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-[#94A3B8]">选择主体后查看 AI 判断。</p>
-                  )}
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full" disabled={!activeVE}><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" disabled={!activeVE} onClick={() => onModuleChange('dd-report')}><ArrowRight size={10} />进入尽调报告</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" disabled={!activeVE} onClick={() => onModuleChange('material')}><ArrowRight size={10} />返回材料解析</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" disabled={!activeVE}><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         );
@@ -821,7 +664,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
           {
             id: 1, name: '主体基本情况', type: '主体基本情况', required: true,
             status: '已完成', completeness: 100, evidenceCount: 3, pendingCount: 0, updatedAt: '04/09 14:20',
-            body: '常州衡远包装材料有限公司成立于2018年，统一社会信用代码91320400MA1XXXXX，注册资本500万元，法定代表人张建华。主营包装材料生产与销售，注册地址与实际经营地址一致。营业执照、法人身份信息均已通过核验，信息一致。',
+            body: '常州衡远包装材料有限公司成立于2018年，统一社会信用代码91320400MA1XXXXX2X，注册资本500万元，法定代表人周海峰。主营包装材料生产与销售，注册地址与实际经营地址一致。营业执照、法人身份信息均已通过核验，信息一致。',
             structuredSummary: '企业名称、统一信用代码、注册资本、法人信息均已核验通过',
             references: [
               { name: '营业执照主体信息', type: '证照证据', status: '已引用', strength: '强', hasConflict: false, blockOutput: false },
@@ -832,8 +675,8 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
           {
             id: 2, name: '股权与实际控制情况', type: '股权与实际控制情况', required: true,
             status: '已完成', completeness: 100, evidenceCount: 2, pendingCount: 0, updatedAt: '04/09 14:20',
-            body: '张建华持股80%，为公司实际控制人。其配偶李芳持股20%。股权结构清晰，无代持或多层穿透问题。法人身份证与工商登记信息一致。',
-            structuredSummary: '股权结构清晰，实控人为张建华，无代持嫌疑',
+            body: '周海峰持股100%，为公司唯一股东及实际控制人。股权结构清晰，无代持或多层穿透问题。法人身份证与工商登记信息一致。',
+            structuredSummary: '股权结构清晰，实控人为周海峰，自然人独资，无代持嫌疑',
             references: [
               { name: '法人身份信息', type: '证照证据', status: '已引用', strength: '强', hasConflict: false, blockOutput: false },
               { name: '公私联动核验', type: '系统回填证据', status: '可引用', strength: '中', hasConflict: false, blockOutput: false },
@@ -958,7 +801,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
             </div>
 
             {/* Four-column layout */}
-            <div className="grid grid-cols-[180px_1fr_260px_250px] gap-3" style={{ minHeight: 540 }}>
+            <div className="grid grid-cols-[180px_1fr_260px] gap-3" style={{ minHeight: 540 }}>
 
               {/* COL 1: Chapter navigation */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1083,78 +926,6 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
               </div>
 
               {/* COL 4: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 判断</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        {hasBlocker
-                          ? '当前尽调报告已形成基础章节内容，能够支撑初步输出，但部分核心结论仍需补充证据与人工确认。'
-                          : '当前尽调报告各章节内容已满足输出要求，建议提交至报告中心统一管理。'}
-                      </p>
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">报告完整度</div>
-                      {(() => {
-                        const avg = Math.round(CHAPTERS.reduce((a, c) => a + c.completeness, 0) / CHAPTERS.length);
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${avg}%`, backgroundColor: avg >= 80 ? '#047857' : avg >= 60 ? '#F59E0B' : '#DC2626' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: avg >= 80 ? '#047857' : avg >= 60 ? '#F59E0B' : '#DC2626' }}>{avg}%</span>
-                          </div>
-                        );
-                      })()}
-                      <p className="text-[9px] text-[#475569] mt-1 leading-4">
-                        {CHAPTERS.filter(c => c.status === '已完成').map(c => c.name).slice(0, 3).join('、')}已完成
-                        {pendingChCount > 0 && `，${CHAPTERS.filter(c => c.status === '待补充' || c.status === '待确认').map(c => c.name).join('、')}仍需补强`}。
-                      </p>
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">核心结论摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">主体身份与基础资质材料一致，交易与资金层面部分证据待补强。整体可信度中等偏上。</p>
-                    </div>
-                    {hasBlocker && (
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">主要缺口</div>
-                        <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                          {CHAPTERS.flatMap(c => c.references.filter(r => r.blockOutput).map(r => `· ${c.name}: ${r.pending ?? '存在阻塞项'}`)).map((line, i) => <div key={i}>{line}</div>)}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        {hasBlocker
-                          ? '建议优先补齐关键章节的证据引用与结论说明，待阻塞项清理后再提交至报告中心。'
-                          : '报告已满足输出条件，建议提交至报告中心统一管理与归档。'}
-                      </p>
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{hasBlocker ? '当前报告（补强后提交）' : '报告中心'}</p>
-                    </div>
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">人工确认提示</div>
-                      <p className="text-[9px] text-[#475569]">
-                        {CHAPTERS.reduce((a, c) => a + c.references.filter(r => r.status === '待确认').length, 0) > 0
-                          ? `${CHAPTERS.reduce((a, c) => a + c.references.filter(r => r.status === '待确认').length, 0)} 项引用需人工确认`
-                          : '无需人工确认项'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" onClick={() => onModuleChange('report-center')}><ArrowRight size={10} />进入报告中心</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" onClick={() => onModuleChange('evidence')}><ArrowRight size={10} />返回证据核验</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         );
@@ -1257,7 +1028,7 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
             </div>
 
             {/* Three-column layout */}
-            <div className="grid grid-cols-[240px_1fr_250px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[240px_1fr] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Report list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1375,83 +1146,6 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
               </div>
 
               {/* COL 3: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-                  {activeRpt ? (
-                    <div className="space-y-2">
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                        <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                          {activeRpt.status === '已提交' || activeRpt.status === '已归档'
-                            ? `${activeRpt.company.replace(/有限公司$/, '')}的报告已完成流转，可进入归档或后续追溯。`
-                            : activeRpt.hasBlocker
-                              ? `${activeRpt.company.replace(/有限公司$/, '')}的报告仍存在阻塞项，建议补强后再提交。`
-                              : `${activeRpt.company.replace(/有限公司$/, '')}的报告已具备提交条件，建议尽快处理。`}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">报告状态摘要</div>
-                        <p className="text-[9px] text-[#475569] leading-4">
-                          章节完成 {activeRpt.chapterDone}/{activeRpt.chapterTotal}，已引用 {activeRpt.evidenceCount} 项证据
-                          {activeRpt.pendingCount > 0 ? `，${activeRpt.pendingCount} 项待补充` : ''}
-                          {activeRpt.hasConflict ? '，存在冲突引用' : ''}。
-                        </p>
-                      </div>
-                      {(activeRpt.hasBlocker || activeRpt.hasConflict) && (
-                        <div>
-                          <div className="text-[9px] text-[#94A3B8] mb-0.5">核心风险提示</div>
-                          <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                            {activeRpt.hasBlocker && <div>· 存在阻塞项，暂不能正式提交</div>}
-                            {activeRpt.hasConflict && <div>· 存在冲突引用，建议先确认</div>}
-                            {activeRpt.needConfirm && <div>· 存在边界判断项，需人工确认</div>}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">提交准备度</div>
-                        {(() => {
-                          const pct = Math.round((activeRpt.chapterDone / activeRpt.chapterTotal) * 100);
-                          const ready = !activeRpt.hasBlocker && pct >= 90;
-                          return (
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: ready ? '#047857' : '#F59E0B' }} /></div>
-                              <span className="text-[10px] font-bold" style={{ color: ready ? '#047857' : '#F59E0B' }}>{ready ? '可提交' : '需补强'}</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                        <p className="text-[10px] text-[#7C3AED] font-medium">
-                          {activeRpt.status === '已归档' ? '报告已归档，可用于后续追溯与复查。'
-                            : activeRpt.status === '已提交' ? '当前报告已提交，建议进入归档或审批前置。'
-                            : activeRpt.hasBlocker ? '建议先处理阻塞章节，再提交报告。'
-                            : activeRpt.needConfirm ? '建议完成人工确认后提交报告。'
-                            : '当前报告已具备提交条件，建议直接提交。'}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                        <p className="text-[10px] text-[#475569]">
-                          {activeRpt.hasBlocker ? '尽调报告（补强后提交）' : activeRpt.status === '已提交' ? '审批前置 / 归档' : '提交后进入审批前置'}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-[#94A3B8]">选择报告后查看 AI 建议。</p>
-                  )}
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full" disabled={!activeRpt}><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" disabled={!activeRpt}><ArrowRight size={10} />进入审批前置</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB] w-full" disabled={!activeRpt} onClick={() => onModuleChange('dd-report')}><ArrowRight size={10} />返回尽调报告</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" disabled={!activeRpt}><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         );

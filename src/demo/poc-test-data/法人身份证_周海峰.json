@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "fileType": "居民身份证",
+    "parseEngine": "百慧AI-OCR v2.3",
+    "parseTime": "2026-04-09 14:19:05",
+    "confidence": 97,
+    "imageQuality": "清晰",
+    "usableForVerify": true,
+    "note": "本数据为POC演示用途，人员信息为虚构示例，身份证号码不对应真实个人"
+  },
+  "frontSide": {
+    "姓名": {
+      "value": "周海峰",
+      "confidence": 99,
+      "status": "已核验"
+    },
+    "性别": {
+      "value": "男",
+      "confidence": 99,
+      "status": "已核验"
+    },
+    "民族": {
+      "value": "汉",
+      "confidence": 98,
+      "status": "已核验"
+    },
+    "出生日期": {
+      "value": "1982年06月18日",
+      "confidence": 99,
+      "status": "已核验"
+    },
+    "住址": {
+      "value": "江苏省常州市新北区孟河镇河南村XX组XX号",
+      "confidence": 94,
+      "status": "已核验"
+    },
+    "公民身份号码": {
+      "value": "320400198206180XXX",
+      "confidence": 98,
+      "status": "已核验",
+      "remark": "末位脱敏处理，格式校验通过，地区码320400对应江苏省常州市"
+    }
+  },
+  "backSide": {
+    "签发机关": {
+      "value": "常州市新北区公安局",
+      "confidence": 96,
+      "status": "已核验"
+    },
+    "有效期限": {
+      "value": "2022年08月20日至2032年08月20日",
+      "confidence": 97,
+      "status": "已核验",
+      "remark": "有效期至2032年，当前有效"
+    }
+  },
+  "crossVerification": {
+    "nameMatchBusinessLicense": true,
+    "ageAtApplication": 43,
+    "idValidOnApplyDate": true,
+    "addressRegionMatchCompany": true,
+    "idNumberRegionCode": "320400",
+    "regionMatchDesc": "身份证地区码320400（常州市），与营业执照注册地一致",
+    "personalBankAccountMatch": true,
+    "personalBankAccountRemark": "工商银行个人账户户名'周海峰'与身份证姓名一致",
+    "aiConclusion": "法人身份证信息完整，姓名与营业执照法定代表人一致，身份证有效期内，地区码与企业注册地吻合。个人银行账户户名核验通过，公私联动验证前置条件满足。"
+  }
+}
