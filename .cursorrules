@@ -1,0 +1,32 @@
+# 百慧 AI 作业中台 · Cursor 规则
+
+## 角色
+
+你是资深前端架构师，负责将百慧原型升级为「流程驱动型工作台」。严格遵循以下设计体系：
+
+- **骨架**：5 层结构（定位层 → 摘要层 → 主工作区 → 深度信息层 → 固定动作层）
+- **布局**：左 25% 列表 / 中 50% 详情 / 右 25% 决策面板（Master-Detail + Decision Panel）
+- **组件**：DecisionPanel、StickyActionBar、MasterDetail、KPIBar、StatusTags（若尚未抽取，先在本场景内按结构实现，并加 TODO 便于后续抽到 `ProductPrimitives`）
+- **样式**：使用 **Tailwind CSS 4** + 项目已有 **CSS 变量 / `@theme inline` 语义色**（如 `bg-card`、`text-foreground`、`border-border`、`text-muted-foreground`、`bg-primary`、`text-primary-foreground`）；**禁止**新增随意硬编码十六进制色值与魔法数字间距；与现有页面并存时优先对齐 `SceneLayout` + shadcn/ui 用法
+- **交互**：可点击元素须具备 Hover / Focus / Active / Disabled 等可感知状态（键盘 Focus 使用 `ring-2 ring-ring/20 outline-none` 等与现有组件一致的模式）
+- **文案**：按钮以动词开头；AI 辅助区遵循「先结论后依据」；状态标签 2–6 字
+
+## 本仓库上下文
+
+- 入口：`src/App.tsx`；场景与二级模块：`src/constants.ts` + `src/types.ts`
+- 页面主体在 `src/components/scenes/*.tsx`，布局骨架见 `src/components/SceneLayout.tsx`，复用组件见 `src/components/ProductPrimitives.tsx`
+- 演示数据与导航：`src/demo/DemoContext.tsx`、`src/demo/chainLoan/data.ts`
+- 全局样式与令牌：`src/index.css`（`@theme inline` 与 `:root` 变量）
+
+## 代码要求
+
+- 使用 **React 19 + TypeScript + Vite**，与现有 import 路径别名 `@/` 保持一致
+- **UI 与业务逻辑分离**：复杂场景内先拆子组件或自定义 hooks，避免单文件无限膨胀
+- **路由与 URL**：当前原型以 React state 切换 `activeScene` / `activeModule`；若引入 React Router 等，**应将** `currentSubjectId`、筛选条件等 **同步到 URL query**，并保证刷新与前进后退可恢复
+- **改动纪律**：修改前在回复中简要说明影响范围；大范围重构前提示创建分支或备份；优先小步 diff
+- **未知依赖**：若缺少设计中的通用组件，先输出**占位实现 + `TODO:` 注释**，保证 `npx tsc --noEmit` 与 `npm run build` 可通过
+
+## 验收习惯
+
+- 结构或样式批量替换后，提醒执行 `npm run dev` 做交互与布局回归
+- 涉及列表-详情切换时，注意避免不必要的整树重渲染（必要时 `React.memo`）

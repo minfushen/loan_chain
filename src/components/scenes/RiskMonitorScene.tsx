@@ -45,6 +45,7 @@ import {
   InsightStrip,
   AiNote,
   ActionQueueCard,
+  KpiBar,
 } from '../ProductPrimitives';
 import { useDemo } from '../../demo/DemoContext';
 import { ActionBar } from '../../demo/DemoComponents';
@@ -220,37 +221,21 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">预警总览</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一查看当前预警事件、异常信号与待处理事项，辅助监控判断与后续处置推进。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新总览</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出预警概览</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看监控规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新总览</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出预警概览</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看监控规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '预警总数', value: `${totalAlerts}`, desc: '纳入监控范围', icon: ShieldAlert, color: 'text-[#DC2626]' },
-                { label: '高优先级', value: `${highPriCount}`, desc: '建议优先处理', icon: AlertTriangle, color: 'text-[#991B1B]' },
-                { label: '新增预警', value: `${newCount}`, desc: '本期新增', icon: Bell, color: 'text-[#F59E0B]' },
-                { label: '待处理', value: `${pendingCount}`, desc: '未完成处理/确认', icon: Clock, color: 'text-[#C2410C]' },
-                { label: '已升级风险', value: `${upgradedCount}`, desc: '升级为重点风险', icon: TrendingUp, color: 'text-[#DC2626]' },
-                { label: '需人工确认', value: `${confirmCount}`, desc: '边界信号需复核', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '预警总数', value: totalAlerts, hint: '纳入监控范围', tone: 'risk' },
+              { label: '高优先级', value: highPriCount, hint: '建议优先处理', tone: highPriCount > 0 ? 'risk' : 'muted' },
+              { label: '新增预警', value: newCount, hint: '本期新增', tone: newCount > 0 ? 'warn' : 'muted' },
+              { label: '待处理', value: pendingCount, hint: '未完成处理/确认', tone: pendingCount > 0 ? 'warn' : 'muted' },
+              { label: '已升级风险', value: upgradedCount, hint: '升级为重点风险', tone: upgradedCount > 0 ? 'risk' : 'muted' },
+              { label: '需人工确认', value: confirmCount, hint: '边界信号需复核', tone: confirmCount > 0 ? 'warn' : 'muted' },
+            ]} />
 
             {/* 2. Tier board */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
@@ -573,37 +558,21 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">指标监测</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一查看核心监测指标的当前表现、变化趋势与异常波动，辅助异常判断与后续处置。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新指标结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出指标清单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看监测规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新指标结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出指标清单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看监测规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '监测指标总数', value: `${totalMetrics}`, desc: '纳入统一监测', icon: Activity, color: 'text-[#2563EB]' },
-                { label: '正常指标', value: `${normalCount}`, desc: '处于正常区间', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '异常指标', value: `${abnormalCount}`, desc: '偏离正常区间', icon: AlertTriangle, color: 'text-[#DC2626]' },
-                { label: '波动指标', value: `${waveCount}`, desc: '需持续观察', icon: Zap, color: 'text-[#F59E0B]' },
-                { label: '高关注指标', value: `${highCount}`, desc: '建议优先跟踪', icon: Star, color: 'text-[#991B1B]' },
-                { label: '待处理指标', value: `${pendingMt}`, desc: '需确认或干预', icon: Clock, color: 'text-[#C2410C]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '监测指标总数', value: totalMetrics, hint: '纳入统一监测', tone: 'info' },
+              { label: '正常指标', value: normalCount, hint: '处于正常区间', tone: 'normal' },
+              { label: '异常指标', value: abnormalCount, hint: '偏离正常区间', tone: abnormalCount > 0 ? 'risk' : 'muted' },
+              { label: '波动指标', value: waveCount, hint: '需持续观察', tone: waveCount > 0 ? 'warn' : 'muted' },
+              { label: '高关注指标', value: highCount, hint: '建议优先跟踪', tone: highCount > 0 ? 'risk' : 'muted' },
+              { label: '待处理指标', value: pendingMt, hint: '需确认或干预', tone: pendingMt > 0 ? 'warn' : 'muted' },
+            ]} />
 
             {/* 2. Tier board */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
@@ -894,37 +863,21 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">处置作业</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一处理预警、风险与异常事项，支持分派跟进、升级处置与闭环管理。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新任务</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626]"><Send size={10} />批量处置</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出任务清单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看处置规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新任务</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626]"><Send size={10} />批量处置</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出任务清单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看处置规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '待处理任务', value: `${pendingDispCount}`, desc: '等待进入处置流程', icon: Clock, color: 'text-[#DC2626]' },
-                { label: '高优先级', value: `${highPriDispCount}`, desc: '建议优先处理', icon: AlertTriangle, color: 'text-[#991B1B]' },
-                { label: '处理中', value: `${inProgressCount}`, desc: '已进入跟进流程', icon: Loader2, color: 'text-[#C2410C]' },
-                { label: '待人工确认', value: `${confirmDispCount}`, desc: '需人工复核', icon: UserCheck, color: 'text-[#7C3AED]' },
-                { label: '已闭环', value: `${closedDispCount}`, desc: '已完成处理', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '超时未处理', value: `${overtimeCount}`, desc: '需重点关注', icon: Bell, color: 'text-[#DC2626]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '待处理任务', value: pendingDispCount, hint: '等待进入处置流程', tone: pendingDispCount > 0 ? 'risk' : 'muted' },
+              { label: '高优先级', value: highPriDispCount, hint: '建议优先处理', tone: highPriDispCount > 0 ? 'risk' : 'muted' },
+              { label: '处理中', value: inProgressCount, hint: '已进入跟进流程', tone: inProgressCount > 0 ? 'warn' : 'muted' },
+              { label: '待人工确认', value: confirmDispCount, hint: '需人工复核', tone: confirmDispCount > 0 ? 'warn' : 'muted' },
+              { label: '已闭环', value: closedDispCount, hint: '已完成处理', tone: 'normal' },
+              { label: '超时未处理', value: overtimeCount, hint: '需重点关注', tone: overtimeCount > 0 ? 'risk' : 'muted' },
+            ]} />
 
             {/* 3-column: Task List + Detail/Follow-up + AI */}
             <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 500 }}>
@@ -1216,37 +1169,21 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">风险识别</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一识别监控对象中的风险信号、异常组合与趋势变化，辅助风险判断与后续处置推进。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新识别结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换识别口径</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出风险对象</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看识别规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新识别结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换识别口径</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出风险对象</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看识别规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '识别对象总数', value: `${totalRiskObjs}`, desc: '完成识别判断', icon: Shield, color: 'text-[#2563EB]' },
-                { label: '新增风险对象', value: `${newRiskCount}`, desc: '本期新识别', icon: Bell, color: 'text-[#F59E0B]' },
-                { label: '高风险对象', value: `${highRiskCount}`, desc: '建议优先处理', icon: AlertTriangle, color: 'text-[#DC2626]' },
-                { label: '边界风险对象', value: `${borderCount}`, desc: '需进一步确认', icon: Zap, color: 'text-[#7C3AED]' },
-                { label: '待处置对象', value: `${pendingDisp}`, desc: '待进入处置流程', icon: Clock, color: 'text-[#C2410C]' },
-                { label: '需人工确认', value: `${needConfirmRisk}`, desc: '复杂信号需复核', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '识别对象总数', value: totalRiskObjs, hint: '完成识别判断', tone: 'info' },
+              { label: '新增风险对象', value: newRiskCount, hint: '本期新识别', tone: newRiskCount > 0 ? 'warn' : 'muted' },
+              { label: '高风险对象', value: highRiskCount, hint: '建议优先处理', tone: highRiskCount > 0 ? 'risk' : 'muted' },
+              { label: '边界风险对象', value: borderCount, hint: '需进一步确认', tone: borderCount > 0 ? 'warn' : 'muted' },
+              { label: '待处置对象', value: pendingDisp, hint: '待进入处置流程', tone: pendingDisp > 0 ? 'warn' : 'muted' },
+              { label: '需人工确认', value: needConfirmRisk, hint: '复杂信号需复核', tone: needConfirmRisk > 0 ? 'warn' : 'muted' },
+            ]} />
 
             {/* 2. Risk tier board */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
@@ -1553,37 +1490,21 @@ export default function RiskMonitorScene({ activeModule, onModuleChange, sceneOv
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">规则评估</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一评估监控规则的命中表现、识别质量与误报情况，辅助规则优化与监控体系迭代。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新评估结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Clock size={10} />切换统计周期</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出规则评估</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看评估口径</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新评估结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Clock size={10} />切换统计周期</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出规则评估</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看评估口径</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '启用规则总数', value: `${totalRules}`, desc: '纳入监控体系的规则', icon: Layers, color: 'text-[#2563EB]' },
-                { label: '高成效规则', value: `${highEffRules}`, desc: '命中有效、质量较高', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '待优化规则', value: `${toOptRules}`, desc: '存在明显优化空间', icon: Settings, color: 'text-[#C2410C]' },
-                { label: '高误报规则', value: `${highFpRules}`, desc: '误报水平较高', icon: AlertTriangle, color: 'text-[#DC2626]' },
-                { label: '低命中规则', value: `${lowHitRules}`, desc: '覆盖作用有限', icon: TrendingDown, color: 'text-[#F59E0B]' },
-                { label: '需人工复核', value: `${needReviewRules}`, desc: '存在边界判断或争议', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '启用规则总数', value: totalRules, hint: '纳入监控体系的规则', tone: 'info' },
+              { label: '高成效规则', value: highEffRules, hint: '命中有效、质量较高', tone: 'normal' },
+              { label: '待优化规则', value: toOptRules, hint: '存在明显优化空间', tone: toOptRules > 0 ? 'warn' : 'muted' },
+              { label: '高误报规则', value: highFpRules, hint: '误报水平较高', tone: highFpRules > 0 ? 'risk' : 'muted' },
+              { label: '低命中规则', value: lowHitRules, hint: '覆盖作用有限', tone: lowHitRules > 0 ? 'warn' : 'muted' },
+              { label: '需人工复核', value: needReviewRules, hint: '存在边界判断或争议', tone: needReviewRules > 0 ? 'warn' : 'muted' },
+            ]} />
 
             {/* 2. Rule tier board */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white p-3">

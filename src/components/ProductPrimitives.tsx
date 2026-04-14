@@ -3,6 +3,7 @@ import { LucideIcon, ChevronDown, Building2, ArrowRight, Sparkles } from 'lucide
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { SAMPLES, CHAIN_LOAN_STAGE_LABELS, type ChainLoanSample, type DemoStage } from '../demo/chainLoan/data';
 
@@ -1063,6 +1064,354 @@ export function AgentCapabilityCard({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   KpiBar — 页面顶部全局摘要条（3~5 个关键指标）
+   hint 通过 Tooltip 悬浮展示，保持卡片简洁
+   TODO: 已在 ProductPrimitives 抽取，后续可按需扩展 delta/trend 字段
+   ──────────────────────────────────────────────────────────────── */
+export function KpiBar({
+  items,
+  className,
+}: {
+  items: {
+    label: string;
+    value: string | number;
+    hint?: string;
+    tone?: 'normal' | 'info' | 'warn' | 'risk' | 'muted';
+  }[];
+  className?: string;
+}) {
+  const toneMap = {
+    normal: 'text-success',
+    info:   'text-brand',
+    warn:   'text-warning',
+    risk:   'text-danger',
+    muted:  'text-foreground',
+  };
+  return (
+    <div className={cn('grid gap-3', className)} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+      {items.map((item) => (
+        <div key={item.label} className="rounded-lg border border-border bg-card px-4 py-3 group transition-shadow hover:shadow-sm cursor-default">
+          <div className="flex items-center gap-1 mb-1">
+            <div className="text-[10px] text-muted-foreground">{item.label}</div>
+            {item.hint && (
+              <Tooltip content={item.hint} side="bottom">
+                <div className="size-3 rounded-full border border-muted-foreground/30 flex items-center justify-center text-[8px] text-muted-foreground/50 group-hover:border-muted-foreground/60 transition-colors cursor-help">?</div>
+              </Tooltip>
+            )}
+          </div>
+          <div className={cn('text-[22px] font-bold leading-none', toneMap[item.tone ?? 'muted'])}>{item.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Stepper — 流程步骤条
+   TODO: 已在 ProductPrimitives 抽取，后续可扩展 clickable / vertical 变体
+   ──────────────────────────────────────────────────────────────── */
+export function Stepper({
+  steps,
+  current,
+  className,
+}: {
+  steps: { id: string; label: string; hint?: string; stepDescription?: string }[];
+  current: string;
+  className?: string;
+}) {
+  const currentIdx = steps.findIndex((s) => s.id === current);
+  return (
+    <div className={cn('rounded-lg border border-border bg-card px-4 py-3', className)}>
+      <div className="flex items-center gap-0">
+        {steps.map((step, idx) => {
+          const done = idx < currentIdx;
+          const active = idx === currentIdx;
+          const tip = step.stepDescription;
+          const stepBody = (
+            <div className="flex items-center gap-2 shrink-0 group/step">
+              <div className={cn(
+                'size-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all',
+                done   ? 'bg-success border-success text-success-foreground' :
+                active ? 'bg-brand border-brand text-brand-foreground' :
+                         'bg-card border-border text-muted-foreground',
+              )}>
+                {done ? '✓' : idx + 1}
+              </div>
+              <div>
+                <div className={cn('text-[11px] font-semibold leading-tight',
+                  active ? 'text-foreground' : done ? 'text-success' : 'text-muted-foreground',
+                )}>{step.label}</div>
+                {step.hint && <div className="text-[9px] text-muted-foreground">{step.hint}</div>}
+              </div>
+            </div>
+          );
+          return (
+            <React.Fragment key={step.id}>
+              {tip ? (
+                <Tooltip content={tip} side="bottom" className="max-w-[260px]">
+                  <div className="cursor-help outline-none rounded-md focus-visible:ring-2 focus-visible:ring-ring/30">{stepBody}</div>
+                </Tooltip>
+              ) : (
+                stepBody
+              )}
+              {idx < steps.length - 1 && (
+                <div className={cn('flex-1 h-px mx-3', idx < currentIdx ? 'bg-success' : 'bg-border')} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   DecisionPanel — 右侧 AI 判断 + 动作区（标准结构）
+   规范：先结论后依据；主动作唯一；风险提示突出
+   TODO: 已在 ProductPrimitives 抽取，后续可扩展 loading skeleton
+   ──────────────────────────────────────────────────────────────── */
+export function DecisionPanel({
+  judgment,
+  basis,
+  risk,
+  suggestion,
+  primaryAction,
+  secondaryActions,
+  loading,
+  className,
+}: {
+  judgment: string;
+  basis?: string[];
+  risk?: string;
+  suggestion?: string;
+  /** tone 控制主按钮颜色：brand=可推进(默认) / success=立即执行 / warning=需处理 */
+  primaryAction?: { label: string; onClick?: () => void; disabled?: boolean; tone?: 'brand' | 'success' | 'warning' };
+  secondaryActions?: { label: string; onClick?: () => void; disabled?: boolean }[];
+  loading?: boolean;
+  className?: string;
+}) {
+  const primaryTone = primaryAction?.tone ?? 'brand';
+  const primaryCls =
+    primaryTone === 'success' ? 'bg-success hover:bg-success/90 text-success-foreground' :
+    primaryTone === 'warning' ? 'bg-warning hover:bg-warning/90 text-warning-foreground' :
+    'bg-brand hover:bg-brand/90 text-brand-foreground';
+  return (
+    <div className={cn('rounded-lg border border-brand-border bg-gradient-to-b from-brand-subtle to-card p-4 space-y-3', className)}>
+      {/* Header */}
+      <div className="flex items-center gap-1.5">
+        <div className="w-5 h-5 rounded-md bg-gradient-to-br from-ai to-brand flex items-center justify-center shrink-0">
+          <Sparkles size={10} className="text-ai-foreground" />
+        </div>
+        <span className="text-[11px] font-semibold text-foreground">AI 判断</span>
+      </div>
+
+      {loading ? (
+        <div className="text-[10px] text-muted-foreground animate-pulse">分析中…</div>
+      ) : (
+        <div className="space-y-2.5">
+          {/* Judgment */}
+          <div>
+            <div className="text-[9px] text-muted-foreground mb-0.5">当前判断</div>
+            <p className="text-[11px] font-medium text-foreground leading-[1.5]">{judgment}</p>
+          </div>
+
+          {/* Basis */}
+          {basis && basis.length > 0 && (
+            <div>
+              <div className="text-[9px] text-muted-foreground mb-0.5">关键依据</div>
+              <ul className="space-y-0.5">
+                {basis.map((b, i) => (
+                  <li key={i} className="text-[10px] text-muted-foreground flex items-start gap-1">
+                    <span className="text-brand mt-0.5 shrink-0">·</span>
+                    <span className="leading-snug">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Risk */}
+          {risk && (
+            <div className="rounded bg-danger-subtle border border-danger-border px-2.5 py-1.5">
+              <div className="text-[9px] text-muted-foreground mb-0.5">风险提示</div>
+              <p className="text-[10px] text-danger leading-tight">{risk}</p>
+            </div>
+          )}
+
+          {/* Suggestion */}
+          {suggestion && (
+            <div>
+              <div className="text-[9px] text-muted-foreground mb-0.5">下一步建议</div>
+              <p className="text-[10px] text-ai font-medium leading-tight">{suggestion}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      {(primaryAction || secondaryActions) && (
+        <div className="flex flex-col gap-1.5 pt-1 border-t border-brand-border">
+          {primaryAction && (
+            <Button
+              size="sm"
+              className={cn('h-7 text-[10px] gap-1 w-full focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none', primaryCls)}
+              onClick={primaryAction.onClick}
+              disabled={primaryAction.disabled}
+            >
+              {primaryAction.label}
+              <ArrowRight size={10} />
+            </Button>
+          )}
+          {secondaryActions?.map((a, i) => (
+            <Button
+              key={i}
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] gap-1 border-brand-border text-brand w-full focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none"
+              onClick={a.onClick}
+              disabled={a.disabled}
+            >
+              {a.label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   StickyActionBar — 页面底部固定动作栏
+   TODO: 已在 ProductPrimitives 抽取，后续可扩展 progress indicator
+   ──────────────────────────────────────────────────────────────── */
+export function StickyActionBar({
+  primary,
+  secondary,
+  hint,
+  className,
+}: {
+  primary: { label: string; onClick?: () => void; disabled?: boolean };
+  secondary?: { label: string; onClick?: () => void; disabled?: boolean }[];
+  hint?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn(
+      'sticky bottom-0 z-20 rounded-lg border border-border bg-card/95 backdrop-blur-sm px-4 py-2.5 flex items-center justify-between gap-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]',
+      className,
+    )}>
+      {hint ? (
+        <p className="text-[10px] text-muted-foreground leading-tight">{hint}</p>
+      ) : <div />}
+      <div className="flex items-center gap-2 shrink-0">
+        {secondary?.map((a, i) => (
+          <Button
+            key={i}
+            variant="outline"
+            size="sm"
+            className="h-7 text-[10px] border-border text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none"
+            onClick={a.onClick}
+            disabled={a.disabled}
+          >
+            {a.label}
+          </Button>
+        ))}
+        <Button
+          size="sm"
+          className="h-7 text-[10px] gap-1 bg-brand hover:bg-brand/90 text-brand-foreground px-4 focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none"
+          onClick={primary.onClick}
+          disabled={primary.disabled}
+        >
+          {primary.label}
+          <ArrowRight size={10} />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   PageShell — 统一页面骨架（定位层 + 摘要层 + 主工作区 + 固定动作）
+   规范：左 25% 列表 / 中 50% 详情 / 右 25% 决策面板
+   TODO: 已在 ProductPrimitives 抽取，后续可扩展 deep-info 层插槽
+   ──────────────────────────────────────────────────────────────── */
+export function PageShell({
+  title,
+  subtitle,
+  breadcrumb,
+  headerActions,
+  kpi,
+  stepper,
+  left,
+  center,
+  right,
+  stickyBar,
+  className,
+  /** 为 true 时不渲染标题与副标题（由外层 SceneLayout 展示模块名与 description） */
+  hideSceneTitle,
+}: {
+  title: string;
+  subtitle?: string;
+  breadcrumb?: string[];
+  headerActions?: React.ReactNode;
+  kpi?: React.ReactNode;
+  stepper?: React.ReactNode;
+  left?: React.ReactNode;
+  center: React.ReactNode;
+  right?: React.ReactNode;
+  stickyBar?: React.ReactNode;
+  className?: string;
+  hideSceneTitle?: boolean;
+}) {
+  return (
+    <div className={cn('flex flex-col gap-3', className)}>
+      {/* 1. 定位层 */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          {breadcrumb && breadcrumb.length > 0 && (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+              {breadcrumb.map((crumb, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <span className="text-border">/</span>}
+                  <span>{crumb}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+          {!hideSceneTitle && (
+            <>
+              <h2 className="text-[15px] font-semibold text-foreground leading-tight">{title}</h2>
+              {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{subtitle}</p>}
+            </>
+          )}
+        </div>
+        {headerActions && <div className="flex items-center gap-2 shrink-0">{headerActions}</div>}
+      </div>
+
+      {/* 2. 摘要层 */}
+      {kpi}
+
+      {/* 3. 流程条（可选） */}
+      {stepper}
+
+      {/* 4. 主工作区 */}
+      {(left || right) ? (
+        <div className={cn('grid gap-3', left && right ? 'grid-cols-[220px_1fr_260px]' : left ? 'grid-cols-[220px_1fr]' : 'grid-cols-[1fr_260px]')}>
+          {left && <div className="min-w-0">{left}</div>}
+          <div className="min-w-0">{center}</div>
+          {right && <div className="min-w-0">{right}</div>}
+        </div>
+      ) : (
+        <div>{center}</div>
+      )}
+
+      {/* 5. 固定动作层 */}
+      {stickyBar}
     </div>
   );
 }

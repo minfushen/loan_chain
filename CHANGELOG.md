@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.7.4 — 智能审批四页工作台与 SceneLayout 深度集成 (2026-04-13)
+
+- **智能审批**（产品匹配 / 预审与推单 / 补审作业 / 审批摘要）：`ProductApprovalScene` 通过 `SceneLayout` 槽位接入 **KPI 条**、**Sticky 底部动作**、**页内 AI 面板**、**副标题覆盖**
+- 新增 `src/components/scenes/approval/ApprovalSharedUi.tsx`：**中间 AI 引导卡**、**MicroPulse**、**右侧 AI 坞**（窄摘要 / 展开全文 + **TypewriterText**）
+- **预审与推单**、**补审** 等流程使用 **Stepper** 与阶段化文案；README 同步 v0.7.4 特性说明与目录树
+
+---
+
+## v0.7.3 — 产品命名与对外文案 (2026-04-13)
+
+- 产品名统一为 **百慧**；标准副标题 **信贷 AI 作业中台**
+- 系统标题（顶栏、`index.html`、`package.json` 描述）：**百慧 - 信贷 AI 作业中台**
+- 今日总览问候副文案：**百慧已为您整理今日重点客户、待办任务与智能建议。**
+- `README.md`、`metadata.json` 与旧称「硅基工作台」「普惠资产引擎」等对齐更新
+
+---
+
 ## v0.7.2 — 今日工作台信息架构重组 (2026-04-13)
 
 ### 今日工作台二级菜单

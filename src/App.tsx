@@ -94,7 +94,9 @@ function AppShell() {
           <div className="w-6 h-6 rounded-md bg-[#2563EB] flex items-center justify-center text-white">
             <LayoutDashboard size={12} />
           </div>
-          <span className="font-semibold text-[12px] text-white tracking-wide">普惠资产引擎</span>
+          <span className="font-semibold text-[10px] sm:text-[11px] text-white tracking-wide leading-tight max-w-[11rem] sm:max-w-none" title="百慧 - 信贷 AI 作业中台">
+            百慧 - 信贷 AI 作业中台
+          </span>
           <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80] ml-0.5" title="系统运行正常" />
         </div>
 
@@ -153,7 +155,7 @@ function AppShell() {
       {/* ─── Body: Left Nav + Content ────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left primary navigation */}
-        <nav className="w-[140px] bg-[#F8FAFC] border-r border-[#E2E8F0] flex flex-col shrink-0">
+        <nav className="w-[148px] bg-[#F8FAFC] border-r border-[#E2E8F0] flex flex-col shrink-0">
           <div className="flex-1 py-2 space-y-0.5 px-1.5">
             {SCENES.map((scene) => {
               const isActive = activeScene === scene.id;
@@ -162,13 +164,15 @@ function AppShell() {
                   key={scene.id}
                   onClick={() => handleSceneChange(scene.id)}
                   className={cn(
-                    'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all duration-150',
+                    'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all duration-150',
+                    'text-[13px] font-medium',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
                     isActive
                       ? 'bg-[#2563EB] text-white shadow-sm'
                       : 'text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#0F172A]',
                   )}
                 >
-                  <scene.icon size={14} className={isActive ? 'text-white' : 'text-[#94A3B8]'} />
+                  <scene.icon size={15} className={isActive ? 'text-white' : 'text-[#94A3B8]'} />
                   <span className="truncate">{scene.title}</span>
                 </button>
               );

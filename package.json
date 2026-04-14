@@ -1,5 +1,6 @@
 {
-  "name": "react-example",
+  "name": "baihui-credit-ai-workbench",
+  "description": "百慧 - 信贷 AI 作业中台（可交互原型）",
   "private": true,
   "version": "0.0.0",
   "type": "module",

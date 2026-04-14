@@ -58,6 +58,7 @@ import {
   AiNote,
   STATE_COLORS,
   type StateName,
+  KpiBar,
 } from '../ProductPrimitives';
 import { useDemo } from '../../demo/DemoContext';
 import { ActionBar } from '../../demo/DemoComponents';
@@ -214,38 +215,21 @@ export default function PostLoanScene({ activeModule, onModuleChange, sceneOverr
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">经营总览</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一洞察客户经营现状，识别增长机会与恢复对象，驱动经营策略落地。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新数据</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Clock size={10} />切换统计周期</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出经营报告</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新数据</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Clock size={10} />切换统计周期</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出经营报告</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看规则</Button>
             </div>
 
-            {/* 1. 经营概览区 */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '客户总数', value: `${totalCustomers}`, desc: '纳入经营管理的客户', icon: Users, color: 'text-[#2563EB]', change: '+3 较上期' },
-                { label: '在营客户', value: `${activeCustomers}`, desc: '当前活跃且有业务往来', icon: Activity, color: 'text-[#047857]', change: '+2 较上期' },
-                { label: '高价值客户', value: `${highValueCount}`, desc: '资产或贡献度较高', icon: Star, color: 'text-[#F59E0B]', change: '持平' },
-                { label: '可增收客户', value: `${OPPO_ITEMS.length}`, desc: '存在提额/交叉/续贷机会', icon: TrendingUp, color: 'text-[#2563EB]', change: '+2 较上期' },
-                { label: '待恢复客户', value: `${recoverCount}`, desc: '沉默或流失的客户', icon: AlertTriangle, color: 'text-[#DC2626]', change: '+5 较上期' },
-                { label: '本期新增', value: '8', desc: '本统计周期内新增', icon: Plus, color: 'text-[#7C3AED]', change: '+3 较上期' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                  <div className="text-[8px] text-[#64748B]">{c.change}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '客户总数', value: totalCustomers, hint: '纳入经营管理的客户（+3 较上期）', tone: 'info' },
+              { label: '在营客户', value: activeCustomers, hint: '当前活跃且有业务往来（+2 较上期）', tone: 'normal' },
+              { label: '高价值客户', value: highValueCount, hint: '资产或贡献度较高（环比持平）', tone: 'warn' },
+              { label: '可增收客户', value: OPPO_ITEMS.length, hint: '存在提额/交叉/续贷机会（+2 较上期）', tone: 'info' },
+              { label: '待恢复客户', value: recoverCount, hint: '沉默或流失的客户（+5 较上期）', tone: recoverCount > 0 ? 'risk' : 'muted' },
+              { label: '本期新增', value: 8, hint: '本统计周期内新增（+3 较上期）', tone: 'info' },
+            ]} />
 
             {/* 2. 客户价值分层区 */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white p-3">
@@ -473,36 +457,20 @@ export default function PostLoanScene({ activeModule, onModuleChange, sceneOverr
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">客户分层</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">基于客户价值、生命周期与行为特征进行智能分层，透视客群画像，支撑精准经营与策略下发。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新分层</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BBF7D0] text-[#047857]"><Plus size={10} />新建客群</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出画像</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />分层规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新分层</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BBF7D0] text-[#047857]"><Plus size={10} />新建客群</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出画像</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />分层规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '已分层客群', value: `${totalSegs}`, desc: '持续监控中的细分客群', icon: Layers, color: 'text-[#2563EB]' },
-                { label: '覆盖客户', value: `${totalCovered}`, desc: '已纳入日常经营管理', icon: Users, color: 'text-[#047857]' },
-                { label: '向上跃迁', value: `${upCount}`, desc: '本期升级客户', icon: TrendingUp, color: 'text-[#2563EB]' },
-                { label: '向下沉睡', value: `${downCount}`, desc: '活跃骤降客户', icon: TrendingDown, color: 'text-[#DC2626]' },
-                { label: '待配置策略', value: `${needStrategy}`, desc: '亟需下发经营动作', icon: AlertTriangle, color: 'text-[#C2410C]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '已分层客群', value: totalSegs, hint: '持续监控中的细分客群', tone: 'info' },
+              { label: '覆盖客户', value: totalCovered, hint: '已纳入日常经营管理', tone: 'normal' },
+              { label: '向上跃迁', value: upCount, hint: '本期升级客户', tone: upCount > 0 ? 'normal' : 'muted' },
+              { label: '向下沉睡', value: downCount, hint: '活跃骤降客户', tone: downCount > 0 ? 'risk' : 'muted' },
+              { label: '待配置策略', value: needStrategy, hint: '亟需下发经营动作', tone: needStrategy > 0 ? 'warn' : 'muted' },
+            ]} />
 
             {/* 2. Model distribution board */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white p-3">
@@ -811,36 +779,20 @@ export default function PostLoanScene({ activeModule, onModuleChange, sceneOverr
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">经营动作</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">将经营策略转化为具体执行动作，全链路追踪触达与转化漏斗，持续优化经营成效。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Plus size={10} />新建动作</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />执行报告</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />执行规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Plus size={10} />新建动作</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />执行报告</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />执行规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '执行中动作', value: `${executing}`, desc: '活跃派发中', icon: Activity, color: 'text-[#2563EB]' },
-                { label: '高转化动作', value: `${highConvert}`, desc: '建议复用扩大', icon: TrendingUp, color: 'text-[#047857]' },
-                { label: '低效/停滞', value: `${lowEff}`, desc: '亟需优化或叫停', icon: AlertTriangle, color: 'text-[#DC2626]' },
-                { label: '累计触达', value: `${totalReach}`, desc: '去重客户总数', icon: Users, color: 'text-[#2563EB]' },
-                { label: '转化资产', value: totalAddedValue, desc: '促成增量价值', icon: Wallet, color: 'text-[#047857]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '执行中动作', value: executing, hint: '活跃派发中', tone: executing > 0 ? 'info' : 'muted' },
+              { label: '高转化动作', value: highConvert, hint: '建议复用扩大', tone: 'normal' },
+              { label: '低效/停滞', value: lowEff, hint: '亟需优化或叫停', tone: lowEff > 0 ? 'risk' : 'muted' },
+              { label: '累计触达', value: totalReach, hint: '去重客户总数', tone: 'info' },
+              { label: '转化资产', value: totalAddedValue, hint: '促成增量价值', tone: 'normal' },
+            ]} />
 
             {/* 3-column: list + detail/funnel + AI */}
             <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
@@ -1156,36 +1108,20 @@ export default function PostLoanScene({ activeModule, onModuleChange, sceneOverr
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">客户恢复</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">精准识别流失预警与沉睡客群，智能诊断流失归因，提供自动化与人工协同的挽回工作台。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新预警</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C]"><Send size={10} />批量派发</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />流失名单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />流失规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新预警</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C]"><Send size={10} />批量派发</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />流失名单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />流失规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '高危预警', value: `${highRiskCount}`, desc: '极易发生资产转移', icon: AlertTriangle, color: 'text-[#DC2626]' },
-                { label: '待挽高价值', value: `${highValuePending}`, desc: '核心客户需优先抢救', icon: Star, color: 'text-[#C2410C]' },
-                { label: '挽回执行中', value: `${inProgress}`, desc: '自动/人工策略进行中', icon: RefreshCw, color: 'text-[#2563EB]' },
-                { label: '本期挽回', value: `${recovered}`, desc: '重新产生活跃行为', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '挽回成功率', value: `${successRate}%`, desc: '本周期整体挽回效率', icon: TrendingUp, color: '#2563EB' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={typeof c.color === 'string' ? c.color : ''} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '高危预警', value: highRiskCount, hint: '极易发生资产转移', tone: highRiskCount > 0 ? 'risk' : 'muted' },
+              { label: '待挽高价值', value: highValuePending, hint: '核心客户需优先抢救', tone: highValuePending > 0 ? 'warn' : 'muted' },
+              { label: '挽回执行中', value: inProgress, hint: '自动/人工策略进行中', tone: inProgress > 0 ? 'info' : 'muted' },
+              { label: '本期挽回', value: recovered, hint: '重新产生活跃行为', tone: 'normal' },
+              { label: '挽回成功率', value: `${successRate}%`, hint: '本周期整体挽回效率', tone: successRate >= 50 ? 'normal' : 'warn' },
+            ]} />
 
             {/* 3-column: list + detail/actions + AI */}
             <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 480 }}>
@@ -1491,35 +1427,19 @@ export default function PostLoanScene({ activeModule, onModuleChange, sceneOverr
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">经营模板</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">沉淀标准化经营策略，快速生成经营任务，支持精准营销与策略复用。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Plus size={10} />新建模板</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Plus size={10} />新建模板</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '模板总数', value: `${totalTpl}`, desc: '已创建的模板数量', icon: FileText, color: 'text-[#2563EB]' },
-                { label: '启用模板', value: `${enabledTpl}`, desc: '正在生效中', icon: Power, color: 'text-[#047857]' },
-                { label: '本月使用', value: `${monthUse}`, desc: '被调用生成任务次数', icon: Activity, color: 'text-[#7C3AED]' },
-                { label: '覆盖客户', value: `${totalCovered}`, desc: '模板触达客户总量', icon: Users, color: 'text-[#2563EB]' },
-                { label: '平均转化率', value: `${avgConvert}%`, desc: '启用模板综合转化', icon: TrendingUp, color: 'text-[#047857]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '模板总数', value: totalTpl, hint: '已创建的模板数量', tone: 'info' },
+              { label: '启用模板', value: enabledTpl, hint: '正在生效中', tone: 'normal' },
+              { label: '本月使用', value: monthUse, hint: '被调用生成任务次数', tone: 'info' },
+              { label: '覆盖客户', value: totalCovered, hint: '模板触达客户总量', tone: 'info' },
+              { label: '平均转化率', value: `${Number.isFinite(avgConvert) ? avgConvert : 0}%`, hint: '启用模板综合转化', tone: 'normal' },
+            ]} />
 
             {/* 3-column: list + detail + eval/AI */}
             <div className="grid grid-cols-[220px_1fr_250px] gap-3" style={{ minHeight: 480 }}>

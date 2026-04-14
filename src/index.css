@@ -46,6 +46,46 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* ── 百慧产品色语义变量 ──────────────────────────────────────
+       将设计稿中反复出现的品牌色/状态色纳入 token 体系，
+       避免在组件中散落硬编码十六进制值。
+       ──────────────────────────────────────────────────────────── */
+
+    /* 品牌蓝 */
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-subtle: var(--brand-subtle);
+    --color-brand-border: var(--brand-border);
+
+    /* 成功绿 */
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-subtle: var(--success-subtle);
+    --color-success-border: var(--success-border);
+
+    /* 警告橙 */
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-subtle: var(--warning-subtle);
+    --color-warning-border: var(--warning-border);
+
+    /* 危险红 */
+    --color-danger: var(--danger);
+    --color-danger-foreground: var(--danger-foreground);
+    --color-danger-subtle: var(--danger-subtle);
+    --color-danger-border: var(--danger-border);
+
+    /* AI 紫 */
+    --color-ai: var(--ai);
+    --color-ai-foreground: var(--ai-foreground);
+    --color-ai-subtle: var(--ai-subtle);
+    --color-ai-border: var(--ai-border);
+
+    /* 顶栏深色 */
+    --color-topbar: var(--topbar);
+    --color-topbar-foreground: var(--topbar-foreground);
+    --color-topbar-muted: var(--topbar-muted);
 }
 
 :root {
@@ -81,6 +121,42 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    /* ── 百慧产品色 light ──────────────────────────────────────── */
+    /* 品牌蓝 #2563EB 系 */
+    --brand:            oklch(0.488 0.243 264.376);
+    --brand-foreground: oklch(1 0 0);
+    --brand-subtle:     oklch(0.951 0.051 264.376);
+    --brand-border:     oklch(0.82 0.12 264.376);
+
+    /* 成功绿 #047857 系 */
+    --success:            oklch(0.44 0.13 162);
+    --success-foreground: oklch(1 0 0);
+    --success-subtle:     oklch(0.96 0.04 162);
+    --success-border:     oklch(0.78 0.1 162);
+
+    /* 警告橙 #C2410C 系 */
+    --warning:            oklch(0.58 0.17 42);
+    --warning-foreground: oklch(1 0 0);
+    --warning-subtle:     oklch(0.97 0.04 60);
+    --warning-border:     oklch(0.82 0.1 50);
+
+    /* 危险红 #DC2626 系 */
+    --danger:            oklch(0.577 0.245 27.325);
+    --danger-foreground: oklch(1 0 0);
+    --danger-subtle:     oklch(0.97 0.04 27);
+    --danger-border:     oklch(0.82 0.12 27);
+
+    /* AI 紫 #7C3AED 系 */
+    --ai:            oklch(0.52 0.24 293);
+    --ai-foreground: oklch(1 0 0);
+    --ai-subtle:     oklch(0.96 0.04 293);
+    --ai-border:     oklch(0.82 0.1 293);
+
+    /* 顶栏深色 #0F172A */
+    --topbar:          oklch(0.145 0.02 264);
+    --topbar-foreground: oklch(1 0 0);
+    --topbar-muted:    oklch(0.45 0.02 264);
 }
 
 .dark {
@@ -115,6 +191,36 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    /* ── 百慧产品色 dark ───────────────────────────────────────── */
+    --brand:            oklch(0.6 0.2 264.376);
+    --brand-foreground: oklch(0.145 0 0);
+    --brand-subtle:     oklch(0.25 0.06 264.376);
+    --brand-border:     oklch(0.38 0.12 264.376);
+
+    --success:            oklch(0.6 0.14 162);
+    --success-foreground: oklch(0.145 0 0);
+    --success-subtle:     oklch(0.22 0.05 162);
+    --success-border:     oklch(0.36 0.1 162);
+
+    --warning:            oklch(0.72 0.16 50);
+    --warning-foreground: oklch(0.145 0 0);
+    --warning-subtle:     oklch(0.24 0.05 50);
+    --warning-border:     oklch(0.4 0.1 50);
+
+    --danger:            oklch(0.704 0.191 22.216);
+    --danger-foreground: oklch(0.145 0 0);
+    --danger-subtle:     oklch(0.24 0.05 27);
+    --danger-border:     oklch(0.4 0.12 27);
+
+    --ai:            oklch(0.68 0.2 293);
+    --ai-foreground: oklch(0.145 0 0);
+    --ai-subtle:     oklch(0.24 0.06 293);
+    --ai-border:     oklch(0.38 0.12 293);
+
+    --topbar:          oklch(0.1 0.02 264);
+    --topbar-foreground: oklch(0.985 0 0);
+    --topbar-muted:    oklch(0.45 0.02 264);
 }
 
 @layer base {

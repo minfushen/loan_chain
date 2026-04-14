@@ -44,6 +44,7 @@ import {
   InsightStrip,
   AiNote,
   SelectedSampleSummary,
+  KpiBar,
 } from '../ProductPrimitives';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { SceneHero, ActionBar } from '../../demo/DemoComponents';
@@ -222,36 +223,20 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: Props) 
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">在营资产</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一管理当前处于在营状态的授信资产，支持经营跟进、风险识别与还款状态下钻。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新列表</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出资产清单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Star size={10} />批量标记关注</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看经营规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新列表</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出资产清单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Star size={10} />批量标记关注</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看经营规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '在营资产总数', value: `${totalCount} 户`, desc: '纳入经营管理的资产数量', icon: Building2, color: 'text-[#2563EB]' },
-                { label: '在营资产余额', value: totalBalance, desc: '在营资产余额总量', icon: Wallet, color: 'text-[#047857]' },
-                { label: '高价值在营', value: `${highValueCount} 户`, desc: '建议重点维护', icon: Star, color: 'text-[#F59E0B]' },
-                { label: '重点跟踪', value: `${trackCount} 户`, desc: '经营波动需持续关注', icon: ShieldAlert, color: 'text-[#C2410C]' },
-                { label: '履约正常', value: `${normalRepayCount} 户`, desc: '还款表现稳定', icon: CheckCircle2, color: 'text-[#047857]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '在营资产总数', value: `${totalCount} 户`, hint: '纳入经营管理的资产数量', tone: 'info' },
+              { label: '在营资产余额', value: totalBalance, hint: '在营资产余额总量', tone: 'normal' },
+              { label: '高价值在营', value: `${highValueCount} 户`, hint: '建议重点维护', tone: highValueCount > 0 ? 'warn' : 'muted' },
+              { label: '重点跟踪', value: `${trackCount} 户`, hint: '经营波动需持续关注', tone: trackCount > 0 ? 'warn' : 'muted' },
+              { label: '履约正常', value: `${normalRepayCount} 户`, hint: '还款表现稳定', tone: 'normal' },
+            ]} />
 
             {/* 2. Filters */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 flex items-center gap-3 flex-wrap">
@@ -535,36 +520,20 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: Props) 
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">风险监控</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一识别授信资产池中的风险预警、异常波动与高风险关注对象，支持跟踪与处置。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626]"><RefreshCw size={10} />刷新监控结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换预警口径</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出风险清单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看风险规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FCA5A5] text-[#DC2626]"><RefreshCw size={10} />刷新监控结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换预警口径</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出风险清单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看风险规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '风险关注资产', value: `${riskTotal} 户`, desc: '纳入风险关注范围的资产', icon: ShieldAlert, color: 'text-[#DC2626]' },
-                { label: '高风险资产', value: `${highRiskCount} 户`, desc: '需重点跟进', icon: AlertTriangle, color: 'text-[#991B1B]' },
-                { label: '新增预警', value: `${newAlertCount} 户`, desc: '本期新进入预警', icon: Bell, color: 'text-[#F59E0B]' },
-                { label: '待处理风险项', value: `${pendingCount} 项`, desc: '待跟进、确认或处置', icon: Clock, color: 'text-[#C2410C]' },
-                { label: '需人工确认', value: `${needConfirmCount} 户`, desc: '边界信号需复核', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '风险关注资产', value: `${riskTotal} 户`, hint: '纳入风险关注范围的资产', tone: 'risk' },
+              { label: '高风险资产', value: `${highRiskCount} 户`, hint: '需重点跟进', tone: highRiskCount > 0 ? 'risk' : 'muted' },
+              { label: '新增预警', value: `${newAlertCount} 户`, hint: '本期新进入预警', tone: newAlertCount > 0 ? 'warn' : 'muted' },
+              { label: '待处理风险项', value: `${pendingCount} 项`, hint: '待跟进、确认或处置', tone: pendingCount > 0 ? 'warn' : 'muted' },
+              { label: '需人工确认', value: `${needConfirmCount} 户`, hint: '边界信号需复核', tone: needConfirmCount > 0 ? 'warn' : 'muted' },
+            ]} />
 
             {/* 2. Risk tiers */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
@@ -908,37 +877,21 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: Props) 
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">还款表现</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一查看授信资产池的还款状态、到期分布与履约波动，辅助还款跟踪与后续经营动作。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新还款结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出还款清单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看履约规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新还款结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计周期</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出还款清单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看履约规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '正常还款', value: `${normalCount} 户`, desc: '履约节奏稳定', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '临近到期', value: `${nearDueCount} 户`, desc: '短期内即将到期', icon: Clock, color: 'text-[#C2410C]' },
-                { label: '轻微逾期', value: `${mildOverdueCount} 户`, desc: '需重点跟踪', icon: AlertTriangle, color: 'text-[#DC2626]' },
-                { label: '持续逾期', value: `${heavyOverdueCount} 户`, desc: '需进一步处置', icon: ShieldAlert, color: 'text-[#991B1B]' },
-                { label: '本期应还', value: dueTotal, desc: '当前周期应还金额', icon: Wallet, color: 'text-[#2563EB]' },
-                { label: '本期已还', value: paidTotal, desc: '当前周期已还金额', icon: Check, color: 'text-[#047857]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[18px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '正常还款', value: `${normalCount} 户`, hint: '履约节奏稳定', tone: 'normal' },
+              { label: '临近到期', value: `${nearDueCount} 户`, hint: '短期内即将到期', tone: nearDueCount > 0 ? 'warn' : 'muted' },
+              { label: '轻微逾期', value: `${mildOverdueCount} 户`, hint: '需重点跟踪', tone: mildOverdueCount > 0 ? 'risk' : 'muted' },
+              { label: '持续逾期', value: `${heavyOverdueCount} 户`, hint: '需进一步处置', tone: heavyOverdueCount > 0 ? 'risk' : 'muted' },
+              { label: '本期应还', value: dueTotal, hint: '当前周期应还金额', tone: 'info' },
+              { label: '本期已还', value: paidTotal, hint: '当前周期已还金额', tone: 'normal' },
+            ]} />
 
             {/* 2. Tiers */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
@@ -1244,37 +1197,21 @@ export default function AssetPoolScene({ activeModule, onModuleChange }: Props) 
 
         return (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">资产经营看板</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一查看授信资产池的经营规模、在营状态、风险分层与还款表现，辅助经营判断与后续跟进。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新看板</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计口径</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出经营概览</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看经营规则</Button>
-              </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新看板</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Layers size={10} />切换统计口径</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出经营概览</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看经营规则</Button>
             </div>
 
-            {/* 1. Overview cards */}
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                { label: '资产池总规模', value: totalBalance, desc: '纳入统一管理的资产规模', icon: Wallet, color: 'text-[#2563EB]' },
-                { label: '在营资产数', value: `${totalAssets} 户`, desc: '处于在营可持续经营', icon: Building2, color: 'text-[#047857]' },
-                { label: '本期新增转化', value: `${newConversions} 户`, desc: '由审批转化进入资产池', icon: TrendingUp, color: 'text-[#0EA5E9]' },
-                { label: '高价值资产', value: `${highValueCount} 户`, desc: '建议重点维护', icon: Star, color: 'text-[#F59E0B]' },
-                { label: '风险关注资产', value: `${riskCount} 户`, desc: '存在预警需重点观察', icon: ShieldAlert, color: 'text-[#DC2626]' },
-                { label: '还款正常资产', value: `${normalRepay} 户`, desc: '履约表现正常', icon: CheckCircle2, color: 'text-[#047857]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[18px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <KpiBar items={[
+              { label: '资产池总规模', value: totalBalance, hint: '纳入统一管理的资产规模', tone: 'info' },
+              { label: '在营资产数', value: `${totalAssets} 户`, hint: '处于在营可持续经营', tone: 'normal' },
+              { label: '本期新增转化', value: `${newConversions} 户`, hint: '由审批转化进入资产池', tone: 'info' },
+              { label: '高价值资产', value: `${highValueCount} 户`, hint: '建议重点维护', tone: 'warn' },
+              { label: '风险关注资产', value: `${riskCount} 户`, hint: '存在预警需重点观察', tone: riskCount > 0 ? 'risk' : 'muted' },
+              { label: '还款正常资产', value: `${normalRepay} 户`, hint: '履约表现正常', tone: 'normal' },
+            ]} />
 
             {/* 2. Tier board + 3. Key assets + 4. Alerts + 5. AI */}
             <div className="grid grid-cols-[1fr_260px] gap-3">

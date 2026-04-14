@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import {
   AlertTriangle,
   ArrowRight,
-  Brain,
   CheckCircle,
   CheckCircle2,
   ChevronRight,
@@ -20,7 +19,6 @@ import {
   FileText,
   Filter,
   Info,
-  Layers,
   Link2,
   PackageCheck,
   Pencil,
@@ -29,7 +27,6 @@ import {
   Search,
   Shield,
   ShieldCheck,
-  Sparkles,
   Star,
   Upload,
   User,
@@ -46,7 +43,10 @@ import {
   ConfidenceCard,
   AiJudgmentBlock,
   MetricCard,
+  KpiBar,
+  Stepper,
 } from '../ProductPrimitives';
+import { ApprovalAiDock, AiMiddleGuideCard, MicroPulse } from './approval/ApprovalSharedUi';
 import { useDemo, STAGE_ORDER } from '../../demo/DemoContext';
 import { SceneHero, ActionBar } from '../../demo/DemoComponents';
 import { SAMPLES, getRuleHitsForSample } from '../../demo/chainLoan/data';
@@ -131,6 +131,11 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
   const [selectedPreReviewId, setSelectedPreReviewId] = React.useState<string>('PR-01');
   const [selectedReviewTaskId, setSelectedReviewTaskId] = React.useState<string>('RT-01');
   const [selectedSummaryId, setSelectedSummaryId] = React.useState<string>('SM-01');
+  const [approvalAiExpanded, setApprovalAiExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    setApprovalAiExpanded(false);
+  }, [activeModule]);
 
   const isPastApproval = stageIndex >= STAGE_ORDER.indexOf('approved');
   const isAtManualReview = stage === 'manual_review';
@@ -181,7 +186,15 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
   const handleApprove = () => { if (isAtManualReview && active) advanceStage(); };
 
-  const renderContent = () => {
+  type WorkbenchLayout = {
+    main: React.ReactNode;
+    kpiSlot?: React.ReactNode;
+    stickyActionSlot?: React.ReactNode;
+    aiPanel?: React.ReactNode;
+    pageSubtitleOverride?: string;
+  };
+
+  const renderWorkbench = (): WorkbenchLayout => {
     switch (activeModule) {
 
       /* ════════════════════════════════════════════════════════════════════
@@ -310,43 +323,108 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
         const canPreReview = MATCH_PRODUCTS.filter(p => p.level === '高适配' || (p.level === '建议关注' && p.gaps.filter(g => g.blocksPreReview).length === 0)).length;
         const hasGap = MATCH_PRODUCTS.filter(p => p.pendingCount > 0).length;
         const needConfirmCount = MATCH_PRODUCTS.filter(p => p.needConfirm).length;
+        const blockPre = activeProd.gaps.filter((g) => g.blocksPreReview).length;
+        const pctFeas = Math.round((activeProd.metCount / (activeProd.metCount + activeProd.pendingCount)) * 100);
+        const judg =
+          activeProd.level === '高适配'
+            ? `当前主体与「${activeProd.name}」具备较高适配性，基础经营特征与尽调结论能够形成有效支撑。`
+            : activeProd.level === '建议关注'
+              ? `当前主体与「${activeProd.name}」具备一定适配性，但部分准入条件需进一步确认。`
+              : activeProd.level === '可补后做'
+                ? `当前主体与「${activeProd.name}」的匹配度有限，建议补充材料后再评估。`
+                : `当前主体与「${activeProd.name}」的适配度不足，不建议推进。`;
+        const nextPageHint = blockPre === 0 ? '预审与推单' : '补审作业（补强后预审）';
+        const nextStepHint =
+          activeProd.level === '高适配' && blockPre === 0
+            ? '当前产品已具备进入预审条件，建议直接提交。'
+            : activeProd.level === '暂不建议'
+              ? '当前产品不建议推进，建议切换更适合的产品方向。'
+              : '建议优先补齐关键准入缺口后进入预审；如限制项持续存在，可切换产品方向。';
+        const matchingCollapsed = `${activeProd.name} · ${activeProd.level} · ${blockPre === 0 ? '可进入预审' : `${blockPre} 项阻塞预审`}`;
+        const restrictLines =
+          activeProd.restrictions.length > 0 || blockPre > 0
+            ? [
+                '【主要限制提示】',
+                ...activeProd.gaps.filter((g) => g.blocksPreReview).map((g) => `· ${g.condition}: ${g.reason}`),
+                ...activeProd.restrictions.map((r) => `· ${r}`),
+              ].join('\n')
+            : '';
+        const matchingFull = [
+          '【当前判断】',
+          judg,
+          '',
+          '【产品适配摘要】',
+          `已满足 ${activeProd.metCount} 项准入条件，${activeProd.pendingCount} 项待补充${blockPre > 0 ? `，其中 ${blockPre} 项阻塞预审` : '。'}`,
+          '',
+          '【准入可行性】',
+          `综合完成度约 ${pctFeas}%，${blockPre === 0 ? '当前评估为「可预审」。' : '当前评估为「需补强」。'}`,
+          restrictLines,
+          '',
+          '【下一步建议】',
+          nextStepHint,
+          '',
+          '【建议进入页面】',
+          nextPageHint,
+          activeProd.needConfirm ? '\n\n【边界提示】该产品存在边界判断项，建议人工确认后再推进。' : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
 
-        return (
+        return {
+          pageSubtitleOverride: '帮助审批人从多个可选产品中快速收敛出当前案件最合适的产品。',
+          kpiSlot: (
+            <KpiBar
+              items={[
+                { label: '已匹配产品数', value: totalMatched, hint: '当前主体已完成匹配评估的产品数量', tone: 'info' },
+                { label: '高适配产品数', value: highFit, hint: '适配度较高、建议优先推进', tone: 'normal' },
+                { label: '可进入预审数', value: canPreReview, hint: '已具备基础准入条件、可进入预审', tone: 'normal' },
+                {
+                  label: '存在准入缺口数',
+                  value: hasGap,
+                  hint: '存在关键缺口、需补充后再推进',
+                  tone: hasGap ? 'warn' : 'normal',
+                },
+              ]}
+            />
+          ),
+          stickyActionSlot: (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" className="h-8 text-[11px] gap-1.5" onClick={() => onModuleChange('flow')}>
+                <ArrowRight size={12} />
+                进入预审与推单
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 border-[#FED7AA] text-[#C2410C]" onClick={() => onModuleChange('review')}>
+                <Pencil size={12} />
+                发起补审
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5">
+                <FileText size={12} />
+                查看尽调结果
+              </Button>
+              {needConfirmCount > 0 && (
+                <span className="text-[10px] text-muted-foreground ml-1">待人工确认产品 {needConfirmCount} 个</span>
+              )}
+            </div>
+          ),
+          aiPanel: (
+            <ApprovalAiDock
+              collapsedSummary={matchingCollapsed}
+              fullText={matchingFull}
+              expanded={approvalAiExpanded}
+              onToggle={() => setApprovalAiExpanded((v) => !v)}
+            />
+          ),
+          main: (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">产品匹配</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">基于企业特征、尽调结果与准入条件，自动匹配适合推进的授信产品与审批方向。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新匹配结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />重新匹配</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看匹配规则</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出结果</Button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <SampleSwitcher selectedId={selectedSampleId} onSelect={selectSample} compact />
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新匹配结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />重新匹配</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看匹配规则</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出结果</Button>
             </div>
 
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '已匹配产品数', value: totalMatched, desc: '当前主体已完成匹配评估的产品数量', icon: Layers, color: 'text-[#2563EB]' },
-                { label: '高适配产品数', value: highFit, desc: '适配度较高、建议优先推进', icon: Star, color: 'text-[#047857]' },
-                { label: '可进入预审数', value: canPreReview, desc: '已具备基础准入条件、可进入预审', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '存在准入缺口数', value: hasGap, desc: '存在关键缺口、需补充后再推进', icon: AlertTriangle, color: 'text-[#C2410C]' },
-                { label: '待人工确认数', value: needConfirmCount, desc: '存在边界项或特殊判断条件', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Four-column layout */}
-            <div className="grid grid-cols-[220px_1fr_220px_240px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[220px_1fr_220px] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Product recommendation list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -389,11 +467,24 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
               {/* COL 2: Product detail */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[#0F172A]">当前产品详情</span>
-                  <Badge className={cn('text-[7px] border', MATCH_LEVEL_STYLE[activeProd.level])}>{activeProd.level}</Badge>
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">当前产品对比详情区</span>
+                    <Badge className={cn('text-[7px] border shrink-0', MATCH_LEVEL_STYLE[activeProd.level])}>{activeProd.level}</Badge>
+                  </div>
+                  <MicroPulse
+                    lines={[
+                      '正在比对准入矩阵…',
+                      '正在核对尽调引用与规则命中…',
+                      '正在收敛产品排序与缺口项…',
+                    ]}
+                    className="text-[#64748B]"
+                  />
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <AiMiddleGuideCard variant="convergence" title="收敛到「当前最合适」产品">
+                    先看清<strong>适配强度</strong>与<strong>阻塞预审项</strong>；若无阻塞，可直接带入选中产品进入预审；若有，请优先处理右侧准入缺口或发起补审。
+                  </AiMiddleGuideCard>
                   {/* Product info */}
                   <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[10px]">
                     <div><span className="text-[#94A3B8]">产品名称</span> <span className="text-[#0F172A] font-semibold">{activeProd.name}</span></div>
@@ -461,12 +552,10 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                     )}
                   </div>
 
-                  {/* Detail actions */}
+                  {/* Detail actions — 次动作留在主区，主动作见底部 Sticky */}
                   <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#A7F3D0] text-[#047857]" onClick={() => onModuleChange('flow')}><ArrowRight size={9} />进入预审与推单</Button>
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />查看准入依据</Button>
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><FileText size={9} />查看尽调结果</Button>
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FED7AA] text-[#C2410C]" onClick={() => onModuleChange('review')}><Pencil size={9} />发起补审</Button>
                     {activeProd.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />标记人工确认</Button>}
                   </div>
                 </div>
@@ -510,99 +599,10 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                   )}
                 </div>
               </div>
-
-              {/* COL 4: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        {activeProd.level === '高适配'
-                          ? `当前主体与${activeProd.name}具备较高适配性，基础经营特征与尽调结论能够形成有效支撑。`
-                          : activeProd.level === '建议关注'
-                            ? `当前主体与${activeProd.name}具备一定适配性，但部分准入条件需进一步确认。`
-                            : activeProd.level === '可补后做'
-                              ? `当前主体与${activeProd.name}的匹配度有限，建议补充材料后再评估。`
-                              : `当前主体与${activeProd.name}的适配度不足，不建议推进。`}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">产品适配摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        已满足 {activeProd.metCount} 项准入条件，{activeProd.pendingCount} 项待补充
-                        {activeProd.gaps.filter(g => g.blocksPreReview).length > 0
-                          ? `，${activeProd.gaps.filter(g => g.blocksPreReview).length} 项阻塞预审`
-                          : ''}。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">准入可行性</div>
-                      {(() => {
-                        const blockers = activeProd.gaps.filter(g => g.blocksPreReview).length;
-                        const pct = Math.round((activeProd.metCount / (activeProd.metCount + activeProd.pendingCount)) * 100);
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: blockers === 0 ? '#047857' : '#F59E0B' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: blockers === 0 ? '#047857' : '#F59E0B' }}>{blockers === 0 ? '可预审' : '需补强'}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {(activeProd.restrictions.length > 0 || activeProd.gaps.filter(g => g.blocksPreReview).length > 0) && (
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">主要限制提示</div>
-                        <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                          {activeProd.gaps.filter(g => g.blocksPreReview).map((g, i) => <div key={i}>· {g.condition}: {g.reason}</div>)}
-                          {activeProd.restrictions.map((r, i) => <div key={`r-${i}`}>· {r}</div>)}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        {activeProd.level === '高适配' && activeProd.gaps.filter(g => g.blocksPreReview).length === 0
-                          ? '当前产品已具备进入预审条件，建议直接提交。'
-                          : activeProd.level === '暂不建议'
-                            ? '当前产品不建议推进，建议切换更适合的产品方向。'
-                            : '建议优先补齐关键准入缺口后进入预审；如限制项持续存在，可切换产品方向。'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">
-                        {activeProd.gaps.filter(g => g.blocksPreReview).length === 0 ? '预审与推单' : '补审作业（补强后预审）'}
-                      </p>
-                    </div>
-
-                    {activeProd.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该产品存在边界判断项，建议人工确认后再推进。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" onClick={() => onModuleChange('flow')}><ArrowRight size={10} />进入预审与推单</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('review')}><ArrowRight size={10} />进入补审作业</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-        );
+          ),
+        };
       }
 
       /* ════════════════════════════════════════════════════════════════════
@@ -696,42 +696,96 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
         const canPush = PRE_REVIEW_OBJS.filter(o => o.pushStatus === '待推单' || o.pushStatus === '已推单').length;
         const blockedObjs = PRE_REVIEW_OBJS.filter(o => o.blockers.some(b => b.blocksPush)).length;
         const confirmObjs = PRE_REVIEW_OBJS.filter(o => o.needConfirm).length;
+        const pushBlock = activeObj.blockers.filter((b) => b.blocksPush).length;
+        const metPush = activeObj.reviewItems.filter((r) => r.meetsPush).length;
+        const pctPush = Math.round((metPush / activeObj.reviewItems.length) * 100);
+        const flowCollapsed = `${activeObj.shortName} · ${activeObj.conclusion} · ${pushBlock === 0 ? '可推单' : `${pushBlock} 项阻塞推单`}`;
+        const flowJudg =
+          activeObj.conclusion === '建议通过' && pushBlock === 0
+            ? `${activeObj.shortName} 已具备预审通过条件，各项核验结果支撑充分，建议发起推单。`
+            : activeObj.conclusion === '可补后推'
+              ? `${activeObj.shortName} 已具备部分预审通过条件，但仍有个别关键阻塞项需进一步处理。`
+              : `${activeObj.shortName} 当前预审条件不足，建议补强后再推进。`;
+        const flowFull = [
+          '【当前判断】',
+          flowJudg,
+          '',
+          '【预审结论摘要】',
+          `${metPush}/${activeObj.reviewItems.length} 项满足推单条件${activeObj.blockers.length > 0 ? `，${pushBlock} 项阻塞推单` : '。'}`,
+          '',
+          '【推单可行性】',
+          `核验完成度约 ${pctPush}%，${pushBlock === 0 ? '评估为「可推单」。' : '评估为「需处理」。'}`,
+          activeObj.blockers.length > 0
+            ? ['', '【主要阻塞提示】', ...activeObj.blockers.map((b) => `· ${b.name}: ${b.reason}`)].join('\n')
+            : '',
+          '',
+          '【下一步建议】',
+          pushBlock === 0 ? '当前对象已具备推单条件，建议发起正式推单。' : '建议优先处理阻塞项并补强关键说明，待条件满足后再发起推单。',
+          '',
+          '【建议进入页面】',
+          pushBlock === 0 ? '推单 → 统一信贷系统' : '补审作业（补强后推单）',
+          activeObj.needConfirm ? '\n\n【边界提示】该对象存在边界判断项，建议人工确认后再推进。' : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
 
-        return (
+        return {
+          pageSubtitleOverride: '把「能否推单」收敛成可执行门槛：核验通过、阻塞清零后再进入正式审批链路。',
+          kpiSlot: (
+            <KpiBar
+              items={[
+                { label: '待预审对象数', value: totalObjs, hint: '当前等待完成预审判断的对象数量', tone: 'info' },
+                { label: '预审通过数', value: passedObjs, hint: '已满足基础条件、建议通过预审', tone: 'normal' },
+                { label: '可推单对象数', value: canPush, hint: '已具备进入正式审批链路条件', tone: 'normal' },
+                { label: '存在阻塞项数', value: blockedObjs, hint: '存在关键卡点、暂不能直接推单', tone: blockedObjs ? 'warn' : 'normal' },
+                { label: '待人工确认数', value: confirmObjs, hint: '存在边界判断项或特殊情况', tone: confirmObjs ? 'warn' : 'muted' },
+              ]}
+            />
+          ),
+          stickyActionSlot: (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" className="h-8 text-[11px] gap-1.5" onClick={handleApprove}>
+                <ArrowRight size={12} />
+                发起推单
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5" onClick={() => onModuleChange('matching')}>
+                返回产品匹配
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 border-[#FED7AA] text-[#C2410C]" onClick={() => onModuleChange('review')}>
+                <Pencil size={12} />
+                发起补审
+              </Button>
+            </div>
+          ),
+          aiPanel: (
+            <ApprovalAiDock
+              collapsedSummary={flowCollapsed}
+              fullText={flowFull}
+              expanded={approvalAiExpanded}
+              onToggle={() => setApprovalAiExpanded((v) => !v)}
+            />
+          ),
+          main: (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">预审与推单</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">基于产品匹配、尽调结论与准入判断，完成审批前置预审，并推动对象进入后续审批链路。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新预审结果</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />批量预审</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看预审规则</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出结论</Button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新预审结果</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />批量预审</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看预审规则</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出结论</Button>
             </div>
 
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '待预审对象数', value: totalObjs, desc: '当前等待完成预审判断的对象数量', icon: Clock, color: 'text-[#2563EB]' },
-                { label: '预审通过数', value: passedObjs, desc: '已满足基础条件、建议通过预审', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '可推单对象数', value: canPush, desc: '已具备进入正式审批链路条件', icon: ArrowRight, color: 'text-[#047857]' },
-                { label: '存在阻塞项数', value: blockedObjs, desc: '存在关键卡点、暂不能直接推单', icon: AlertTriangle, color: 'text-[#C2410C]' },
-                { label: '待人工确认数', value: confirmObjs, desc: '存在边界判断项或特殊情况', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
+            <Stepper
+              className="shadow-sm"
+              current="pre"
+              steps={[
+                { id: 'match', label: '产品匹配', hint: '方向已选', stepDescription: '在「产品匹配」中完成适配与准入缺口收敛。' },
+                { id: 'pre', label: '预审判断', hint: '当前步骤', stepDescription: '逐项核验主体、材料、风险规则与尽调引用。' },
+                { id: 'push', label: '推单准备', hint: '阻塞清零', stepDescription: '清除阻塞推单项后可发起推单。' },
+                { id: 'formal', label: '进入正式审批', hint: '信贷系统', stepDescription: '推送至统一信贷系统进入正式审批。' },
+              ]}
+            />
 
-            {/* Four-column layout */}
-            <div className="grid grid-cols-[210px_1fr_210px_240px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[210px_1fr_210px] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Pre-review task list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -768,14 +822,27 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
               {/* COL 2: Pre-review results */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[#0F172A]">预审结果 — {activeObj.shortName}</span>
-                  <div className="flex items-center gap-1">
-                    <Badge className={cn('text-[7px] border', CONCLUSION_STYLE[activeObj.conclusion])}>{activeObj.conclusion}</Badge>
-                    <Badge className={cn('text-[7px] border', PUSH_STYLE[activeObj.pushStatus])}>{activeObj.pushStatus}</Badge>
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">预审结果 — {activeObj.shortName}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Badge className={cn('text-[7px] border', CONCLUSION_STYLE[activeObj.conclusion])}>{activeObj.conclusion}</Badge>
+                      <Badge className={cn('text-[7px] border', PUSH_STYLE[activeObj.pushStatus])}>{activeObj.pushStatus}</Badge>
+                    </div>
                   </div>
+                  <MicroPulse
+                    lines={[
+                      '正在核对预审事项与依据引用…',
+                      '正在评估推单门槛与阻塞项…',
+                      '正在收敛「可推单 / 需补审」结论…',
+                    ]}
+                    className="text-[#64748B]"
+                  />
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  <AiMiddleGuideCard variant="threshold" title="门槛判断：先清阻塞，再谈推单">
+                    本页只做<strong>预审与推单准备</strong>。请优先看清右侧阻塞项是否<strong>阻塞推单</strong>；未清零前，推单动作应保持克制，必要时回到补审或产品匹配。
+                  </AiMiddleGuideCard>
                   {/* Entity info row */}
                   <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-[9px] pb-2 border-b border-[#F1F5F9]">
                     <div><span className="text-[#94A3B8]">企业</span> <span className="text-[#0F172A] font-medium">{activeObj.shortName}</span></div>
@@ -806,13 +873,12 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                     </div>
                   ))}
 
-                  {/* Result actions */}
+                  {/* Result actions — 主动作见底部 Sticky */}
                   <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />查看依据</Button>
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Shield size={9} />查看风险项</Button>
                     <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={9} />重新预审</Button>
                     {activeObj.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />标记人工确认</Button>}
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#A7F3D0] text-[#047857]"><ArrowRight size={9} />加入推单</Button>
                   </div>
                 </div>
               </div>
@@ -852,93 +918,10 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                   )}
                 </div>
               </div>
-
-              {/* COL 4: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        {activeObj.conclusion === '建议通过' && activeObj.blockers.filter(b => b.blocksPush).length === 0
-                          ? `${activeObj.shortName}已具备预审通过条件，各项核验结果支撑充分，建议发起推单。`
-                          : activeObj.conclusion === '可补后推'
-                            ? `${activeObj.shortName}已具备部分预审通过条件，但仍存在个别关键阻塞项需进一步处理。`
-                            : `${activeObj.shortName}当前预审条件不足，建议补强后再推进。`}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">预审结论摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        {activeObj.reviewItems.filter(r => r.meetsPush).length}/{activeObj.reviewItems.length} 项满足推单条件
-                        {activeObj.blockers.length > 0 ? `，${activeObj.blockers.filter(b => b.blocksPush).length} 项阻塞推单` : ''}。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">推单可行性</div>
-                      {(() => {
-                        const metItems = activeObj.reviewItems.filter(r => r.meetsPush).length;
-                        const pct = Math.round((metItems / activeObj.reviewItems.length) * 100);
-                        const canDo = activeObj.blockers.filter(b => b.blocksPush).length === 0;
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: canDo ? '#047857' : '#F59E0B' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: canDo ? '#047857' : '#F59E0B' }}>{canDo ? '可推单' : '需处理'}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {activeObj.blockers.length > 0 && (
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">主要阻塞提示</div>
-                        <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                          {activeObj.blockers.map((b, i) => <div key={i}>· {b.name}: {b.reason}</div>)}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        {activeObj.blockers.filter(b => b.blocksPush).length === 0
-                          ? '当前对象已具备推单条件，建议发起正式推单。'
-                          : '建议优先处理阻塞项并补强关键说明，待条件满足后再发起推单。'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">
-                        {activeObj.blockers.filter(b => b.blocksPush).length === 0 ? '推单 → 统一信贷系统' : '补审作业（补强后推单）'}
-                      </p>
-                    </div>
-
-                    {activeObj.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该对象存在边界判断项，建议人工确认后再推进。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" onClick={handleApprove}><ArrowRight size={10} />发起推单</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('review')}><ArrowRight size={10} />进入补审作业</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-        );
+          ),
+        };
       }
 
       /* ════════════════════════════════════════════════════════════════════
@@ -1027,42 +1010,84 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
         const canAdvanceCount = SUMMARY_OBJS.filter(o => o.canAdvance).length;
         const limitCount = SUMMARY_OBJS.filter(o => o.evidences.some(e => e.blocksAdvance)).length;
         const confirmCount = SUMMARY_OBJS.filter(o => o.needConfirm).length;
+        const passedEv = activeObj.evidences.filter((e) => !e.blocksAdvance).length;
+        const totalEv = activeObj.evidences.length || 1;
+        const pctSum = Math.round((passedEv / totalEv) * 100);
+        const sumCollapsed = `${activeObj.shortName} · ${activeObj.suggestion} · ${activeObj.canAdvance ? '依据闭环' : '待收束限制项'}`;
+        const sumJudg = activeObj.canAdvance
+          ? `${activeObj.shortName} 已形成完整审批判断，依据闭环，建议输出摘要并进入正式审批。`
+          : `${activeObj.shortName} 已形成基础审批判断，但仍有部分限制项需进一步说明或确认。`;
+        const sumFull = [
+          '【当前判断】',
+          sumJudg,
+          '',
+          '【审批结论摘要】',
+          activeObj.canAdvance
+            ? '主体与产品匹配充分，预审与补审结果均支撑推进，当前无明显限制。'
+            : `主体与产品具备匹配基础，当前主要限制集中在：${activeObj.evidences.filter((e) => e.blocksAdvance).map((e) => e.name).join('、') || '—'}。`,
+          '',
+          '【推进可行性】',
+          `依据项闭环约 ${pctSum}%。`,
+          activeObj.evidences.some((e) => e.blocksAdvance)
+            ? ['', '【主要限制提示】', ...activeObj.evidences.filter((e) => e.blocksAdvance).map((e) => `· ${e.name}：${e.limitNote || e.evidenceType}`)].join('\n')
+            : '',
+          '',
+          '【下一步建议】',
+          activeObj.canAdvance ? '关键依据已闭环，建议输出审批摘要并进入正式审批。' : '建议优先补充高影响限制项说明，待关键依据闭环后输出审批摘要。',
+          '',
+          '【建议进入页面】',
+          activeObj.canAdvance ? '正式审批链路' : '补审作业',
+          activeObj.needConfirm ? '\n\n【边界提示】该对象存在边界判断项，建议人工确认后再正式输出。' : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
 
-        return (
+        return {
+          pageSubtitleOverride: '把多源依据收束成「可输出、可负责」的审批摘要结论，支撑最终裁决与留痕。',
+          kpiSlot: (
+            <KpiBar
+              items={[
+                { label: '待生成摘要数', value: pendingGen, hint: '当前等待形成审批摘要结论', tone: 'warn' },
+                { label: '已生成摘要数', value: generated, hint: '已完成审批摘要生成', tone: 'info' },
+                { label: '可推进对象数', value: canAdvanceCount, hint: '已具备进入审批链路条件', tone: 'normal' },
+                { label: '存在限制项数', value: limitCount, hint: '存在关键限制或待处理事项', tone: limitCount ? 'warn' : 'normal' },
+                { label: '待人工确认数', value: confirmCount, hint: '存在边界判断项、需人工确认', tone: confirmCount ? 'warn' : 'muted' },
+              ]}
+            />
+          ),
+          stickyActionSlot: (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" className="h-8 text-[11px] gap-1.5" onClick={handleApprove}>
+                <ArrowRight size={12} />
+                进入正式审批
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 border-[#FED7AA] text-[#C2410C]" onClick={() => onModuleChange('review')}>
+                返回补审作业
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5">
+                <Download size={12} />
+                导出摘要
+              </Button>
+            </div>
+          ),
+          aiPanel: (
+            <ApprovalAiDock
+              collapsedSummary={sumCollapsed}
+              fullText={sumFull}
+              expanded={approvalAiExpanded}
+              onToggle={() => setApprovalAiExpanded((v) => !v)}
+            />
+          ),
+          main: (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">审批摘要</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">统一汇总产品匹配、预审结论与补审结果，形成可解释、可输出的审批摘要结论。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新摘要</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />批量生成摘要</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出摘要</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看摘要规则</Button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新摘要</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />批量生成摘要</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出摘要</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看摘要规则</Button>
             </div>
 
-            {/* Overview cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '待生成摘要数', value: pendingGen, desc: '当前等待形成审批摘要结论', icon: Clock, color: 'text-[#C2410C]' },
-                { label: '已生成摘要数', value: generated, desc: '已完成审批摘要生成', icon: FileCheck2, color: 'text-[#2563EB]' },
-                { label: '可推进对象数', value: canAdvanceCount, desc: '已具备进入审批链路条件', icon: CheckCircle2, color: 'text-[#047857]' },
-                { label: '存在限制项数', value: limitCount, desc: '存在关键限制或待处理事项', icon: AlertTriangle, color: 'text-[#F59E0B]' },
-                { label: '待人工确认数', value: confirmCount, desc: '存在边界判断项、需人工确认', icon: UserCheck, color: 'text-[#7C3AED]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Four-column layout */}
-            <div className="grid grid-cols-[210px_1fr_210px_240px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[210px_1fr_210px] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Object list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1100,14 +1125,27 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
               {/* COL 2: Summary detail */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[#0F172A]">当前摘要详情</span>
-                  <div className="flex items-center gap-1.5">
-                    <Badge className={cn('text-[7px] border', SGG_STYLE[activeObj.suggestion])}>{activeObj.suggestion}</Badge>
-                    <Badge className={cn('text-[7px] border', OUT_STYLE[activeObj.status])}>{activeObj.status}</Badge>
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">审批摘要主区</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Badge className={cn('text-[7px] border', SGG_STYLE[activeObj.suggestion])}>{activeObj.suggestion}</Badge>
+                      <Badge className={cn('text-[7px] border', OUT_STYLE[activeObj.status])}>{activeObj.status}</Badge>
+                    </div>
                   </div>
+                  <MicroPulse
+                    lines={[
+                      '正在收束多源依据与限制项…',
+                      '正在生成可输出摘要表述…',
+                      '正在对齐额度期限与可推进性…',
+                    ]}
+                    className="text-[#64748B]"
+                  />
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                  <AiMiddleGuideCard variant="adjudication" title="裁决引导：先建议，再结论，再输出">
+                    按<strong>审批建议 → 结论摘要 → 关键依据 → 限制项 → 输出动作</strong>阅读。右侧为完整 AI 解释；底部 Sticky 承载「进入正式审批」等裁决级动作。
+                  </AiMiddleGuideCard>
                   {/* Entity & product info */}
                   <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] pb-2 border-b border-[#F1F5F9]">
                     <div><span className="text-[#94A3B8]">企业</span> <span className="text-[#0F172A] font-medium">{activeObj.company}</span></div>
@@ -1118,9 +1156,17 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                     <div><span className="text-[#94A3B8]">来源</span> <span className="text-[#0F172A]">{activeObj.source}</span></div>
                   </div>
 
+                  <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-2.5 space-y-1">
+                    <div className="text-[10px] font-semibold text-[#0F172A]">审批建议</div>
+                    <p className="text-[9px] text-[#475569] leading-relaxed">
+                      系统倾向 <span className="font-semibold text-[#0F172A]">{activeObj.suggestion}</span>，摘要状态 <span className="font-semibold text-[#0F172A]">{activeObj.status}</span>
+                      {activeObj.needConfirm ? '；存在待人工确认边界项。' : '。'}
+                    </p>
+                  </div>
+
                   {/* Summary conclusion */}
                   <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-[#0F172A]">摘要结论</div>
+                    <div className="text-[10px] font-semibold text-[#0F172A]">结论摘要</div>
                     <div className={cn('rounded px-2.5 py-2 text-[9px] leading-4', activeObj.canAdvance ? 'bg-[#F0FDF4] border border-[#BBF7D0] text-[#047857]' : 'bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E]')}>
                       {activeObj.conclusionText}
                     </div>
@@ -1137,9 +1183,9 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                     </div>
                   </div>
 
-                  {/* Composition */}
+                  {/* Composition — 关键依据 */}
                   <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-[#0F172A]">结论组成</div>
+                    <div className="text-[10px] font-semibold text-[#0F172A]">关键依据</div>
                     {[
                       { k: '产品匹配', v: activeObj.productMatchSummary },
                       { k: '预审结论', v: activeObj.preReviewSummary },
@@ -1154,20 +1200,38 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                     {activeObj.manualNote && <div className="flex items-start gap-2 text-[9px]"><span className="text-[#94A3B8] shrink-0 w-14">人工说明</span><span className="text-[#334155]">{activeObj.manualNote}</span></div>}
                   </div>
 
-                  {/* Output info */}
-                  <div className="grid grid-cols-3 gap-2 text-[8px] pb-2 border-t border-[#F1F5F9] pt-2">
-                    <div><span className="text-[#94A3B8]">生成时间</span><div className="text-[#0F172A]">{activeObj.generatedAt}</div></div>
-                    <div><span className="text-[#94A3B8]">编辑人</span><div className="text-[#0F172A]">{activeObj.lastEditor}</div></div>
-                    <div><span className="text-[#94A3B8]">编辑时间</span><div className="text-[#0F172A]">{activeObj.lastEditTime}</div></div>
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-semibold text-[#0F172A]">限制项</div>
+                    {activeObj.evidences.some((e) => e.blocksAdvance || e.limitNote) ? (
+                      <ul className="text-[9px] text-[#C2410C] space-y-0.5 list-disc pl-4">
+                        {activeObj.evidences
+                          .filter((e) => e.blocksAdvance || e.limitNote)
+                          .map((e) => (
+                            <li key={e.name}>
+                              {e.name}
+                              {e.limitNote ? `：${e.limitNote}` : ''}
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[9px] text-[#047857]">当前无明显限制项。</p>
+                    )}
                   </div>
 
-                  {/* Detail actions */}
-                  <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-2 flex-wrap">
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Pencil size={9} />编辑摘要</Button>
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />查看来源依据</Button>
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><RefreshCw size={9} />重新生成</Button>
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#A7F3D0] text-[#047857]"><ArrowRight size={9} />输出审批摘要</Button>
-                    {activeObj.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />标记人工确认</Button>}
+                  {/* Output info + actions */}
+                  <div className="space-y-2 border-t border-[#F1F5F9] pt-2">
+                    <div className="text-[10px] font-semibold text-[#0F172A]">输出动作</div>
+                    <div className="grid grid-cols-3 gap-2 text-[8px] pb-1">
+                      <div><span className="text-[#94A3B8]">生成时间</span><div className="text-[#0F172A]">{activeObj.generatedAt}</div></div>
+                      <div><span className="text-[#94A3B8]">编辑人</span><div className="text-[#0F172A]">{activeObj.lastEditor}</div></div>
+                      <div><span className="text-[#94A3B8]">编辑时间</span><div className="text-[#0F172A]">{activeObj.lastEditTime}</div></div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]"><Pencil size={9} />编辑摘要</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />查看来源依据</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><RefreshCw size={9} />重新生成</Button>
+                      {activeObj.needConfirm && <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#DDD6FE] text-[#7C3AED]"><UserCheck size={9} />标记人工确认</Button>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1209,90 +1273,10 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                   </div>
                 </div>
               </div>
-
-              {/* COL 4: AI judgment & actions */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        {activeObj.canAdvance
-                          ? `${activeObj.shortName}已形成完整审批判断，依据闭环，建议输出摘要并进入正式审批。`
-                          : `${activeObj.shortName}已形成基础审批判断，但仍有部分限制项需进一步说明或确认。`}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">审批结论摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        {activeObj.canAdvance
-                          ? '主体与产品匹配充分，预审与补审结果均支撑推进，当前无明显限制。'
-                          : `主体与产品具备匹配基础，当前主要限制集中在${activeObj.evidences.filter(e => e.blocksAdvance).map(e => e.name).join('、')}。`}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">推进可行性</div>
-                      {(() => {
-                        const totalEv = activeObj.evidences.length || 1;
-                        const passed = activeObj.evidences.filter(e => !e.blocksAdvance).length;
-                        const pct = Math.round((passed / totalEv) * 100);
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: activeObj.canAdvance ? '#047857' : '#F59E0B' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: activeObj.canAdvance ? '#047857' : '#F59E0B' }}>{pct}%</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {activeObj.evidences.some(e => e.blocksAdvance) && (
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">主要限制提示</div>
-                        <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                          {activeObj.evidences.filter(e => e.blocksAdvance).map((e, i) => <div key={i}>· {e.name}：{e.limitNote}</div>)}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        {activeObj.canAdvance
-                          ? '关键依据已闭环，建议输出审批摘要并进入正式审批。'
-                          : '建议优先补充高影响限制项说明，待关键依据闭环后输出审批摘要。'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeObj.canAdvance ? '正式审批链路' : '补审作业'}</p>
-                    </div>
-
-                    {activeObj.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该对象存在边界判断项，建议人工确认后再正式输出。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" onClick={handleApprove}><ArrowRight size={10} />进入正式审批</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#FED7AA] text-[#C2410C] w-full" onClick={() => onModuleChange('review')}><ArrowRight size={10} />返回补审作业</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-        );
+          ),
+        };
       }
 
       /* ════════════════════════════════════════════════════════════════════
@@ -1378,42 +1362,86 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
         const explainTasks = REVIEW_TASKS.filter(t => t.pendingExplanations.length > 0).length;
         const confirmTasks = REVIEW_TASKS.filter(t => t.needConfirm).length;
         const canReturnTasks = REVIEW_TASKS.filter(t => t.canReturn).length;
+        const revCollapsed = `${activeTask.shortName} · ${activeTask.status} · ${activeTask.canReturn ? '可回流预审' : '待补齐缺口'}`;
+        const revJudg = activeTask.canReturn
+          ? `${activeTask.shortName} 的阻塞项已基本处理完成，建议发起回流返回预审。`
+          : `${activeTask.shortName} 的部分阻塞项已具备处理基础，但仍有关键缺口需要进一步补充。`;
+        const revFull = [
+          '【当前判断】',
+          revJudg,
+          '',
+          '【补审结论摘要】',
+          `${activeTask.gaps.length} 项缺口，已处理 ${activeTask.supplemented.length} 项${activeTask.pending.length > 0 ? `，${activeTask.pending.length} 项待处理` : '。'}`,
+          '',
+          '【下一步建议】',
+          activeTask.canReturn
+            ? '关键缺口已消除，建议发起回流返回预审与推单。'
+            : activeTask.suggestSwitch
+              ? '核心数据不足，建议返回产品匹配重新评估。'
+              : '建议优先补齐高影响缺口，关键限制项消除后返回预审。',
+          '',
+          '【建议进入页面】',
+          activeTask.canReturn ? '预审与推单' : activeTask.suggestSwitch ? '产品匹配' : '继续补审处理',
+          activeTask.needConfirm ? '\n\n【边界提示】该任务存在边界判断项，建议人工确认后再推进。' : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
 
-        return (
+        return {
+          pageSubtitleOverride: '补强边界与材料缺口，明确「能否回流预审」与回流路径。',
+          kpiSlot: (
+            <KpiBar
+              items={[
+                { label: '待补审任务数', value: totalTasks, hint: '当前等待处理的补审任务总数', tone: 'warn' },
+                { label: '待补件对象数', value: materialTasks, hint: '存在关键材料缺失、需补件', tone: materialTasks ? 'risk' : 'muted' },
+                { label: '待补充说明数', value: explainTasks, hint: '需补充经营、风险或规则说明', tone: explainTasks ? 'warn' : 'muted' },
+                { label: '待人工确认数', value: confirmTasks, hint: '存在边界判断项、需人工确认', tone: confirmTasks ? 'warn' : 'muted' },
+                { label: '可返回预审数', value: canReturnTasks, hint: '已具备回流预审条件', tone: 'normal' },
+              ]}
+            />
+          ),
+          stickyActionSlot: (
+            <div className="flex flex-wrap items-center gap-2">
+              {activeTask.canReturn ? (
+                <Button size="sm" className="h-8 text-[11px] gap-1.5" onClick={() => onModuleChange('flow')}>
+                  <ArrowRight size={12} />
+                  返回预审与推单
+                </Button>
+              ) : (
+                <Button size="sm" className="h-8 text-[11px] gap-1.5">
+                  <Pencil size={12} />
+                  继续补审
+                </Button>
+              )}
+              {activeTask.suggestSwitch && (
+                <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5" onClick={() => onModuleChange('matching')}>
+                  返回产品匹配
+                </Button>
+              )}
+              <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5">
+                <Download size={12} />
+                导出任务清单
+              </Button>
+            </div>
+          ),
+          aiPanel: (
+            <ApprovalAiDock
+              collapsedSummary={revCollapsed}
+              fullText={revFull}
+              expanded={approvalAiExpanded}
+              onToggle={() => setApprovalAiExpanded((v) => !v)}
+            />
+          ),
+          main: (
           <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#0F172A]">补审作业</h2>
-                <p className="text-[11px] text-[#64748B] mt-0.5">对审批推进中的补件、补充说明与边界阻塞项进行统一处理，支撑对象继续进入审批链路。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新任务</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />批量补审</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出任务清单</Button>
-                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看处理规则</Button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#BFDBFE] text-[#2563EB]"><RefreshCw size={10} />刷新任务</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Zap size={10} />批量补审</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Download size={10} />导出任务清单</Button>
+              <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={10} />查看处理规则</Button>
             </div>
 
-            {/* Overview */}
-            <div className="grid grid-cols-5 gap-3">
-              {[
-                { label: '待补审任务数', value: totalTasks, desc: '当前等待处理的补审任务总数', icon: Clock, color: 'text-[#C2410C]' },
-                { label: '待补件对象数', value: materialTasks, desc: '存在关键材料缺失、需补件', icon: Upload, color: 'text-[#DC2626]' },
-                { label: '待补充说明数', value: explainTasks, desc: '需补充经营、风险或规则说明', icon: Pencil, color: 'text-[#F59E0B]' },
-                { label: '待人工确认数', value: confirmTasks, desc: '存在边界判断项、需人工确认', icon: UserCheck, color: 'text-[#7C3AED]' },
-                { label: '可返回预审数', value: canReturnTasks, desc: '已具备回流预审条件', icon: CheckCircle2, color: 'text-[#047857]' },
-              ].map(c => (
-                <div key={c.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-1">
-                  <div className="flex items-center gap-1.5"><c.icon size={12} className={c.color} /><span className="text-[10px] text-[#64748B]">{c.label}</span></div>
-                  <div className="text-[20px] font-bold text-[#0F172A]">{c.value}</div>
-                  <div className="text-[9px] text-[#94A3B8]">{c.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Four-column layout */}
-            <div className="grid grid-cols-[210px_1fr_210px_240px] gap-3" style={{ minHeight: 520 }}>
+            <div className="grid grid-cols-[210px_1fr_210px] gap-3" style={{ minHeight: 520 }}>
 
               {/* COL 1: Task list */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
@@ -1450,11 +1478,24 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
               {/* COL 2: Detail */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[#0F172A]">当前补审详情</span>
-                  <Badge className={cn('text-[7px] border', RSTATUS_STYLE[activeTask.status])}>{activeTask.status}</Badge>
+                <div className="px-4 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC] flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">补审详情主区</span>
+                    <Badge className={cn('text-[7px] border shrink-0', RSTATUS_STYLE[activeTask.status])}>{activeTask.status}</Badge>
+                  </div>
+                  <MicroPulse
+                    lines={[
+                      '正在核对阻塞项与已补充项…',
+                      '正在评估回流预审可行性…',
+                      '正在收敛缺口处理路径…',
+                    ]}
+                    className="text-[#64748B]"
+                  />
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                  <AiMiddleGuideCard variant="boundary" title="边界补强：先阻塞摘要，再决定回流">
+                    阅读顺序：<strong>阻塞摘要 → 已补充 → 待处理缺口 → 预计回流路径</strong>。若仍存在阻塞回流项，请优先在右侧缺口卡处理后再发起回流。
+                  </AiMiddleGuideCard>
                   {/* Task info */}
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[9px] pb-2 border-b border-[#F1F5F9]">
                     <div><span className="text-[#94A3B8]">任务名称</span> <span className="text-[#0F172A] font-medium">{activeTask.taskName}</span></div>
@@ -1465,7 +1506,7 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
                   {/* Problem description */}
                   <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-[#0F172A]">当前问题说明</div>
+                    <div className="text-[10px] font-semibold text-[#0F172A]">阻塞摘要</div>
                     <div className="text-[9px] text-[#C2410C] font-medium">{activeTask.blockerSummary}</div>
                     {activeTask.missingMaterials.length > 0 && (
                       <div className="text-[9px]"><span className="text-[#94A3B8]">缺失材料:</span> {activeTask.missingMaterials.join('、')}</div>
@@ -1481,24 +1522,35 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
 
                   {/* Processing status */}
                   <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-[#0F172A]">处理情况</div>
-                    {activeTask.supplemented.length > 0 && (
+                    <div className="text-[10px] font-semibold text-[#0F172A]">已补充</div>
+                    {activeTask.supplemented.length > 0 ? (
                       <div className="text-[9px]">
-                        <span className="text-[#94A3B8]">已补充:</span>
-                        {activeTask.supplemented.map((s, i) => <span key={i} className="ml-1 inline-flex items-center gap-0.5 text-[#047857]"><CheckCircle2 size={8} />{s}</span>)}
+                        {activeTask.supplemented.map((s, i) => <span key={i} className="mr-2 inline-flex items-center gap-0.5 text-[#047857]"><CheckCircle2 size={8} />{s}</span>)}
                       </div>
+                    ) : (
+                      <p className="text-[9px] text-[#94A3B8]">暂无已确认补充项。</p>
                     )}
-                    {activeTask.pending.length > 0 && (
+                    <div className="text-[10px] font-semibold text-[#0F172A] pt-1">待处理缺口</div>
+                    {activeTask.pending.length > 0 ? (
                       <div className="text-[9px]">
-                        <span className="text-[#94A3B8]">待处理:</span>
-                        {activeTask.pending.map((p, i) => <span key={i} className="ml-1 inline-flex items-center gap-0.5 text-[#C2410C]"><Clock size={8} />{p}</span>)}
+                        {activeTask.pending.map((p, i) => <span key={i} className="mr-2 inline-flex items-center gap-0.5 text-[#C2410C]"><Clock size={8} />{p}</span>)}
                       </div>
+                    ) : (
+                      <p className="text-[9px] text-[#047857]">当前无待处理缺口项。</p>
                     )}
                     <div className="text-[8px] text-[#94A3B8]">最近: {activeTask.lastAction}</div>
 
                     {/* Conclusion */}
                     <div className={cn('rounded px-2.5 py-1.5 text-[9px]', activeTask.canReturn ? 'bg-[#F0FDF4] border border-[#BBF7D0] text-[#047857]' : 'bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E]')}>
                       {activeTask.canReturn ? <><CheckCircle2 size={9} className="inline mr-1" />缺口已基本消除，可返回预审</> : <><AlertTriangle size={9} className="inline mr-1" />{activeTask.conclusion}</>}
+                    </div>
+                    <div className="rounded border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1.5 text-[9px] text-[#334155]">
+                      <span className="font-semibold text-[#0F172A]">预计回流路径：</span>
+                      {activeTask.canReturn
+                        ? '预审与推单（缺口已消除，可回流）'
+                        : activeTask.suggestSwitch
+                          ? '产品匹配（需重判适配方向）'
+                          : '继续补审 → 消除阻塞回流项 → 预审与推单'}
                     </div>
                   </div>
 
@@ -1559,99 +1611,28 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                   )}
                 </div>
               </div>
-
-              {/* COL 4: AI judgment */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#2563EB] flex items-center justify-center"><Brain size={10} className="text-white" /></div>
-                    <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">当前判断</div>
-                      <p className="text-[10px] text-[#0F172A] leading-4 font-medium">
-                        {activeTask.canReturn
-                          ? `${activeTask.shortName}的阻塞项已基本处理完成，建议发起回流返回预审。`
-                          : `${activeTask.shortName}的部分阻塞项已具备处理基础，但仍有关键缺口需要进一步补充。`}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">补审结论摘要</div>
-                      <p className="text-[9px] text-[#475569] leading-4">
-                        {activeTask.gaps.length} 项缺口，已处理 {activeTask.supplemented.length} 项
-                        {activeTask.pending.length > 0 ? `，${activeTask.pending.length} 项待处理` : ''}。
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">缺口处理进度</div>
-                      {(() => {
-                        const total = activeTask.gaps.length || 1;
-                        const done = activeTask.supplemented.length;
-                        const pct = Math.round((done / Math.max(total, done)) * 100);
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-[#F1F5F9] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: activeTask.canReturn ? '#047857' : '#F59E0B' }} /></div>
-                            <span className="text-[10px] font-bold" style={{ color: activeTask.canReturn ? '#047857' : '#F59E0B' }}>{activeTask.canReturn ? '可回流' : '处理中'}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {activeTask.riskTags.length > 0 && (
-                      <div>
-                        <div className="text-[9px] text-[#94A3B8] mb-0.5">主要风险提示</div>
-                        <div className="rounded bg-[#FEF2F2] px-2 py-1.5 text-[9px] text-[#DC2626] space-y-0.5">
-                          {activeTask.riskTags.map((t, i) => <div key={i}>· {t}</div>)}
-                          {activeTask.unresolved.map((u, i) => <div key={`u-${i}`}>· {u}（未消除）</div>)}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">下一步建议</div>
-                      <p className="text-[10px] text-[#7C3AED] font-medium">
-                        {activeTask.canReturn
-                          ? '关键缺口已消除，建议发起回流返回预审与推单。'
-                          : activeTask.suggestSwitch
-                            ? '核心数据不足，建议返回产品匹配重新评估。'
-                            : '建议优先补齐高影响缺口，关键限制项消除后返回预审。'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] text-[#94A3B8] mb-0.5">建议进入页面</div>
-                      <p className="text-[10px] text-[#475569]">{activeTask.canReturn ? '预审与推单' : activeTask.suggestSwitch ? '产品匹配' : '继续补审处理'}</p>
-                    </div>
-
-                    {activeTask.needConfirm && (
-                      <div className="rounded bg-[#F5F3FF] px-2 py-1.5 text-[9px] text-[#7C3AED]">
-                        该任务存在边界判断项，建议人工确认后再推进。
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white w-full"><CheckCircle2 size={10} />采纳建议</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#A7F3D0] text-[#047857] w-full" onClick={() => onModuleChange('flow')}><ArrowRight size={10} />返回预审与推单</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full" onClick={() => onModuleChange('matching')}><ArrowRight size={10} />返回产品匹配</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 border-[#E2E8F0] text-[#475569] w-full"><UserCheck size={10} />人工确认</Button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-        );
+          ),
+        };
       }
     }
   };
 
+  const layout = renderWorkbench();
+
   return (
-    <SceneLayout title={scene.title} modules={scene.modules} activeModule={activeModule} onModuleChange={onModuleChange}>
-      {renderContent()}
+    <SceneLayout
+      title={scene.title}
+      modules={scene.modules}
+      activeModule={activeModule}
+      onModuleChange={onModuleChange}
+      pageSubtitleOverride={layout.pageSubtitleOverride}
+      kpiSlot={layout.kpiSlot}
+      stickyActionSlot={layout.stickyActionSlot}
+      aiPanel={layout.aiPanel}
+    >
+      {layout.main}
     </SceneLayout>
   );
 }
