@@ -1,0 +1,72 @@
+# #12 海通包装 — 物流核实场景
+company_name: "苏州海通包装材料有限公司"
+short_name: "海通包装"
+credit_code: "91320400MA1XXXXX12"
+legal_person: "徐海通"
+industry: "包装材料"
+chain_name: "新能源电池产业链"
+role_in_chain: "三级包装供应商"
+region: "江苏苏州"
+established_date: "2019-08-25"
+registered_capital: 280
+employee_count: 16
+company_type: "有限责任公司"
+business_scope: "包装材料的加工与销售；防静电包装、防潮包装材料"
+vat_type: "小规模纳税人"
+
+counterparties:
+  - name: "华盛电子科技有限公司"
+    code: "B-HS"
+    weight: 0.50
+    is_main_chain: true
+  - name: "锐信新材料有限公司"
+    code: "B-RX"
+    weight: 0.28
+    is_main_chain: false
+  - name: "其他客户"
+    code: "B-OTHER"
+    weight: 0.22
+    is_main_chain: false
+
+products:
+  - name: "防静电包装袋"
+    spec: "定制型"
+    unit_price_min: 35.0
+    unit_price_max: 55.0
+  - name: "防潮包装膜"
+    spec: "标准型"
+    unit_price_min: 20.0
+    unit_price_max: 38.0
+  - name: "缓冲气柱袋"
+    spec: "通用型"
+    unit_price_min: 15.0
+    unit_price_max: 28.0
+
+annual_sales: 340.0
+order_count_12m: 44
+receivable_cycle_base: 43
+receivable_cycle_jitter: 5
+
+logistics_carrier: "驰远物流"
+logistics_region: "江苏苏州"
+ship_days_after_order: 5
+logistics_transit_days: 2
+
+bank_accounts:
+  - bank_name: "建设银行"
+    account_masked: "6227****3341"
+    weight: 0.65
+  - bank_name: "工商银行"
+    account_masked: "6222****6678"
+    weight: 0.35
+
+anomalies:
+  - type: "delayed_logistics"
+    severity: 0.5
+    month_range: [6, 10]
+
+year: 2025
+seed: 112
+prefix: "HT"
+main_chain_path: ["宁川新能源", "盛拓模组科技", "华盛电子", "海通包装"]
+key_counterparty: "华盛电子科技有限公司"

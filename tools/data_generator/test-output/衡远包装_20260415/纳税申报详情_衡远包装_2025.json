@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "常州衡远包装材料有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 7206125,
+    "totalVAT": 216184,
+    "totalSurcharge": 25942,
+    "incomeTaxEstimate": 180153
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 458696,
+      "vat": 13761,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 366666,
+      "vat": 11000,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 557162,
+      "vat": 16715,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 622722,
+      "vat": 18682,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 536441,
+      "vat": 16093,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 664856,
+      "vat": 19946,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 662519,
+      "vat": 19876,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 637573,
+      "vat": 19127,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 789588,
+      "vat": 23688,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 637402,
+      "vat": 19122,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 668480,
+      "vat": 20054,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 604021,
+      "vat": 18121,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

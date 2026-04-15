@@ -1,0 +1,19 @@
+# 百慧 POC 演示数据 — 15 家企业批量生成清单
+# 使用方式: python3 main.py --batch config/all_poc.yaml
+
+profiles:
+  - config/profiles/hengyuan.yaml   # #1 衡远包装 — 基准参考
+  - config/profiles/jiali.yaml      # #2 佳利包装 — 证据不足观察池
+  - config/profiles/chiyuan.yaml    # #3 驰远物流 — 运费贷场景
+  - config/profiles/ruixin.yaml     # #4 锐信新材 — 集中度触发降额
+  - config/profiles/ruifeng.yaml    # #5 瑞丰辅料 — 风险预警→恢复
+  - config/profiles/xinda.yaml      # #6 鑫达精密 — 快速通道
+  - config/profiles/lvneng.yaml     # #7 绿能新材 — 成立时间短
+  - config/profiles/huasheng.yaml   # #8 华盛电子 — 发票连续性
+  - config/profiles/shunda.yaml     # #9 顺达包装 — 字段异常
+  - config/profiles/minghui.yaml    # #10 明辉化工 — 提额申请
+  - config/profiles/lianhe.yaml     # #11 联合物流 — 运单数据密集
+  - config/profiles/haitong.yaml    # #12 海通包装 — 物流核实
+  - config/profiles/xinrui.yaml     # #13 新锐精密 — 回款周期偏长
+  - config/profiles/dongfang.yaml   # #14 东方配件 — 订单下滑预警
+  - config/profiles/huayu.yaml      # #15 华宇塑料 — 材料缺失

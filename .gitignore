@@ -32,3 +32,7 @@ Thumbs.db
 # vite cache
 .vite/
 .superpowers/
+
+# local QA dumps / IDE
+snapshot.txt
+.kiro/

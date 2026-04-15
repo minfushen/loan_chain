@@ -27,6 +27,7 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Sparkles,
   Star,
   Upload,
   User,
@@ -1322,8 +1323,12 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                   <p className="text-[9px] text-[#94A3B8] mt-0.5">优先处理高阻塞等级任务</p>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  {REVIEW_TASKS.map(task => {
+                  {REVIEW_TASKS.map((task, idx) => {
                     const isActive = activeTask?.id === task.id;
+                    // 前三个任务对应智能体演示案例（needConfirm 或 hasRiskGap）
+                    const agentCaseIds = ['agent-case-chenjihua', 'agent-case-zhangweimin', 'agent-case-lixiufang'];
+                    const agentCaseId = idx < agentCaseIds.length ? agentCaseIds[idx] : null;
+                    const hasAgentCase = agentCaseId !== null && (task.needConfirm || task.riskTags.length > 0);
                     return (
                       <div key={task.id} onClick={() => setSelectedReviewTaskId(task.id)}
                         className={cn('px-3 py-2.5 border-b border-[#F1F5F9] cursor-pointer transition-all', isActive ? 'bg-[#EFF6FF] border-l-2 border-l-[#2563EB]' : 'hover:bg-[#FAFBFF]')}>
@@ -1336,10 +1341,27 @@ export default function ProductApprovalScene({ activeModule, onModuleChange, sce
                           <span className={cn('font-bold', BLOCK_STYLE[task.blockLevel])}>阻塞:{task.blockLevel}</span>
                           {task.canReturn && <span className="text-[#047857]">可回流</span>}
                           {task.needConfirm && <span className="text-[#7C3AED]">需确认</span>}
+                          {hasAgentCase && (
+                            <span className="flex items-center gap-0.5 text-[#7C3AED] font-semibold">
+                              <Sparkles size={8} />智能体介入
+                            </span>
+                          )}
                         </div>
                         <div className="text-[8px] text-[#94A3B8]">{task.updatedAt} · {task.handler}</div>
                         <div className="flex items-center gap-1 mt-1.5">
                           <Button variant="outline" size="sm" className="h-5 text-[8px] px-1.5 gap-0.5 border-[#BFDBFE] text-[#2563EB]" onClick={e => { e.stopPropagation(); }}>开始处理</Button>
+                          {hasAgentCase && (
+                            <Button
+                              size="sm"
+                              className="h-5 text-[8px] px-1.5 gap-0.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-white border-0"
+                              onClick={e => {
+                                e.stopPropagation();
+                                window.dispatchEvent(new CustomEvent('navigate-to-agent-workbench', { detail: { caseId: agentCaseId } }));
+                              }}
+                            >
+                              <Sparkles size={7} />查看智能体作业
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" className="h-5 text-[8px] px-1 text-[#64748B]"><Star size={8} /></Button>
                         </div>
                       </div>

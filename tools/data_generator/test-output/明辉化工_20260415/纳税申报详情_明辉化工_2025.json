@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "南京明辉化工有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 16313459,
+    "totalVAT": 489404,
+    "totalSurcharge": 58728,
+    "incomeTaxEstimate": 407836
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 975903,
+      "vat": 29277,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 948865,
+      "vat": 28466,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 1106023,
+      "vat": 33181,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 1365671,
+      "vat": 40970,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 1357906,
+      "vat": 40737,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 1331932,
+      "vat": 39958,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 1402712,
+      "vat": 42081,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 1726996,
+      "vat": 51810,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 1601136,
+      "vat": 48034,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 1476281,
+      "vat": 44288,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 1641301,
+      "vat": 49239,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 1378733,
+      "vat": 41362,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

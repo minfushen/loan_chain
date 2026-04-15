@@ -1,0 +1,102 @@
+{
+  "company_name": "常州鑫达精密机械有限公司",
+  "short_name": "鑫达精密",
+  "credit_code": "91320400MA1XXXXX06",
+  "legal_person": "陈伟达",
+  "legal_person_id": "",
+  "industry": "精密机械",
+  "chain_name": "新能源电池产业链",
+  "role_in_chain": "二级精密零部件供应商",
+  "region": "江苏常州",
+  "established_date": "2015-06-20",
+  "registered_capital": 1200.0,
+  "employee_count": 68,
+  "company_type": "有限责任公司",
+  "business_scope": "精密机械零部件的加工与销售；模具设计与制造；自动化设备配件",
+  "vat_type": "一般纳税人",
+  "counterparties": [
+    {
+      "name": "盛拓模组科技有限公司",
+      "code": "B-ST",
+      "weight": 0.5,
+      "is_main_chain": true
+    },
+    {
+      "name": "宁川新能源科技有限公司",
+      "code": "B-NC",
+      "weight": 0.3,
+      "is_main_chain": true
+    },
+    {
+      "name": "其他客户A",
+      "code": "B-OA",
+      "weight": 0.12,
+      "is_main_chain": false
+    },
+    {
+      "name": "其他客户B",
+      "code": "B-OB",
+      "weight": 0.08,
+      "is_main_chain": false
+    }
+  ],
+  "products": [
+    {
+      "name": "精密金属结构件",
+      "spec": "铝合金CNC加工",
+      "unit_price_min": 200.0,
+      "unit_price_max": 380.0
+    },
+    {
+      "name": "模具配件",
+      "spec": "定制型",
+      "unit_price_min": 150.0,
+      "unit_price_max": 280.0
+    },
+    {
+      "name": "自动化设备零件",
+      "spec": "标准型",
+      "unit_price_min": 80.0,
+      "unit_price_max": 160.0
+    }
+  ],
+  "annual_sales": 1860.0,
+  "order_count_12m": 124,
+  "avg_order_amount": 150000.0,
+  "receivable_cycle_base": 28,
+  "receivable_cycle_jitter": 3,
+  "logistics_carrier": "驰远物流",
+  "logistics_region": "江苏常州",
+  "ship_days_after_order": 4,
+  "logistics_transit_days": 1,
+  "bank_accounts": [
+    {
+      "bank_name": "工商银行",
+      "account_masked": "6222****1101",
+      "branch": "",
+      "weight": 0.5
+    },
+    {
+      "bank_name": "建设银行",
+      "account_masked": "6227****2202",
+      "branch": "",
+      "weight": 0.3
+    },
+    {
+      "bank_name": "中国银行",
+      "account_masked": "6217****3303",
+      "branch": "",
+      "weight": 0.2
+    }
+  ],
+  "anomalies": [],
+  "year": 2025,
+  "seed": 106,
+  "main_chain_path": [
+    "宁川新能源",
+    "盛拓模组科技",
+    "鑫达精密"
+  ],
+  "key_counterparty": "盛拓模组科技",
+  "prefix": "XD"
+}

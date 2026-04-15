@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "苏州华盛电子科技有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 8180039,
+    "totalVAT": 245401,
+    "totalSurcharge": 29448,
+    "incomeTaxEstimate": 204501
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 477862,
+      "vat": 14336,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 439950,
+      "vat": 13198,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 606755,
+      "vat": 18203,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 698484,
+      "vat": 20955,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 611233,
+      "vat": 18337,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 752065,
+      "vat": 22562,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 701866,
+      "vat": 21056,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 904979,
+      "vat": 27149,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 847267,
+      "vat": 25418,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 804651,
+      "vat": 24140,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 626313,
+      "vat": 18789,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 708615,
+      "vat": 21258,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

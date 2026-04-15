@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "无锡联合物流有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 4453308,
+    "totalVAT": 133599,
+    "totalSurcharge": 16032,
+    "incomeTaxEstimate": 111333
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 289329,
+      "vat": 8680,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 284480,
+      "vat": 8534,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 320153,
+      "vat": 9605,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 332261,
+      "vat": 9968,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 352686,
+      "vat": 10581,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 391382,
+      "vat": 11741,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 381143,
+      "vat": 11434,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 443026,
+      "vat": 13291,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 460701,
+      "vat": 13821,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 400731,
+      "vat": 12022,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 397934,
+      "vat": 11938,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 399483,
+      "vat": 11984,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

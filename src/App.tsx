@@ -33,6 +33,7 @@ import AssetPoolScene from './components/scenes/AssetPoolScene';
 import SmartMonitorScene from './components/scenes/SmartMonitorScene';
 import SmartOperationScene from './components/scenes/SmartOperationScene';
 import StrategyConfigScene from './components/scenes/StrategyConfigScene';
+import AgentWorkbenchScene from './components/scenes/AgentWorkbenchScene';
 
 function AppShell() {
   const [activeScene, setActiveScene] = useState<SceneId>('cockpit');
@@ -62,6 +63,18 @@ function AppShell() {
     setNavigate(navigateToScene);
   }, [setNavigate, navigateToScene]);
 
+  // 监听补审作业页的智能体路由跳转事件，支持携带 caseId
+  const [agentInitialCase, setAgentInitialCase] = React.useState<string | undefined>(undefined);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const caseId = (e as CustomEvent).detail?.caseId;
+      if (caseId) setAgentInitialCase(caseId);
+      navigateToScene('agent-workbench', 'agent-demo');
+    };
+    window.addEventListener('navigate-to-agent-workbench', handler);
+    return () => window.removeEventListener('navigate-to-agent-workbench', handler);
+  }, [navigateToScene]);
+
   const renderScene = () => {
     const props = { activeModule, onModuleChange: setActiveModule };
     switch (activeScene) {
@@ -81,6 +94,8 @@ function AppShell() {
         return <SmartOperationScene {...props} />;
       case 'strategy-config':
         return <StrategyConfigScene {...props} />;
+      case 'agent-workbench':
+        return <AgentWorkbenchScene activeCase={agentInitialCase} />;
       default:
         return <CockpitScene {...props} />;
     }

@@ -1,0 +1,104 @@
+{
+  "company_name": "南京新锐精密科技有限公司",
+  "short_name": "新锐精密",
+  "credit_code": "91320400MA1XXXXX13",
+  "legal_person": "方新锐",
+  "legal_person_id": "",
+  "industry": "精密制造",
+  "chain_name": "新能源电池产业链",
+  "role_in_chain": "二级精密件供应商",
+  "region": "江苏南京",
+  "established_date": "2016-11-30",
+  "registered_capital": 900.0,
+  "employee_count": 48,
+  "company_type": "有限责任公司",
+  "business_scope": "精密零部件、汽车配件的制造与销售；机械加工服务",
+  "vat_type": "一般纳税人",
+  "counterparties": [
+    {
+      "name": "宁川新能源科技有限公司",
+      "code": "B-NC",
+      "weight": 0.42,
+      "is_main_chain": true
+    },
+    {
+      "name": "盛拓模组科技有限公司",
+      "code": "B-ST",
+      "weight": 0.33,
+      "is_main_chain": true
+    },
+    {
+      "name": "其他客户",
+      "code": "B-OTHER",
+      "weight": 0.25,
+      "is_main_chain": false
+    }
+  ],
+  "products": [
+    {
+      "name": "电池外壳精密件",
+      "spec": "铝合金冲压",
+      "unit_price_min": 180.0,
+      "unit_price_max": 300.0
+    },
+    {
+      "name": "散热片组件",
+      "spec": "定制型",
+      "unit_price_min": 120.0,
+      "unit_price_max": 220.0
+    },
+    {
+      "name": "端板连接件",
+      "spec": "标准型",
+      "unit_price_min": 90.0,
+      "unit_price_max": 160.0
+    }
+  ],
+  "annual_sales": 1180.0,
+  "order_count_12m": 64,
+  "avg_order_amount": 184375.0,
+  "receivable_cycle_base": 58,
+  "receivable_cycle_jitter": 8,
+  "logistics_carrier": "驰远物流",
+  "logistics_region": "江苏南京",
+  "ship_days_after_order": 4,
+  "logistics_transit_days": 2,
+  "bank_accounts": [
+    {
+      "bank_name": "中国银行",
+      "account_masked": "6217****5581",
+      "branch": "",
+      "weight": 0.5
+    },
+    {
+      "bank_name": "工商银行",
+      "account_masked": "6222****8812",
+      "branch": "",
+      "weight": 0.3
+    },
+    {
+      "bank_name": "招商银行",
+      "account_masked": "6214****2233",
+      "branch": "",
+      "weight": 0.2
+    }
+  ],
+  "anomalies": [
+    {
+      "type": "extended_receivable",
+      "severity": 0.5,
+      "month_range": [
+        1,
+        12
+      ]
+    }
+  ],
+  "year": 2025,
+  "seed": 113,
+  "main_chain_path": [
+    "宁川新能源",
+    "新锐精密"
+  ],
+  "key_counterparty": "宁川新能源科技有限公司",
+  "prefix": "XR"
+}

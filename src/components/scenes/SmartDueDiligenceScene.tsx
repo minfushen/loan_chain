@@ -139,7 +139,9 @@ export default function SmartDueDiligenceScene({ activeModule, onModuleChange }:
         if (!selectedTask && TASKS.length > 0) {
           setSelectedTask(TASKS[0].id);
         }
-        const activeTask = TASKS.find(t => t.id === selectedTask) ?? TASKS[0];
+        // 跟随 DemoContext 的 currentSample 自动选中对应任务
+        const autoTaskId = TASKS.find(t => t.company === currentSample.companyName)?.id ?? TASKS[0].id;
+        const activeTask = TASKS.find(t => t.id === selectedTask) ?? TASKS.find(t => t.id === autoTaskId) ?? TASKS[0];
 
         const pendingTasks = TASKS.filter(t => t.status === '待解析' || t.status === '解析中').length;
         const parsedTotal = TASKS.reduce((acc, t) => acc + t.parsedMat, 0);

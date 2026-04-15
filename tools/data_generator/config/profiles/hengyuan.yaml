@@ -1,0 +1,77 @@
+# 衡远包装 — 基准参考配置
+# 基于 poc-test-data 中的手工数据，用于验证生成器输出一致性
+
+company_name: "常州衡远包装材料有限公司"
+short_name: "衡远包装"
+credit_code: "91320400MA1XXXXX01"
+legal_person: "周海峰"
+legal_person_id: "320481198803124512"
+industry: "新能源包装材料"
+chain_name: "新能源电池产业链"
+role_in_chain: "三级包装材料供应商"
+region: "江苏常州"
+established_date: "2018-03-15"
+registered_capital: 500
+employee_count: 27
+company_type: "有限责任公司（自然人独资）"
+business_scope: "包装材料的生产、销售；可循环周转箱、缓冲包装材料、回收包装箱的研发与制造"
+vat_type: "小规模纳税人"
+
+counterparties:
+  - name: "盛拓模组科技有限公司"
+    code: "B-ST"
+    weight: 0.72
+    is_main_chain: true
+  - name: "锐信新材料有限公司"
+    code: "B-RX"
+    weight: 0.15
+    is_main_chain: false
+  - name: "无锡创达电气有限公司"
+    code: "B-WX"
+    weight: 0.13
+    is_main_chain: false
+
+products:
+  - name: "可循环周转箱"
+    spec: "600×400×300mm"
+    unit_price_min: 45.0
+    unit_price_max: 55.0
+  - name: "缓冲包装材料"
+    spec: "EPE珍珠棉定制"
+    unit_price_min: 45.0
+    unit_price_max: 55.0
+  - name: "回收包装箱"
+    spec: "标准型"
+    unit_price_min: 45.0
+    unit_price_max: 55.0
+
+annual_sales: 680.0
+order_count_12m: 48
+avg_order_amount: 0.0  # 自动计算
+
+receivable_cycle_base: 34
+receivable_cycle_jitter: 3
+
+logistics_carrier: "驰远物流"
+logistics_region: "江苏苏州"
+ship_days_after_order: 5
+logistics_transit_days: 2
+
+bank_accounts:
+  - bank_name: "交通银行"
+    account_masked: "382******961"
+    branch: "常州新北支行"
+    weight: 0.6
+  - bank_name: "农业银行"
+    account_masked: "6228***********2378"
+    branch: "常州孟河支行"
+    weight: 0.4
+
+anomalies: []
+
+year: 2025
+seed: 42
+
+main_chain_path: ["宁川新能源", "盛拓模组科技", "衡远包装"]
+key_counterparty: "盛拓模组科技"
+prefix: "HY"

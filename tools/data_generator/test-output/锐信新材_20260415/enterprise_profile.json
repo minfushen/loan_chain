@@ -1,0 +1,93 @@
+{
+  "company_name": "苏州锐信新材料有限公司",
+  "short_name": "锐信新材",
+  "credit_code": "91320400MA1XXXXX04",
+  "legal_person": "林建华",
+  "legal_person_id": "",
+  "industry": "新材料",
+  "chain_name": "新能源电池产业链",
+  "role_in_chain": "二级原材料供应商",
+  "region": "江苏苏州",
+  "established_date": "2017-08-15",
+  "registered_capital": 800.0,
+  "employee_count": 35,
+  "company_type": "有限责任公司",
+  "business_scope": "新型功能材料的研发、生产与销售；锂电池隔膜材料、高分子材料",
+  "vat_type": "一般纳税人",
+  "counterparties": [
+    {
+      "name": "盛拓模组科技有限公司",
+      "code": "B-ST",
+      "weight": 0.62,
+      "is_main_chain": true
+    },
+    {
+      "name": "其他客户A",
+      "code": "B-OA",
+      "weight": 0.2,
+      "is_main_chain": false
+    },
+    {
+      "name": "其他客户B",
+      "code": "B-OB",
+      "weight": 0.18,
+      "is_main_chain": false
+    }
+  ],
+  "products": [
+    {
+      "name": "锂电池隔膜材料",
+      "spec": "12μm湿法膜",
+      "unit_price_min": 120.0,
+      "unit_price_max": 180.0
+    },
+    {
+      "name": "高分子功能膜",
+      "spec": "定制型",
+      "unit_price_min": 90.0,
+      "unit_price_max": 140.0
+    }
+  ],
+  "annual_sales": 920.0,
+  "order_count_12m": 72,
+  "avg_order_amount": 127777.78,
+  "receivable_cycle_base": 36,
+  "receivable_cycle_jitter": 5,
+  "logistics_carrier": "驰远物流",
+  "logistics_region": "江苏苏州",
+  "ship_days_after_order": 4,
+  "logistics_transit_days": 2,
+  "bank_accounts": [
+    {
+      "bank_name": "中国银行",
+      "account_masked": "6217****3301",
+      "branch": "",
+      "weight": 0.55
+    },
+    {
+      "bank_name": "招商银行",
+      "account_masked": "6214****7788",
+      "branch": "",
+      "weight": 0.45
+    }
+  ],
+  "anomalies": [
+    {
+      "type": "high_concentration",
+      "severity": 0.7,
+      "month_range": [
+        1,
+        12
+      ]
+    }
+  ],
+  "year": 2025,
+  "seed": 104,
+  "main_chain_path": [
+    "宁川新能源",
+    "盛拓模组科技",
+    "锐信新材"
+  ],
+  "key_counterparty": "盛拓模组科技",
+  "prefix": "RX"
+}

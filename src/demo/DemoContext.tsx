@@ -13,11 +13,11 @@ const STAGE_ORDER: DemoStage[] = [
 ];
 
 const STAGE_SCENE_MAP: Record<DemoStage, { sceneId: SceneId; moduleId: string }> = {
-  ecosystem: { sceneId: 'strategy-config', moduleId: 'standard' },
+  ecosystem: { sceneId: 'smart-identify', moduleId: 'file-import' },
   identified: { sceneId: 'smart-identify', moduleId: 'feed' },
-  pre_credit: { sceneId: 'asset-pool', moduleId: 'pipeline' },
+  pre_credit: { sceneId: 'smart-due-diligence', moduleId: 'material' },
   manual_review: { sceneId: 'smart-approval', moduleId: 'review' },
-  approved: { sceneId: 'smart-approval', moduleId: 'review' },
+  approved: { sceneId: 'smart-approval', moduleId: 'summary' },
   risk_alert: { sceneId: 'smart-monitor', moduleId: 'warning' },
   post_loan_recovery: { sceneId: 'smart-operation', moduleId: 'operations' },
 };

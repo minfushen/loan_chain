@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "苏州锐信新材料有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 10231174,
+    "totalVAT": 306935,
+    "totalSurcharge": 36832,
+    "incomeTaxEstimate": 255779
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 544227,
+      "vat": 16327,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 586637,
+      "vat": 17599,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 773152,
+      "vat": 23195,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 861975,
+      "vat": 25859,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 829354,
+      "vat": 24881,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 997074,
+      "vat": 29912,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 881312,
+      "vat": 26439,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 986121,
+      "vat": 29584,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 986842,
+      "vat": 29605,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 1015418,
+      "vat": 30463,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 870160,
+      "vat": 26105,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 898902,
+      "vat": 26967,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

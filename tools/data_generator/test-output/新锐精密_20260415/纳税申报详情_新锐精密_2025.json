@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "南京新锐精密科技有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 13174993,
+    "totalVAT": 395250,
+    "totalSurcharge": 47430,
+    "incomeTaxEstimate": 329375
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 680763,
+      "vat": 20423,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 618792,
+      "vat": 18564,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 982498,
+      "vat": 29475,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 1007554,
+      "vat": 30227,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 1101473,
+      "vat": 33044,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 1262399,
+      "vat": 37872,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 1186746,
+      "vat": 35602,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 1192602,
+      "vat": 35778,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 1222004,
+      "vat": 36660,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 1258729,
+      "vat": 37762,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 1392869,
+      "vat": 41786,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 1268563,
+      "vat": 38057,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

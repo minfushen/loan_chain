@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "常州东方配件制造有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 7289124,
+    "totalVAT": 218674,
+    "totalSurcharge": 26241,
+    "incomeTaxEstimate": 182228
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 428079,
+      "vat": 12842,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 389359,
+      "vat": 11681,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 534378,
+      "vat": 16031,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 559320,
+      "vat": 16780,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 681141,
+      "vat": 20434,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 647403,
+      "vat": 19422,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 644653,
+      "vat": 19340,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 690810,
+      "vat": 20724,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 602413,
+      "vat": 18072,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 671424,
+      "vat": 20143,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 658264,
+      "vat": 19748,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 781878,
+      "vat": 23456,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

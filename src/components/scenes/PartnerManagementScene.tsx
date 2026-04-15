@@ -311,6 +311,8 @@ export default function PartnerManagementScene({ activeModule, onModuleChange, s
   const [showAddDialog, setShowAddDialog] = React.useState(false);
   const [newSceneName, setNewSceneName] = React.useState('');
   const [selectedTplId, setSelectedTplId] = React.useState<string | null>(null);
+  const [selectedPolicyId, setSelectedPolicyId] = React.useState<string | null>(null);
+  const [filterType, setFilterType] = React.useState<'all' | '风险对冲' | '风险转移' | '风险自留' | '风险规避'>('all');
 
   const filteredScenes = SCENES_DATA.filter(s => sceneSearch === '' || s.name.includes(sceneSearch) || s.desc.includes(sceneSearch));
   const selectedScene = SCENES_DATA.find(s => s.id === selectedSceneId);
@@ -1391,6 +1393,330 @@ export default function PartnerManagementScene({ activeModule, onModuleChange, s
                   </div>
                 );
               })}
+            </div>
+          </div>
+        );
+      }
+
+      /* ════════════════════════════════════════════════════════════════════
+         风险处置策略
+         根据机构风险偏好，配置对冲、转移、自留、规避四类处置策略
+         ════════════════════════════════════════════════════════════════════ */
+      case 'risk-disposal': {
+        type DisposalType = '风险对冲' | '风险转移' | '风险自留' | '风险规避';
+        type RiskLevelTag = '高风险' | '中风险' | '低风险';
+        type PolicyStatus = '启用' | '暂停' | '草稿';
+
+        interface DisposalPolicy {
+          id: string;
+          name: string;
+          type: DisposalType;
+          desc: string;
+          triggerConditions: string[];
+          targetSegments: string[];
+          action: string;
+          params: { label: string; value: string }[];
+          riskLevel: RiskLevelTag;
+          status: PolicyStatus;
+          hitCount: string;
+          owner: string;
+          updatedAt: string;
+        }
+
+        const TYPE_STYLE: Record<DisposalType, { bg: string; text: string; border: string; icon: React.ReactNode }> = {
+          '风险对冲': { bg: 'bg-[#EFF6FF]', text: 'text-[#2563EB]', border: 'border-[#BFDBFE]', icon: <ArrowRight size={11} className="text-[#2563EB]" /> },
+          '风险转移': { bg: 'bg-[#F5F3FF]', text: 'text-[#7C3AED]', border: 'border-[#DDD6FE]', icon: <Send size={11} className="text-[#7C3AED]" /> },
+          '风险自留': { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', border: 'border-[#FED7AA]', icon: <Shield size={11} className="text-[#C2410C]" /> },
+          '风险规避': { bg: 'bg-[#FEF2F2]', text: 'text-[#DC2626]', border: 'border-[#FCA5A5]', icon: <X size={11} className="text-[#DC2626]" /> },
+        };
+
+        const STATUS_STYLE: Record<PolicyStatus, string> = {
+          '启用': 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]',
+          '暂停': 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]',
+          '草稿': 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+        };
+
+        const POLICIES: DisposalPolicy[] = [
+          {
+            id: 'RD-001', name: '利率风险对冲策略', type: '风险对冲',
+            desc: '对中高风险浮动利率贷款，通过利率互换工具锁定利率风险敞口',
+            triggerConditions: ['贷款利率类型 = 浮动利率', '风险评级 ≥ B+', '单笔金额 ≥ 50万'],
+            targetSegments: ['产业链订单微贷', '税票贷'],
+            action: '触发利率互换协议，锁定基准利率 ±50bp 区间',
+            params: [
+              { label: '对冲比例', value: '80%' },
+              { label: '对冲工具', value: '利率互换（IRS）' },
+              { label: '触发阈值', value: '利率波动 > 50bp' },
+              { label: '最大敞口', value: '500万/笔' },
+            ],
+            riskLevel: '中风险', status: '启用', hitCount: '23笔/月', owner: '风险管理部', updatedAt: '2026-04-01',
+          },
+          {
+            id: 'RD-002', name: '信用风险转移策略', type: '风险转移',
+            desc: '对高集中度或脱核场景客户，通过信用保险或担保机构转移违约风险',
+            triggerConditions: ['客户集中度 > 60%', '或 脱核场景且无链主确权', '或 评级 C 类及以下'],
+            targetSegments: ['脱核链贷', '订单微贷（无确权）'],
+            action: '要求客户购买信用保险，或引入担保机构提供连带责任担保',
+            params: [
+              { label: '转移比例', value: '≥ 70%' },
+              { label: '保险产品', value: '出口信用险 / 国内贸易险' },
+              { label: '担保机构', value: '省级融资担保公司' },
+              { label: '保费承担', value: '客户自付' },
+            ],
+            riskLevel: '高风险', status: '启用', hitCount: '8笔/月', owner: '信贷审批部', updatedAt: '2026-03-20',
+          },
+          {
+            id: 'RD-003', name: '小额信用自留策略', type: '风险自留',
+            desc: '对低风险、小额、高频的标准化产品，在风险容忍度内直接自留，不做额外对冲',
+            triggerConditions: ['单笔金额 ≤ 30万', '评级 A 类或 B 类', '三流匹配率 ≥ 90%', '无异常规则命中'],
+            targetSegments: ['税票贷', '公私联动贷'],
+            action: '直接授信，计提标准拨备，纳入常规贷后监控',
+            params: [
+              { label: '自留上限', value: '单笔 30万 / 客户 100万' },
+              { label: '拨备比例', value: '1.5%（正常类）' },
+              { label: '监控频率', value: '月度' },
+              { label: '预警阈值', value: '逾期 > 7天触发预警' },
+            ],
+            riskLevel: '低风险', status: '启用', hitCount: '142笔/月', owner: '产品策略组', updatedAt: '2026-04-05',
+          },
+          {
+            id: 'RD-004', name: '高风险场景规避策略', type: '风险规避',
+            desc: '对特定高风险行业、异常经营信号或黑名单主体，直接拒绝授信，不进入后续流程',
+            triggerConditions: ['命中黑名单', '或 行业属于限制类（房地产开发、P2P等）', '或 近12个月有逾期记录', '或 公私混用未解释且置信度 < 70%'],
+            targetSegments: ['全产品线'],
+            action: '系统自动拒绝，生成拒绝原因说明，不进入人工审批队列',
+            params: [
+              { label: '拒绝方式', value: '系统自动拒绝' },
+              { label: '通知方式', value: '短信 + 系统消息' },
+              { label: '申诉窗口', value: '30天内可申诉' },
+              { label: '记录保留', value: '5年' },
+            ],
+            riskLevel: '高风险', status: '启用', hitCount: '31笔/月', owner: '合规风控部', updatedAt: '2026-03-15',
+          },
+          {
+            id: 'RD-005', name: '季节性现金流对冲策略', type: '风险对冲',
+            desc: '针对季末缴税、农业季节性等导致的短期现金流波动，通过额度弹性机制对冲流动性风险',
+            triggerConditions: ['季末月份（3/6/9/12月）', '且 历史季末现金流波动 > 20%', '且 评级 B 类及以上'],
+            targetSegments: ['税票贷', '涉农经营贷'],
+            action: '季末前30天自动上浮可用额度10%，季末后恢复原额度',
+            params: [
+              { label: '弹性幅度', value: '+10% 临时上浮' },
+              { label: '生效时间', value: '季末前30天自动触发' },
+              { label: '恢复时间', value: '季末后15天自动恢复' },
+              { label: '适用上限', value: '单客户弹性额度 ≤ 20万' },
+            ],
+            riskLevel: '低风险', status: '草稿', hitCount: '—', owner: '产品策略组', updatedAt: '2026-04-08',
+          },
+        ];
+
+        const selectedPolicy = POLICIES.find(p => p.id === selectedPolicyId);
+        const filtered = filterType === 'all' ? POLICIES : POLICIES.filter(p => p.type === filterType);
+        const typeCount = (t: DisposalType) => POLICIES.filter(p => p.type === t).length;
+        const enabledCount = POLICIES.filter(p => p.status === '启用').length;
+
+        return (
+          <div className="space-y-4">
+            {/* 页头 */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield size={14} className="text-[#DC2626]" />
+                <div>
+                  <span className="text-[13px] font-semibold text-[#0F172A]">风险处置策略</span>
+                  <span className="text-[11px] text-[#94A3B8] ml-2">根据机构风险偏好，配置对冲 / 转移 / 自留 / 规避四类处置策略</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] border-[#E2E8F0]"><Download size={10} />导出</Button>
+                <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#DC2626] hover:bg-[#B91C1C] text-white"><Plus size={10} />新建策略</Button>
+              </div>
+            </div>
+
+            {/* 统计卡片 */}
+            <div className="grid grid-cols-5 gap-3">
+              {[
+                { label: '策略总数', value: POLICIES.length, sub: `已启用 ${enabledCount}`, color: 'text-[#0F172A]' },
+                { label: '风险对冲', value: typeCount('风险对冲'), sub: '利率 / 汇率 / 流动性', color: 'text-[#2563EB]' },
+                { label: '风险转移', value: typeCount('风险转移'), sub: '保险 / 担保', color: 'text-[#7C3AED]' },
+                { label: '风险自留', value: typeCount('风险自留'), sub: '标准化小额产品', color: 'text-[#C2410C]' },
+                { label: '风险规避', value: typeCount('风险规避'), sub: '黑名单 / 限制行业', color: 'text-[#DC2626]' },
+              ].map(m => (
+                <div key={m.label} className="rounded-lg border border-[#E2E8F0] bg-white p-3">
+                  <div className="text-[10px] text-[#94A3B8]">{m.label}</div>
+                  <div className={`text-xl font-bold mt-0.5 ${m.color}`}>{m.value}</div>
+                  <div className="text-[9px] text-[#64748B] mt-0.5">{m.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 机构风险偏好 */}
+            <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={13} className="text-[#7C3AED]" />
+                  <span className="text-[12px] font-semibold text-[#0F172A]">机构风险偏好</span>
+                  <Badge className="bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA] text-[9px]">中性偏保守</Badge>
+                </div>
+                <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#64748B]"><Edit size={9} />调整偏好</Button>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { label: '整体风险容忍度', value: '中性偏保守', desc: '优先保障资产质量，适度牺牲收益率', bar: 35 },
+                  { label: '单笔最大敞口', value: '300万', desc: '超出需报批风险委员会', bar: 60 },
+                  { label: '集中度上限', value: '单客户 ≤ 5%', desc: '超出触发集中度预警', bar: 50 },
+                  { label: '对冲覆盖率目标', value: '≥ 60%', desc: '中高风险资产对冲覆盖率', bar: 60 },
+                ].map(item => (
+                  <div key={item.label} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 space-y-1.5">
+                    <div className="text-[9px] text-[#94A3B8]">{item.label}</div>
+                    <div className="text-[12px] font-bold text-[#0F172A]">{item.value}</div>
+                    <div className="h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden">
+                      <div className="h-full rounded-full bg-[#7C3AED]" style={{ width: `${item.bar}%` }} />
+                    </div>
+                    <div className="text-[9px] text-[#64748B]">{item.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 类型筛选 */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {(['all', '风险对冲', '风险转移', '风险自留', '风险规避'] as const).map(t => (
+                <button key={t} onClick={() => setFilterType(t)}
+                  className={cn('px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-all',
+                    filterType === t ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white text-[#475569] border-[#E2E8F0] hover:border-[#94A3B8]',
+                  )}>
+                  {t === 'all' ? `全部 (${POLICIES.length})` : `${t} (${typeCount(t)})`}
+                </button>
+              ))}
+            </div>
+
+            {/* 主从布局 */}
+            <div className="grid grid-cols-[320px_1fr] gap-4" style={{ minHeight: 480 }}>
+              {/* 左：策略列表 */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                <div className="px-3 py-2 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0F172A]">处置策略列表</span>
+                  <p className="text-[9px] text-[#94A3B8] mt-0.5">点击策略查看详细配置</p>
+                </div>
+                <div className="flex-1 overflow-y-auto divide-y divide-[#F1F5F9]">
+                  {filtered.map(p => {
+                    const ts = TYPE_STYLE[p.type];
+                    const isActive = selectedPolicyId === p.id;
+                    return (
+                      <div key={p.id} onClick={() => setSelectedPolicyId(p.id)}
+                        className={cn('px-3 py-3 cursor-pointer transition-all',
+                          isActive ? 'bg-[#F5F3FF] border-l-2 border-l-[#7C3AED]' : 'hover:bg-[#FAFBFF]',
+                        )}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px] font-semibold text-[#0F172A] truncate">{p.name}</span>
+                          <Badge className={cn('text-[7px] border flex-shrink-0 ml-1', STATUS_STYLE[p.status])}>{p.status}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span className={cn('text-[8px] px-1.5 py-0.5 rounded border flex items-center gap-1', ts.bg, ts.text, ts.border)}>
+                            {ts.icon}{p.type}
+                          </span>
+                          <span className={cn('text-[8px] px-1.5 py-0.5 rounded border',
+                            p.riskLevel === '高风险' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]' :
+                            p.riskLevel === '中风险' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' :
+                            'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]',
+                          )}>{p.riskLevel}</span>
+                        </div>
+                        <div className="text-[9px] text-[#64748B] line-clamp-2 leading-4">{p.desc}</div>
+                        <div className="flex items-center justify-between mt-1.5 text-[8px] text-[#94A3B8]">
+                          <span>命中 {p.hitCount}</span><span>{p.owner}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 右：策略详情 */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
+                {selectedPolicy ? (() => {
+                  const ts = TYPE_STYLE[selectedPolicy.type];
+                  return (
+                    <>
+                      <div className="px-4 py-3 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={cn('text-[9px] px-2 py-1 rounded border flex items-center gap-1', ts.bg, ts.text, ts.border)}>
+                            {ts.icon}{selectedPolicy.type}
+                          </span>
+                          <span className="text-[12px] font-semibold text-[#0F172A]">{selectedPolicy.name}</span>
+                          <Badge className={cn('text-[7px] border', STATUS_STYLE[selectedPolicy.status])}>{selectedPolicy.status}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#64748B]"><Edit size={9} />编辑</Button>
+                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#64748B]">
+                            <Power size={9} />{selectedPolicy.status === '启用' ? '暂停' : '启用'}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div className="text-[11px] text-[#475569] leading-5 bg-[#F8FAFC] rounded-lg px-3 py-2.5 border border-[#E2E8F0]">
+                          {selectedPolicy.desc}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                            <Zap size={12} className="text-[#F59E0B]" />触发条件
+                          </div>
+                          <div className="space-y-1.5">
+                            {selectedPolicy.triggerConditions.map((c, i) => (
+                              <div key={i} className="flex items-start gap-2 text-[10px] text-[#334155]">
+                                <span className="w-4 h-4 rounded-full bg-[#FFF7ED] border border-[#FED7AA] text-[#C2410C] flex items-center justify-center text-[8px] font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                                {c}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                            <Users size={12} className="text-[#2563EB]" />适用客群
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedPolicy.targetSegments.map(s => (
+                              <span key={s} className="text-[9px] px-2 py-1 rounded-lg bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                            <ArrowRight size={12} className="text-[#047857]" />处置动作
+                          </div>
+                          <div className={cn('rounded-lg border px-3 py-2.5 text-[10px] leading-5', ts.bg, ts.border, ts.text)}>
+                            {selectedPolicy.action}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                            <Settings size={12} className="text-[#64748B]" />策略参数
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {selectedPolicy.params.map(param => (
+                              <div key={param.label} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2">
+                                <div className="text-[9px] text-[#94A3B8]">{param.label}</div>
+                                <div className="text-[11px] font-semibold text-[#0F172A] mt-0.5">{param.value}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-[9px] pt-2 border-t border-[#F1F5F9]">
+                          <div><span className="text-[#94A3B8]">策略编号</span><div className="font-mono text-[#0F172A] mt-0.5">{selectedPolicy.id}</div></div>
+                          <div><span className="text-[#94A3B8]">负责部门</span><div className="text-[#0F172A] mt-0.5">{selectedPolicy.owner}</div></div>
+                          <div><span className="text-[#94A3B8]">最近更新</span><div className="text-[#0F172A] mt-0.5">{selectedPolicy.updatedAt}</div></div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })() : (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-8">
+                    <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] flex items-center justify-center">
+                      <Shield size={22} className="text-[#CBD5E1]" />
+                    </div>
+                    <div className="text-[12px] font-medium text-[#0F172A]">选择一条策略查看详情</div>
+                    <div className="text-[10px] text-[#94A3B8] leading-5">点击左侧策略卡片，查看触发条件、处置动作与策略参数</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );

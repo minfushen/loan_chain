@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "dataSource": "模拟工商信息（POC演示用）",
+    "queryTime": "2026-04-15 12:20:26",
+    "queryEngine": "百慧AI-外数模拟层",
+    "note": "本数据为POC演示用途。企业名称 南京新锐精密科技有限公司 为虚构示例。"
+  },
+  "basicInfo": {
+    "companyName": "南京新锐精密科技有限公司",
+    "creditCode": "91320400MA1XXXXX13",
+    "companyType": "有限责任公司",
+    "legalPerson": "方新锐",
+    "registeredCapital": "900万元人民币",
+    "paidInCapital": "900万元人民币",
+    "establishDate": "2016-11-30",
+    "approvalDate": "2025-03-10",
+    "operatingStatus": "存续（在营）",
+    "registeredAddress": "江苏省南京工业园区新锐精密路93号",
+    "businessAddress": "江苏省南京工业园区新锐精密路93号",
+    "addressConsistent": true,
+    "businessScope": "精密零部件、汽车配件的制造与销售；机械加工服务",
+    "industry": "精密制造",
+    "industryCode": "C2290",
+    "employeeCount": 48,
+    "socialInsuranceCount": 45,
+    "taxRegistrationStatus": "正常",
+    "vatType": "一般纳税人"
+  },
+  "shareholders": [
+    {
+      "name": "方新锐",
+      "type": "自然人",
+      "shareholdingRatio": "100%",
+      "subscriptionAmount": "900万元",
+      "paidInAmount": "900万元",
+      "isActualController": true
+    }
+  ],
+  "management": [
+    {
+      "name": "方新锐",
+      "position": "执行董事/总经理",
+      "startDate": "2016-11-30"
+    }
+  ],
+  "branchOffices": [],
+  "qualifications": [
+    {
+      "name": "营业执照",
+      "issuer": "市场监督管理局",
+      "validUntil": "长期",
+      "status": "有效"
+    }
+  ],
+  "intellectualProperty": {
+    "trademarks": 1,
+    "patents": 0,
+    "softwareCopyrights": 0
+  },
+  "riskInfo": {
+    "judicialRisk": {
+      "lawsuits": 0,
+      "asDefendant": 0,
+      "asPlaintiff": 0,
+      "executionCases": 0,
+      "dishonestExecutee": false,
+      "conclusion": "未发现司法风险"
+    },
+    "administrativePenalty": {
+      "count": 0,
+      "taxViolation": false,
+      "environmentalViolation": false,
+      "conclusion": "未发现行政处罚记录"
+    },
+    "abnormalOperation": {
+      "onList": false,
+      "reason": null,
+      "conclusion": "未列入经营异常名录"
+    },
+    "seriousViolation": {
+      "onList": false,
+      "conclusion": "未列入严重违法失信名单"
+    },
+    "publicSentiment": {
+      "negativeNews": 0,
+      "riskKeywords": [],
+      "conclusion": "未发现负面舆情"
+    }
+  },
+  "changeHistory": [
+    {
+      "date": "2019-06-20",
+      "changeType": "注册资本变更",
+      "before": "360万元",
+      "after": "900万元",
+      "remark": "增资扩股，经营规模扩大"
+    }
+  ],
+  "annualReports": [
+    {
+      "year": 2025,
+      "status": "已公示",
+      "submitDate": "2026-04-10"
+    },
+    {
+      "year": 2024,
+      "status": "已公示",
+      "submitDate": "2025-04-11"
+    },
+    {
+      "year": 2023,
+      "status": "已公示",
+      "submitDate": "2024-04-12"
+    },
+    {
+      "year": 2022,
+      "status": "已公示",
+      "submitDate": "2023-04-13"
+    },
+    {
+      "year": 2021,
+      "status": "已公示",
+      "submitDate": "2022-04-14"
+    }
+  ],
+  "relatedCompanies": [],
+  "aiAnalysis": {
+    "companyAge": "9年",
+    "meetsAgeRequirement": true,
+    "capitalAdequacy": "注册资本900万，实缴到位",
+    "shareholderStructure": "单一自然人股东，结构清晰",
+    "riskSummary": "无司法风险、无行政处罚、无经营异常、无负面舆情",
+    "conclusion": "工商信息完整，企业存续状态正常，满足授信准入要求"
+  }
+}

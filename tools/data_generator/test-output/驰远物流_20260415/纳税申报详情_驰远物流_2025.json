@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "常州驰远物流有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 5739604,
+    "totalVAT": 172188,
+    "totalSurcharge": 20663,
+    "incomeTaxEstimate": 143490
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 346613,
+      "vat": 10398,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 352618,
+      "vat": 10579,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 404918,
+      "vat": 12148,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 447840,
+      "vat": 13435,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 456586,
+      "vat": 13698,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 531719,
+      "vat": 15952,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 540368,
+      "vat": 16211,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 602131,
+      "vat": 18064,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 556168,
+      "vat": 16685,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 536556,
+      "vat": 16097,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 483790,
+      "vat": 14514,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 480297,
+      "vat": 14409,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

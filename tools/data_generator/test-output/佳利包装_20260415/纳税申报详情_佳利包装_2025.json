@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "溧阳佳利包装材料有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 3236959,
+    "totalVAT": 97109,
+    "totalSurcharge": 11653,
+    "incomeTaxEstimate": 80924
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 240410,
+      "vat": 7212,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 245849,
+      "vat": 7375,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 225017,
+      "vat": 6751,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 396554,
+      "vat": 11897,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 403951,
+      "vat": 12119,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 304584,
+      "vat": 9138,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 206809,
+      "vat": 6204,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 508735,
+      "vat": 15262,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 239531,
+      "vat": 7186,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 465519,
+      "vat": 13966,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

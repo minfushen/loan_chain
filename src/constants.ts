@@ -7,6 +7,7 @@ import {
   FileSearch,
   ScanSearch,
   Settings2,
+  Sparkles,
 } from 'lucide-react';
 import { Scene } from './types';
 
@@ -101,8 +102,18 @@ export const SCENES: Scene[] = [
       { id: 'long-tail', title: '场景策略' },
       { id: 'product-config', title: '产品策略配置' },
       { id: 'approval-rules', title: '审批策略' },
+      { id: 'risk-disposal', title: '风险处置策略' },
       { id: 'report-template', title: '报告模板配置' },
       { id: 'data-source', title: '数据源配置' },
+    ],
+  },
+  {
+    id: 'agent-workbench',
+    title: '智能体作业',
+    icon: Sparkles,
+    modules: [
+      { id: 'agent-demo', title: '智能体作业详情' },
+      { id: 'human-boundary', title: '人机协作边界' },
     ],
   },
 ];

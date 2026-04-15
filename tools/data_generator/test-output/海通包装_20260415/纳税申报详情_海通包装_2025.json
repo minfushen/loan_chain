@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "苏州海通包装材料有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 3489935,
+    "totalVAT": 104698,
+    "totalSurcharge": 12564,
+    "incomeTaxEstimate": 87248
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 175516,
+      "vat": 5265,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 206852,
+      "vat": 6206,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 267307,
+      "vat": 8019,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 258834,
+      "vat": 7765,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 264895,
+      "vat": 7947,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 331317,
+      "vat": 9940,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 302215,
+      "vat": 9066,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 360310,
+      "vat": 10809,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 360730,
+      "vat": 10822,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 334646,
+      "vat": 10039,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 316549,
+      "vat": 9496,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 310766,
+      "vat": 9323,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

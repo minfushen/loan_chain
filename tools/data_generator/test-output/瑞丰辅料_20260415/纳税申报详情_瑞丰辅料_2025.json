@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "无锡瑞丰辅料有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 5722670,
+    "totalVAT": 171680,
+    "totalSurcharge": 20602,
+    "incomeTaxEstimate": 143067
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 362261,
+      "vat": 10868,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 419938,
+      "vat": 12598,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 359877,
+      "vat": 10796,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 452271,
+      "vat": 13568,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 458536,
+      "vat": 13756,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 506304,
+      "vat": 15189,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 585536,
+      "vat": 17566,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 533908,
+      "vat": 16017,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 564526,
+      "vat": 16936,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 508582,
+      "vat": 15257,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 497400,
+      "vat": 14922,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 473532,
+      "vat": 14206,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

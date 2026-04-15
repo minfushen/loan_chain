@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "溧阳绿能新材料有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 4780854,
+    "totalVAT": 143426,
+    "totalSurcharge": 17211,
+    "incomeTaxEstimate": 119521
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 230799,
+      "vat": 6924,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 357709,
+      "vat": 10731,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 292840,
+      "vat": 8785,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 338907,
+      "vat": 10167,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 378296,
+      "vat": 11349,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 402496,
+      "vat": 12075,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 429564,
+      "vat": 12887,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 485210,
+      "vat": 14556,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 534263,
+      "vat": 16028,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 451598,
+      "vat": 13548,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 443869,
+      "vat": 13316,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 435304,
+      "vat": 13059,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

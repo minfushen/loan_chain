@@ -8,7 +8,8 @@ export type SceneId =
   | 'asset-pool'
   | 'smart-monitor'
   | 'smart-operation'
-  | 'strategy-config';
+  | 'strategy-config'
+  | 'agent-workbench';
 
 export interface Module {
   id: string;

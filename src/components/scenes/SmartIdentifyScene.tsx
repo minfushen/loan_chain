@@ -249,29 +249,53 @@ const RECOMMEND_LEVEL_STYLE: Record<RecommendLevel, { bg: string; text: string; 
 };
 
 function getRecommendLevel(s: ChainLoanSample): RecommendLevel {
+  // 混合路径：三流 + 抵押，最高优先级
+  if (s.loanPath === 'hybrid') return '优先推荐';
+  // 抵押路径：产权清晰即优先推荐，无论三流数据
+  if (s.loanPath === 'collateral' && s.collateral?.propertyRisk === '清晰') return '优先推荐';
+  if (s.loanPath === 'collateral' && s.collateral?.propertyRisk === '待核验') return '建议关注';
+  // 信用流贷：原有三流逻辑
   if (s.agentHints.confidence >= 80 && s.evidenceCoverage >= 80) return '优先推荐';
   if (s.agentHints.confidence >= 60) return '建议关注';
   return '待人工确认';
 }
 
+// 抵押物类型优先级权重（用于排序和显示）
+const COLLATERAL_PRIORITY: Record<string, number> = { '房产': 3, '设备': 2, '存货': 1, '应收账款质押': 1 };
+
 const RECOMMEND_ITEMS: RecommendItem[] = SAMPLES.map(s => ({
   sampleId: s.id,
   level: getRecommendLevel(s),
   scene: s.productType,
-  hitRules: [
-    s.orderCount90d >= 15 ? '订单稳定性通过' : '订单频次偏低',
-    s.invoiceContinuityMonths >= 10 ? '开票连续性通过' : '开票连续性一般',
-    s.relationStrength >= 70 ? '关系强度较高' : '关系强度待确认',
-  ].filter(Boolean),
-  reasons: [
-    s.orderCount90d >= 15 ? `近 90 天 ${s.orderCount90d} 笔稳定交易` : `近 90 天 ${s.orderCount90d} 笔交易，频次偏低`,
-    s.relationStrength >= 70 ? `关系强度 ${s.relationStrength}%，链上位置清晰` : `关系强度 ${s.relationStrength}%，需补充验证`,
-  ],
+  hitRules: s.loanPath === 'collateral' || s.loanPath === 'hybrid'
+    ? [
+        s.collateral ? `${s.collateral.type}抵押（评估 ${s.collateral.estimatedValue}）` : '',
+        s.collateral ? `LTV ${Math.round(s.collateral.ltvRatio * 100)}%` : '',
+        s.collateral?.propertyRisk === '清晰' ? '产权清晰无瑕疵' : '产权待核验',
+        s.loanPath === 'hybrid' ? '三流数据同步验证通过' : '',
+      ].filter(Boolean)
+    : [
+        s.orderCount90d >= 15 ? '订单稳定性通过' : '订单频次偏低',
+        s.invoiceContinuityMonths >= 10 ? '开票连续性通过' : '开票连续性一般',
+        s.relationStrength >= 70 ? '关系强度较高' : '关系强度待确认',
+      ].filter(Boolean),
+  reasons: s.loanPath === 'collateral' || s.loanPath === 'hybrid'
+    ? [
+        s.collateral ? `${s.collateral.type}评估价值 ${s.collateral.estimatedValue}，LTV ${Math.round(s.collateral.ltvRatio * 100)}%` : '',
+        s.loanPath === 'hybrid' ? `三流数据同步良好，置信度 ${s.agentHints.confidence}%` : '三流数据不足，以抵押物为主要授信依据',
+      ].filter(Boolean)
+    : [
+        s.orderCount90d >= 15 ? `近 90 天 ${s.orderCount90d} 笔稳定交易` : `近 90 天 ${s.orderCount90d} 笔交易，频次偏低`,
+        s.relationStrength >= 70 ? `关系强度 ${s.relationStrength}%，链上位置清晰` : `关系强度 ${s.relationStrength}%，需补充验证`,
+      ],
   riskHint: s.riskFlags.length > 0
     ? `存在 ${s.riskFlags.length} 项风险标识：${s.riskFlags.join('、')}`
     : '当前未发现明显风险信号',
   nextAction: s.nextAction,
-  suggestedPage: s.agentHints.confidence >= 80 ? '智能尽调' : s.agentHints.confidence >= 60 ? '智能筛选' : '人工确认',
+  suggestedPage: (s.loanPath === 'collateral' || s.loanPath === 'hybrid') ? '智能尽调'
+    : s.agentHints.confidence >= 80 ? '智能尽调'
+    : s.agentHints.confidence >= 60 ? '智能筛选'
+    : '人工确认',
   recommendTime: '2026-04-09 09:30',
   sourceBatch: 'BATCH-20260409-001',
 }));
@@ -299,10 +323,17 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
     return 'file-import';
   };
 
-  const { navigate } = useDemo();
+  const { navigate, selectSample } = useDemo();
   const [selectedBatch, setSelectedBatch] = React.useState<string | null>(null);
   const [drawerTab, setDrawerTab] = React.useState<'info' | 'validate' | 'sample' | 'timeline'>('info');
   const [apiSection, setApiSection] = React.useState<'overview' | 'batches' | 'mapping'>('overview');
+  const [uploadState, setUploadState] = React.useState<'idle' | 'uploading' | 'done'>('idle');
+  const [uploadedFileName, setUploadedFileName] = React.useState<string>('');
+  const [dynamicBatches, setDynamicBatches] = React.useState<ImportBatch[]>(IMPORT_BATCHES);
+  const [importTab, setImportTab] = React.useState<'upload' | 'api'>('upload');
+  // CSV解析出的企业列表，用于动态生成推荐
+  const [csvCompanies, setCsvCompanies] = React.useState<{ name: string; creditCode: string; legalPerson: string; capital: string; established: string; reason: string }[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedRecommend, setSelectedRecommend] = React.useState<string | null>(RECOMMEND_ITEMS[0]?.sampleId ?? null);
   const [selectedFilter, setSelectedFilter] = React.useState<string | null>(SAMPLES[0]?.id ?? null);
   const [filterExpanded, setFilterExpanded] = React.useState(true);
@@ -312,6 +343,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
   const [graphView, setGraphView] = React.useState<'trade' | 'fund' | 'logistics' | 'linked'>('trade');
   const [selectedLinkedEntity, setSelectedLinkedEntity] = React.useState<string | null>(null);
   const [linkedView, setLinkedView] = React.useState<'legal' | 'controller' | 'account' | 'repayment'>('legal');
+  const [csvToast, setCsvToast] = React.useState<{ count: number; visible: boolean } | null>(null);
 
   const renderContent = () => {
     switch (activeModule) {
@@ -320,9 +352,9 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
          PAGE 1: 名单导入 — 文件上传 + API接入合并页
          ═══════════════════════════════════════════════════════════ */
       case 'file-import': {
-        const batch = IMPORT_BATCHES.find(b => b.id === selectedBatch);
+        const batch = dynamicBatches.find(b => b.id === selectedBatch);
         const statusGroups: BatchStatus[] = ['待校验', '待修正', '待生成样本', '待进入识别', '已完成'];
-        const countByStatus = (s: BatchStatus) => IMPORT_BATCHES.filter(b => b.status === s);
+        const countByStatus = (s: BatchStatus) => dynamicBatches.filter(b => b.status === s);
 
         if (batch && selectedBatch) {
           const DRAWER_TABS = [
@@ -340,8 +372,18 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                 <Badge className={cn('text-[9px] border', BATCH_STATUS_STYLE[batch.status])}>{batch.status}</Badge>
                 <div className="flex-1" />
                 {batch.status === '待修正' && <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#DC2626] border-[#FCA5A5]"><Download size={10} />下载异常清单</Button>}
-                {batch.status === '待生成样本' && <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Sparkles size={10} />生成样本</Button>}
-                {batch.status === '待进入识别' && <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#047857] hover:bg-[#065F46] text-white"><ArrowRight size={10} />进入识别</Button>}
+                {batch.status === '待生成样本' && <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white" onClick={() => {
+                  setDynamicBatches(prev => prev.map(item => item.id === batch.id ? {
+                    ...item,
+                    status: '待进入识别' as BatchStatus,
+                    currentStep: '待推送识别',
+                    generatedSamples: item.passedCount,
+                    pendingSamples: 0,
+                    nextAction: '进入识别',
+                    generateTime: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-').slice(0, 16),
+                  } : item));
+                }}><Sparkles size={10} />生成样本</Button>}
+                {batch.status === '待进入识别' && <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#047857] hover:bg-[#065F46] text-white" onClick={() => navigate('smart-identify', 'feed')}><ArrowRight size={10} />进入识别</Button>}
               </div>
 
               {/* Drawer tabs */}
@@ -362,7 +404,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
                       { label: '批次名称', value: batch.name },
-                      { label: '文件名', value: batch.fileName },
+                      { label: '文件名', value: uploadedFileName || batch.fileName },
                       { label: '来源类型', value: batch.sourceType },
                       { label: '导入时间', value: batch.importTime },
                       { label: '企业总数', value: `${batch.totalCount} 户` },
@@ -436,17 +478,17 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
             {/* 顶部 Tab：文件上传 | API接入 */}
             <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-1 w-fit">
               {[
-                { id: 'upload', label: '文件上传', icon: Upload },
-                { id: 'api', label: 'API 接入', icon: Plug },
+                { id: 'upload' as const, label: '文件上传', icon: Upload },
+                { id: 'api' as const, label: 'API 接入', icon: Plug },
               ].map(t => {
                 const Icon = t.icon;
                 return (
                   <button
                     key={t.id}
-                    onClick={() => setApiSection(t.id === 'api' ? 'overview' : 'overview')}
+                    onClick={() => setImportTab(t.id)}
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all',
-                      (t.id === 'upload' && apiSection !== 'api-tab') || (t.id === 'api' && apiSection === 'api-tab')
+                      importTab === t.id
                         ? 'bg-white text-[#0F172A] shadow-sm border border-[#E2E8F0]'
                         : 'text-[#64748B] hover:text-[#334155]',
                     )}
@@ -456,7 +498,79 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                 );
               })}
             </div>
-            {/* Header */}
+
+            {/* ── API 接入 Tab ── */}
+            {importTab === 'api' && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#F3E8FF] flex items-center justify-center"><Plug size={15} className="text-[#7C3AED]" /></div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#0F172A]">API 接入</h3>
+                      <p className="text-[11px] text-[#94A3B8]">通过行内 ESB 总线接入企业名单批次，管理接口状态与运行结果。</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] border-[#E2E8F0]"><BookOpen size={10} />接口文档</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#2563EB] border-[#BFDBFE]"><Play size={10} />发起测试</Button>
+                  </div>
+                </div>
+
+                {/* 接口状态卡片 */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { name: 'CRM客群推送接口', code: 'ESB-CRM-001', status: '已连接' as const, lastCall: '10分钟前', successRate: '99.2%', desc: '从CRM系统推送目标客群名单', color: 'text-[#047857]', bg: 'bg-[#ECFDF3]', border: 'border-[#A7F3D0]' },
+                    { name: '核心企业供应链接口', code: 'ESB-SCM-002', status: '已连接' as const, lastCall: '2小时前', successRate: '97.8%', desc: '从供应链管理系统拉取供应商名单', color: 'text-[#047857]', bg: 'bg-[#ECFDF3]', border: 'border-[#A7F3D0]' },
+                    { name: '外部数据平台接口', code: 'ESB-EXT-003', status: '配额不足' as const, lastCall: '昨天', successRate: '94.1%', desc: '从外部数据平台获取企业线索', color: 'text-[#C2410C]', bg: 'bg-[#FFF7ED]', border: 'border-[#FED7AA]' },
+                  ].map(intf => (
+                    <div key={intf.code} className={cn('rounded-lg border p-3 space-y-2', intf.border, intf.bg)}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-semibold text-[#0F172A]">{intf.name}</span>
+                        <Badge className={cn('text-[9px] border', intf.bg, intf.color, intf.border)}>{intf.status}</Badge>
+                      </div>
+                      <p className="text-[10px] text-[#64748B]">{intf.desc}</p>
+                      <div className="flex items-center justify-between text-[10px] text-[#94A3B8]">
+                        <span>编码: <code className="font-mono">{intf.code}</code></span>
+                        <span>成功率 <b className={intf.color}>{intf.successRate}</b></span>
+                      </div>
+                      <div className="text-[10px] text-[#94A3B8]">最近调用: {intf.lastCall}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 近期批次 */}
+                <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-[#F1F5F9] bg-[#F8FAFC] flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#0F172A]">近期接入批次</span>
+                    <span className="text-[10px] text-[#94A3B8]">最近7天</span>
+                  </div>
+                  {[
+                    { id: 'API-20260413-001', source: 'CRM客群推送接口', time: '2026-04-13 08:30', count: 43, passed: 41, status: '已完成', statusColor: 'text-[#047857]', statusBg: 'bg-[#ECFDF3] border-[#A7F3D0]' },
+                    { id: 'API-20260412-002', source: '核心企业供应链接口', time: '2026-04-12 16:15', count: 28, passed: 26, status: '已完成', statusColor: 'text-[#047857]', statusBg: 'bg-[#ECFDF3] border-[#A7F3D0]' },
+                    { id: 'API-20260411-003', source: 'CRM客群推送接口', time: '2026-04-11 10:42', count: 67, passed: 62, status: '已完成', statusColor: 'text-[#047857]', statusBg: 'bg-[#ECFDF3] border-[#A7F3D0]' },
+                    { id: 'API-20260410-004', source: '外部数据平台接口', time: '2026-04-10 14:20', count: 15, passed: 0, status: '配额超限', statusColor: 'text-[#C2410C]', statusBg: 'bg-[#FFF7ED] border-[#FED7AA]' },
+                  ].map(b => (
+                    <div key={b.id} className="px-4 py-3 border-b border-[#F1F5F9] last:border-b-0 flex items-center gap-3 hover:bg-[#FAFBFF] transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <code className="text-[11px] font-mono font-semibold text-[#0F172A]">{b.id}</code>
+                          <Badge className={cn('text-[9px] border', b.statusBg, b.statusColor)}>{b.status}</Badge>
+                        </div>
+                        <div className="text-[10px] text-[#94A3B8] mt-0.5">{b.source} · {b.time}</div>
+                      </div>
+                      <div className="flex items-center gap-4 text-[10px] text-[#64748B] shrink-0">
+                        <span>接收 <b className="text-[#0F172A]">{b.count}</b> 户</span>
+                        {b.passed > 0 && <span>通过 <b className="text-[#047857]">{b.passed}</b> 户</span>}
+                      </div>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] px-2 text-[#64748B] border-[#E2E8F0] shrink-0">查看详情</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── 文件上传 Tab ── */}
+            {importTab === 'upload' && (<>
             <div className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] flex items-center justify-center"><Upload size={15} className="text-[#2563EB]" /></div>
@@ -466,9 +580,132 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* 隐藏的文件选择器，只接受 CSV/Excel */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadedFileName(file.name);
+                    setUploadState('uploading');
+                    e.target.value = '';
+
+                    // 解析文件内容，动态生成批次信息
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                      const text = evt.target?.result as string ?? '';
+                      const lines = text.split('\n').filter(l => l.trim());
+                      const dataRows = lines.length > 1 ? lines.length - 1 : 0; // 减去表头
+                      const isCSV = file.name.endsWith('.csv');
+                      const now = new Date();
+                      const pad = (n: number) => String(n).padStart(2, '0');
+                      const importTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                      const batchName = file.name.replace(/\.(csv|xlsx|xls)$/i, '').replace(/_/g, ' ');
+                      const missingFields = Math.min(3, Math.floor(dataRows * 0.03));
+                      const formatErrors = Math.min(2, Math.floor(dataRows * 0.02));
+                      const duplicates = Math.min(1, Math.floor(dataRows * 0.01));
+                      const passedCount = dataRows - missingFields - formatErrors;
+
+                      // 解析CSV企业列表（跳过表头），用于智能筛选动态推荐
+                      if (isCSV && lines.length > 1) {
+                        // 清除 BOM 及首行多余空白
+                        const rawHeader = lines[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+                        // 模糊匹配列索引，支持常见变体
+                        const findCol = (keywords: string[]) =>
+                          rawHeader.findIndex(h => keywords.some(k => h.includes(k)));
+                        const nameIdx    = findCol(['企业名称', '公司名称', '单位名称', '名称']);
+                        const codeIdx    = findCol(['统一社会信用代码', '信用代码', '社会信用代码', '注册号']);
+                        const legalIdx   = findCol(['法人姓名', '法定代表人', '法人代表', '法人']);
+                        const capitalIdx = findCol(['注册资本', '资本', '注册资金']);
+                        const dateIdx    = findCol(['成立日期', '注册日期', '成立时间', '注册时间']);
+                        const reasonIdx  = findCol(['推荐原因', '原因', '备注', '说明']);
+                        const parsed = lines.slice(1).map(line => {
+                          // 简单处理带引号的字段（如字段内含逗号）
+                          const cols = line.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+                          return {
+                            name:        nameIdx    >= 0 ? (cols[nameIdx]    ?? '') : '',
+                            creditCode:  codeIdx    >= 0 ? (cols[codeIdx]    ?? '') : '',
+                            legalPerson: legalIdx   >= 0 ? (cols[legalIdx]   ?? '') : '',
+                            capital:     capitalIdx >= 0 ? (cols[capitalIdx] ?? '') : '',
+                            established: dateIdx    >= 0 ? (cols[dateIdx]    ?? '') : '',
+                            reason:      reasonIdx  >= 0 ? (cols[reasonIdx]  ?? '') : '',
+                          };
+                        }).filter(r => r.name);
+                        setCsvCompanies(parsed);
+                        // 显示解析结果 toast
+                        setCsvToast({ count: parsed.length, visible: true });
+                        setTimeout(() => setCsvToast(null), 4000);
+                        // 导入后将推荐选中项重置到第一条
+                        if (parsed.length > 0) {
+                          setSelectedRecommend(`csv-0`);
+                        }
+                      }
+
+                      // 动态更新批次数据
+                      const dynamicBatch: ImportBatch = {
+                        id: 'IMP-20260413-001',
+                        name: batchName,
+                        fileName: file.name,
+                        sourceType: isCSV ? 'CSV' : 'Excel',
+                        importTime,
+                        totalCount: dataRows,
+                        passedCount,
+                        missingFields,
+                        formatErrors,
+                        duplicates,
+                        pendingConfirm: missingFields > 0 ? 1 : 0,
+                        generatedSamples: 0,
+                        pendingSamples: passedCount,
+                        currentStep: '待生成样本',
+                        status: '待生成样本',
+                        suggestedScene: file.name.includes('新能源') ? '脱核链上' : file.name.includes('商圈') ? '本地商圈' : '通用',
+                        nextAction: '生成样本',
+                        creator: '王敏',
+                        validateTime: importTime,
+                      };
+                      // 写回到 dynamicBatches[0]
+                      setDynamicBatches(prev => {
+                        const next = [...prev];
+                        next[0] = dynamicBatch;
+                        return next;
+                      });
+
+                      setTimeout(() => {
+                        setUploadState('done');
+                        setSelectedBatch('IMP-20260413-001');
+                        setDrawerTab('info');
+                      }, 800);
+                    };
+                    reader.readAsText(file, 'utf-8');
+                  }}
+                />
                 <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] border-[#E2E8F0]"><FileText size={10} />查看字段要求</Button>
                 <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1 text-[#64748B] border-[#E2E8F0]"><Download size={10} />下载模板</Button>
-                <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Upload size={10} />上传文件</Button>
+                <Button
+                  size="sm"
+                  disabled={uploadState === 'uploading'}
+                  className={cn('h-7 text-[10px] gap-1 text-white transition-all min-w-[88px]',
+                    uploadState === 'done' ? 'bg-[#047857] hover:bg-[#065F46]' :
+                    uploadState === 'uploading' ? 'bg-[#2563EB] opacity-80 cursor-not-allowed' :
+                    'bg-[#2563EB] hover:bg-[#1D4ED8]'
+                  )}
+                  onClick={() => {
+                    if (uploadState === 'idle') fileInputRef.current?.click();
+                    else if (uploadState === 'done') {
+                      // 允许重新上传
+                      setUploadState('idle');
+                      setUploadedFileName('');
+                      setTimeout(() => fileInputRef.current?.click(), 50);
+                    }
+                  }}
+                >
+                  {uploadState === 'idle' && <><Upload size={10} />上传文件</>}
+                  {uploadState === 'uploading' && <><RefreshCw size={10} className="animate-spin" />处理中…</>}
+                  {uploadState === 'done' && <><CheckCircle2 size={10} />上传成功</>}
+                </Button>
               </div>
             </div>
 
@@ -519,10 +756,20 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                               <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#DC2626] border-[#FCA5A5]" onClick={() => { setSelectedBatch(b.id); setDrawerTab('validate'); }}><AlertCircle size={9} />查看问题</Button>
                               <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#64748B]"><Download size={9} />下载异常清单</Button>
                             </>}
-                            {b.status === '待生成样本' && <Button size="sm" className="h-6 text-[10px] px-2 gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white"><Sparkles size={9} />生成样本</Button>}
+                            {b.status === '待生成样本' && <Button size="sm" className="h-6 text-[10px] px-2 gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white" onClick={() => {
+                              setDynamicBatches(prev => prev.map(item => item.id === b.id ? {
+                                ...item,
+                                status: '待进入识别' as BatchStatus,
+                                currentStep: '待推送识别',
+                                generatedSamples: item.passedCount,
+                                pendingSamples: 0,
+                                nextAction: '进入识别',
+                                generateTime: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-').slice(0, 16),
+                              } : item));
+                            }}><Sparkles size={9} />生成样本</Button>}
                             {b.status === '待进入识别' && <>
                               <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#2563EB] border-[#BFDBFE]" onClick={() => { setSelectedBatch(b.id); setDrawerTab('sample'); }}><Eye size={9} />查看样本</Button>
-                              <Button size="sm" className="h-6 text-[10px] px-2 gap-1 bg-[#047857] hover:bg-[#065F46] text-white"><ArrowRight size={9} />进入识别</Button>
+                              <Button size="sm" className="h-6 text-[10px] px-2 gap-1 bg-[#047857] hover:bg-[#065F46] text-white" onClick={() => navigate('smart-identify', 'feed')}><ArrowRight size={9} />进入识别</Button>
                             </>}
                             {b.status === '已完成' && <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 gap-1 text-[#047857] border-[#A7F3D0]" onClick={() => { setSelectedBatch(b.id); setDrawerTab('info'); }}><CheckCircle2 size={9} />查看结果</Button>}
                           </div>
@@ -534,6 +781,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                 </div>
               );
             })}
+          </>)}
           </div>
         );
       }
@@ -550,27 +798,86 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
       case 'filter-flow': // 已合并至 feed，保留 case 做兼容跳转
       case 'feed': {
         const levels: RecommendLevel[] = ['优先推荐', '建议关注', '待人工确认'];
-        const currentItem = RECOMMEND_ITEMS.find(r => r.sampleId === selectedRecommend);
-        const currentSample = SAMPLES.find(s => s.id === selectedRecommend);
+
+        // 如果有CSV导入数据，动态生成推荐列表；否则用默认5个样本
+        const dynamicRecommendItems: RecommendItem[] = csvCompanies.length > 0
+          ? csvCompanies.map((c, i) => {
+              // 根据推荐原因和注册资本简单推断置信度
+              const capital = parseFloat(c.capital) || 0;
+              const yearsSince = c.established
+                ? Math.max(0, new Date().getFullYear() - parseInt(c.established.slice(0, 4)))
+                : 0;
+              const hasRisk = c.reason.includes('风险') || c.reason.includes('逾期') || c.reason.includes('异常') || c.reason.includes('排除');
+              const isStrong = c.reason.includes('稳定') || c.reason.includes('清晰') || c.reason.includes('通过') || capital >= 800;
+              const isWeak = c.reason.includes('不足') || c.reason.includes('待补充') || c.reason.includes('偏低') || yearsSince < 2;
+              const confidence = hasRisk ? 35 : isStrong ? 85 : isWeak ? 48 : 65;
+              const level: RecommendLevel = hasRisk ? '待人工确认' : confidence >= 80 ? '优先推荐' : confidence >= 60 ? '建议关注' : '待人工确认';
+              // 识别抵押物关键词，判断贷款路径
+              const hasCollateral = c.reason.includes('房产') || c.reason.includes('厂房') || c.reason.includes('设备') || c.reason.includes('抵押') || c.reason.includes('存货质押');
+              const hasGoodFlow = isStrong && !isWeak;
+              const csvLoanPath = hasCollateral && hasGoodFlow ? 'hybrid' : hasCollateral ? 'collateral' : 'credit_flow';
+              // 抵押路径置信度直接拉高
+              const finalConfidence = csvLoanPath === 'hybrid' ? 95 : csvLoanPath === 'collateral' ? 88 : confidence;
+              const finalLevel: RecommendLevel = csvLoanPath !== 'credit_flow' ? '优先推荐' : (hasRisk ? '待人工确认' : confidence >= 80 ? '优先推荐' : confidence >= 60 ? '建议关注' : '待人工确认');
+              // 用CSV里的企业名匹配已有样本（前5条对应样本）
+              const matchedSample = SAMPLES.find(s => s.companyName === c.name);
+              const sampleId = matchedSample?.id ?? `csv-${i}`;
+              return {
+                sampleId,
+                level: finalLevel,
+                scene: csvLoanPath !== 'credit_flow' ? (csvLoanPath === 'hybrid' ? '抵押+流贷混合' : '抵押贷款') : (capital >= 500 ? '订单微贷' : '税票贷'),
+                hitRules: csvLoanPath !== 'credit_flow'
+                  ? [
+                      c.reason.includes('房产') || c.reason.includes('厂房') ? '房产抵押（优先级最高）' : c.reason.includes('设备') ? '设备抵押' : '存货/质押',
+                      csvLoanPath === 'hybrid' ? '三流数据同步验证通过' : '三流数据不足，以抵押物为主',
+                      '产权待核验',
+                    ].filter(Boolean)
+                  : [
+                      isStrong ? '订单稳定性通过' : '订单频次待核实',
+                      yearsSince >= 3 ? '开票连续性通过' : '开票连续性待核实',
+                      capital >= 300 ? '注册资本达标' : '注册资本偏低',
+                    ].filter(Boolean),
+                reasons: csvLoanPath !== 'credit_flow'
+                  ? [
+                      `${c.reason.slice(0, 30)}`,
+                      csvLoanPath === 'hybrid' ? `三流数据良好，置信度 ${finalConfidence}%` : '三流数据薄弱，抵押物为主要授信依据',
+                    ]
+                  : [
+                      c.reason.slice(0, 30) || `注册资本${c.capital}万，成立${yearsSince}年`,
+                      `法人：${c.legalPerson}`,
+                    ],
+                riskHint: hasRisk ? `推荐原因含风险提示：${c.reason.slice(0, 40)}` : '当前未发现明显风险信号',
+                nextAction: csvLoanPath !== 'credit_flow' ? '核验抵押物产权' : (hasRisk ? '人工确认' : finalConfidence >= 80 ? '进入尽调' : '补充材料后推进'),
+                suggestedPage: csvLoanPath !== 'credit_flow' ? '智能尽调' : (finalConfidence >= 80 ? '智能尽调' : finalConfidence >= 60 ? '智能筛选' : '人工确认'),
+                recommendTime: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-').slice(0, 16),
+                sourceBatch: dynamicBatches[0]?.id ?? 'BATCH-001',
+              } as RecommendItem;
+            })
+          : RECOMMEND_ITEMS;
+
+        const activeRecommendItems = dynamicRecommendItems;
+        const currentItem = activeRecommendItems.find(r => r.sampleId === selectedRecommend)
+          ?? activeRecommendItems[0];
+        const currentSampleForFeed = SAMPLES.find(s => s.id === currentItem?.sampleId) ?? SAMPLES[0];
 
         const overviewCards = [
-          { label: '今日新增推荐', value: RECOMMEND_ITEMS.length, desc: '系统今日新识别出的推荐企业', icon: Sparkles, color: 'text-[#2563EB]' },
-          { label: '高置信度推荐', value: RECOMMEND_ITEMS.filter(r => r.level === '优先推荐').length, desc: '关系与证据覆盖较强，建议优先处理', icon: Star, color: 'text-[#F59E0B]' },
-          { label: '待进入筛选', value: RECOMMEND_ITEMS.filter(r => r.suggestedPage === '智能筛选').length, desc: '推荐已生成，待进一步筛选确认', icon: Filter, color: 'text-[#7C3AED]' },
-          { label: '待进入尽调', value: RECOMMEND_ITEMS.filter(r => r.suggestedPage === '智能尽调').length, desc: '已具备基础条件，可推进尽调作业', icon: FileSearch, color: 'text-[#047857]' },
-          { label: '待人工确认', value: RECOMMEND_ITEMS.filter(r => r.level === '待人工确认').length, desc: '存在边界情况，建议人工补充判断', icon: UserCheck, color: 'text-[#64748B]' },
+          { label: '今日新增推荐', value: activeRecommendItems.length, desc: '系统今日新识别出的推荐企业', icon: Sparkles, color: 'text-[#2563EB]' },
+          { label: '高置信度推荐', value: activeRecommendItems.filter(r => r.level === '优先推荐').length, desc: '关系与证据覆盖较强，建议优先处理', icon: Star, color: 'text-[#F59E0B]' },
+          { label: '待进入筛选', value: activeRecommendItems.filter(r => r.suggestedPage === '智能筛选').length, desc: '推荐已生成，待进一步筛选确认', icon: Filter, color: 'text-[#7C3AED]' },
+          { label: '待进入尽调', value: activeRecommendItems.filter(r => r.suggestedPage === '智能尽调').length, desc: '已具备基础条件，可推进尽调作业', icon: FileSearch, color: 'text-[#047857]' },
+          { label: '待人工确认', value: activeRecommendItems.filter(r => r.level === '待人工确认').length, desc: '存在边界情况，建议人工补充判断', icon: UserCheck, color: 'text-[#64748B]' },
         ];
 
         return (
           <div className="space-y-4">
             {/* AI Insight replacing KPI cards */}
             <AiInsight
-              message={`今日新增 ${RECOMMEND_ITEMS.length} 条推荐，其中 ${RECOMMEND_ITEMS.filter(r => r.level === '优先推荐').length} 条高置信度可优先处理，${RECOMMEND_ITEMS.filter(r => r.suggestedPage === '智能尽调').length} 条已具备进入尽调条件。`}
+              message={`今日新增 ${activeRecommendItems.length} 条推荐，其中 ${activeRecommendItems.filter(r => r.level === '优先推荐').length} 条高置信度可优先处理，${activeRecommendItems.filter(r => r.suggestedPage === '智能尽调').length} 条已具备进入尽调条件。`}
               tone="info"
               action={
                 <div className="flex items-center gap-1.5">
                   <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1"><RefreshCw size={9} />刷新</Button>
-                  <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1" onClick={() => navigate('smart-due-diligence')}><FileSearch size={9} />进入尽调</Button>
+                  <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1" onClick={() => { selectSample('sample-hengyuan'); navigate('smart-due-diligence', 'material'); }}><FileSearch size={9} />进入尽调</Button>
                 </div>
               }
             />
@@ -582,11 +889,11 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
                 <div className="px-3 py-2.5 border-b border-[#F1F5F9] bg-[#F8FAFC]">
                   <span className="text-[11px] font-semibold text-[#0F172A]">推荐流</span>
-                  <span className="text-[9px] text-[#94A3B8] ml-2">{RECOMMEND_ITEMS.length} 家企业</span>
+                  <span className="text-[9px] text-[#94A3B8] ml-2">{activeRecommendItems.length} 家企业</span>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {levels.map(level => {
-                    const items = RECOMMEND_ITEMS.filter(r => r.level === level);
+                    const items = activeRecommendItems.filter(r => r.level === level);
                     if (items.length === 0) return null;
                     const ls = RECOMMEND_LEVEL_STYLE[level];
                     return (
@@ -597,8 +904,23 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                           <span className="text-[9px] text-[#94A3B8]">{items.length}</span>
                         </div>
                         {items.map(item => {
-                          const sample = SAMPLES.find(s => s.id === item.sampleId)!;
+                          // 优先匹配已有样本，否则用CSV数据构造显示
+                          const sample = SAMPLES.find(s => s.id === item.sampleId);
+                          const csvIdx = item.sampleId.startsWith('csv-') ? parseInt(item.sampleId.replace('csv-', '')) : -1;
+                          const csvEntry = csvIdx >= 0 ? csvCompanies[csvIdx] : undefined;
+                          const displayName = sample?.shortName ?? (csvEntry?.name.slice(0, 8) ?? item.sampleId);
+                          const displayRole = sample?.roleInChain ?? '产业链企业';
+                          const displayChain = sample?.chainName ?? (csvEntry ? '导入名单' : '新能源电池产业链');
+                          const displayConfidence = sample?.agentHints.confidence ??
+                            (item.level === '优先推荐' ? 87 : item.level === '建议关注' ? 65 : 42);
+                          const loanPath = sample?.loanPath ?? 'credit_flow';
                           const isActive = selectedRecommend === item.sampleId;
+                          // loanPath 标签样式
+                          const loanPathTag = loanPath === 'hybrid'
+                            ? { label: '混合贷 ★', cls: 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' }
+                            : loanPath === 'collateral'
+                            ? { label: '抵押贷', cls: 'bg-[#F0FDF4] text-[#047857] border-[#A7F3D0]' }
+                            : null;
                           return (
                             <div
                               key={item.sampleId}
@@ -609,10 +931,15 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                               )}
                             >
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-[12px] font-semibold text-[#0F172A] truncate">{sample.shortName}</span>
-                                <Badge className={cn('text-[8px] border', ls.bg, ls.text, ls.border)}>{level}</Badge>
+                                <span className="text-[12px] font-semibold text-[#0F172A] truncate">{displayName}</span>
+                                <div className="flex items-center gap-1">
+                                  {loanPathTag && (
+                                    <span className={cn('text-[8px] px-1.5 py-0.5 rounded border font-medium', loanPathTag.cls)}>{loanPathTag.label}</span>
+                                  )}
+                                  <Badge className={cn('text-[8px] border', ls.bg, ls.text, ls.border)}>{level}</Badge>
+                                </div>
                               </div>
-                              <div className="text-[9px] text-[#64748B] mb-1.5">{sample.roleInChain} · {sample.chainName}</div>
+                              <div className="text-[9px] text-[#64748B] mb-1.5">{displayRole} · {displayChain}</div>
                               <div className="flex items-center gap-2 flex-wrap mb-1.5">
                                 {item.hitRules.slice(0, 2).map(r => (
                                   <span key={r} className={cn(
@@ -625,9 +952,9 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                                 <div className="flex items-center gap-1">
                                   <span className="text-[9px] text-[#94A3B8]">置信度</span>
                                   <div className="w-12 h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-                                    <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${sample.agentHints.confidence}%` }} />
+                                    <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${displayConfidence}%` }} />
                                   </div>
-                                  <span className="text-[9px] font-medium text-[#0F172A]">{sample.agentHints.confidence}%</span>
+                                  <span className="text-[9px] font-medium text-[#0F172A]">{displayConfidence}%</span>
                                 </div>
                                 <span className="text-[8px] text-[#CBD5E1]">{item.recommendTime.split(' ')[1]}</span>
                               </div>
@@ -642,17 +969,15 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
 
               {/* CENTER: Current recommendation detail */}
               <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden flex flex-col">
-                {currentSample && currentItem ? (
+                {currentSampleForFeed && currentItem ? (
                   <>
                     <div className="px-4 py-3 border-b border-[#F1F5F9] bg-[#F8FAFC]">
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] font-semibold text-[#0F172A]">当前推荐详情</span>
                         <div className="flex items-center gap-1.5">
-                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'feed')}><Filter size={9} />条件筛选</Button>
-                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'list')}><Layers size={9} />加入候选池</Button>
-                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={9} />进入尽调</Button>
                           <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'graph')}><Network size={9} />关系图谱</Button>
                           <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'linked')}><Link2 size={9} />公私联动</Button>
+                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'list')}><Layers size={9} />候选资产</Button>
                         </div>
                       </div>
                     </div>
@@ -660,27 +985,38 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                       {/* Entity info */}
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[15px] font-bold text-[#0F172A]">{currentSample.companyName}</span>
+                          <span className="text-[15px] font-bold text-[#0F172A]">{currentSampleForFeed.companyName}</span>
                           <Badge className={cn('text-[9px] border', RECOMMEND_LEVEL_STYLE[currentItem.level].bg, RECOMMEND_LEVEL_STYLE[currentItem.level].text, RECOMMEND_LEVEL_STYLE[currentItem.level].border)}>{currentItem.level}</Badge>
                         </div>
                         <div className="flex items-center gap-3 text-[10px] text-[#64748B]">
-                          <span>{currentSample.roleInChain}</span>
+                          <span>{currentSampleForFeed.roleInChain}</span>
                           <span className="text-[#CBD5E1]">·</span>
-                          <span>{currentSample.chainName}</span>
+                          <span>{currentSampleForFeed.chainName}</span>
                           <span className="text-[#CBD5E1]">·</span>
-                          <span>年销售 {currentSample.annualSales}</span>
+                          <span>年销售 {currentSampleForFeed.annualSales}</span>
                           <span className="text-[#CBD5E1]">·</span>
-                          <span>{currentSample.productType}</span>
+                          <span>{currentSampleForFeed.productType}</span>
                         </div>
                       </div>
 
                       {/* Identification judgment */}
                       <div className="rounded-lg border border-[#E2E8F0] p-3 space-y-2">
-                        <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><Brain size={12} className="text-[#7C3AED]" />识别判断</div>
+                        <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                          <Brain size={12} className="text-[#7C3AED]" />识别判断
+                          {currentSampleForFeed.loanPath !== 'credit_flow' && (
+                            <span className={cn('ml-auto text-[9px] px-2 py-0.5 rounded border font-medium',
+                              currentSampleForFeed.loanPath === 'hybrid'
+                                ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]'
+                                : 'bg-[#F0FDF4] text-[#047857] border-[#A7F3D0]'
+                            )}>
+                              {currentSampleForFeed.loanPath === 'hybrid' ? '混合贷款路径 ★ 最高优先级' : '抵押贷款路径'}
+                            </span>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-[#64748B]">识别结论</span>
-                            <span className="font-medium text-[#0F172A]">{currentSample.segmentTag}</span>
+                            <span className="font-medium text-[#0F172A]">{currentSampleForFeed.segmentTag}</span>
                           </div>
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-[#64748B]">推荐场景</span>
@@ -688,26 +1024,72 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                           </div>
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-[#64748B]">推荐额度区间</span>
-                            <span className="font-medium text-[#0F172A]">{currentSample.recommendedLimit}</span>
+                            <span className="font-medium text-[#0F172A]">{currentSampleForFeed.recommendedLimit}</span>
                           </div>
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-[#64748B]">当前阶段建议</span>
-                            <span className="font-medium text-[#2563EB]">{currentSample.nextAction}</span>
+                            <span className="font-medium text-[#2563EB]">{currentSampleForFeed.nextAction}</span>
                           </div>
                         </div>
-                        <p className="text-[10px] text-[#475569] bg-[#F8FAFC] rounded px-2.5 py-1.5 mt-1 leading-4">{currentSample.aiSummary}</p>
+                        <p className="text-[10px] text-[#475569] bg-[#F8FAFC] rounded px-2.5 py-1.5 mt-1 leading-4">{currentSampleForFeed.aiSummary}</p>
                       </div>
+
+                      {/* 抵押物核验模块（仅抵押/混合路径显示） */}
+                      {currentSampleForFeed.collateral && (
+                        <div className={cn('rounded-lg border p-3 space-y-2',
+                          currentSampleForFeed.loanPath === 'hybrid' ? 'border-[#FED7AA] bg-[#FFFBEB]' : 'border-[#A7F3D0] bg-[#F0FDF4]'
+                        )}>
+                          <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                            <Shield size={12} className={currentSampleForFeed.loanPath === 'hybrid' ? 'text-[#C2410C]' : 'text-[#047857]'} />
+                            抵押物核验
+                            <span className="text-[9px] font-normal text-[#64748B] ml-1">
+                              {currentSampleForFeed.collateral.registered ? '✓ 已完成抵押登记' : '⚠ 待办理抵押登记'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-[#64748B]">抵押物类型</span>
+                              <span className="font-semibold text-[#0F172A]">{currentSampleForFeed.collateral.type}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-[#64748B]">评估价值</span>
+                              <span className="font-semibold text-[#047857]">{currentSampleForFeed.collateral.estimatedValue}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-[#64748B]">抵押率 LTV</span>
+                              <span className="font-medium text-[#0F172A]">{Math.round(currentSampleForFeed.collateral.ltvRatio * 100)}%</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-[#64748B]">产权状态</span>
+                              <span className={cn('font-medium',
+                                currentSampleForFeed.collateral.propertyRisk === '清晰' ? 'text-[#047857]' :
+                                currentSampleForFeed.collateral.propertyRisk === '待核验' ? 'text-[#C2410C]' : 'text-[#DC2626]'
+                              )}>{currentSampleForFeed.collateral.propertyRisk}</span>
+                            </div>
+                          </div>
+                          <p className="text-[9px] text-[#64748B] bg-white/60 rounded px-2 py-1 leading-4">{currentSampleForFeed.collateral.note}</p>
+                          {!currentSampleForFeed.collateral.registered && (
+                            <div className="text-[9px] text-[#C2410C] bg-white/60 rounded px-2 py-1">放款前需完成抵押登记手续</div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Evidence summary */}
                       <div className="rounded-lg border border-[#E2E8F0] p-3 space-y-2">
-                        <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><Shield size={12} className="text-[#047857]" />证据摘要</div>
+                        <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                          <Shield size={12} className="text-[#047857]" />
+                          {currentSampleForFeed.loanPath === 'credit_flow' ? '证据摘要' : '三流数据参考'}
+                          {currentSampleForFeed.loanPath !== 'credit_flow' && (
+                            <span className="text-[9px] font-normal text-[#94A3B8] ml-1">（抵押路径下仅作参考）</span>
+                          )}
+                        </div>
                         <div className="grid grid-cols-3 gap-3">
                           {[
-                            { label: '关系强度', value: currentSample.relationStrength, color: currentSample.relationStrength >= 70 ? '#047857' : '#C2410C' },
-                            { label: '真实性评分', value: currentSample.authenticityScore, color: currentSample.authenticityScore >= 70 ? '#047857' : '#C2410C' },
-                            { label: '证据覆盖度', value: currentSample.evidenceCoverage, color: currentSample.evidenceCoverage >= 70 ? '#047857' : '#C2410C' },
+                            { label: '关系强度', value: currentSampleForFeed.relationStrength, color: currentSampleForFeed.relationStrength >= 70 ? '#047857' : '#C2410C' },
+                            { label: '真实性评分', value: currentSampleForFeed.authenticityScore, color: currentSampleForFeed.authenticityScore >= 70 ? '#047857' : '#C2410C' },
+                            { label: '证据覆盖度', value: currentSampleForFeed.evidenceCoverage, color: currentSampleForFeed.evidenceCoverage >= 70 ? '#047857' : '#C2410C' },
                           ].map(m => (
-                            <div key={m.label} className="text-center p-2 rounded-lg bg-[#F8FAFC]">
+                            <div key={m.label} className={cn('text-center p-2 rounded-lg bg-[#F8FAFC]', currentSampleForFeed.loanPath !== 'credit_flow' && 'opacity-50')}>
                               <div className="text-[9px] text-[#64748B] mb-1">{m.label}</div>
                               <div className="text-[18px] font-bold" style={{ color: m.color }}>{m.value}%</div>
                               <div className="w-full h-1.5 rounded-full bg-[#E2E8F0] mt-1 overflow-hidden">
@@ -722,7 +1104,9 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                             {currentItem.hitRules.map(r => (
                               <span key={r} className={cn(
                                 'text-[9px] px-2 py-0.5 rounded border',
-                                r.includes('通过') || r.includes('较高') ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' : 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
+                                r.includes('通过') || r.includes('较高') || r.includes('清晰') || r.includes('抵押') || r.includes('LTV')
+                                  ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]'
+                                  : 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
                               )}>{r}</span>
                             ))}
                           </div>
@@ -730,12 +1114,12 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                         <div className="space-y-1 mt-2">
                           <div className="text-[10px] text-[#64748B]">关键证据</div>
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">90天订单</span><span className="text-[#0F172A] font-medium">{currentSample.orderCount90d} 笔 / {currentSample.orderAmount90d}</span></div>
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">连续开票</span><span className="text-[#0F172A] font-medium">{currentSample.invoiceContinuityMonths} 个月</span></div>
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">客户集中度</span><span className="text-[#0F172A] font-medium">{currentSample.maxCustomerConcentration}</span></div>
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">回款周期</span><span className="text-[#0F172A] font-medium">{currentSample.avgReceivableCycle}</span></div>
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">物流状态</span><span className="text-[#0F172A] font-medium">{currentSample.logisticsStatus}</span></div>
-                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">账户流水</span><span className="text-[#0F172A] font-medium">{currentSample.accountFlowStatus}</span></div>
+                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">90天订单</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.orderCount90d} 笔 / {currentSampleForFeed.orderAmount90d}</span></div>
+                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">连续开票</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.invoiceContinuityMonths} 个月</span></div>
+                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">客户集中度</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.maxCustomerConcentration}</span></div>
+                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">回款周期</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.avgReceivableCycle}</span></div>
+                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">物流状态</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.logisticsStatus}</span></div>
+                            <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">账户流水</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.accountFlowStatus}</span></div>
                           </div>
                         </div>
                       </div>
@@ -745,19 +1129,19 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                         <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><AlertTriangle size={12} className="text-[#F59E0B]" />风险提示</div>
                         <div className="flex items-center gap-2">
                           <Badge className={cn('text-[9px] border',
-                            currentSample.riskStatus === '正常' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' :
-                            currentSample.riskStatus === '观察' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' :
+                            currentSampleForFeed.riskStatus === '正常' ? 'bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]' :
+                            currentSampleForFeed.riskStatus === '观察' ? 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]' :
                             'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',
-                          )}>{currentSample.riskStatus}</Badge>
-                          {currentSample.riskFlags.length > 0 && currentSample.riskFlags.map(f => (
+                          )}>{currentSampleForFeed.riskStatus}</Badge>
+                          {currentSampleForFeed.riskFlags.length > 0 && currentSampleForFeed.riskFlags.map(f => (
                             <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5]">{f}</span>
                           ))}
                         </div>
                         <p className="text-[10px] text-[#475569] leading-4">{currentItem.riskHint}</p>
-                        {currentSample.riskFlags.length > 0 && (
+                        {currentSampleForFeed.riskFlags.length > 0 && (
                           <div className="text-[9px] text-[#C2410C] bg-[#FFF7ED] rounded px-2 py-1">建议先查看关系图谱，再决定是否进入尽调</div>
                         )}
-                        {currentSample.riskFlags.length === 0 && (
+                        {currentSampleForFeed.riskFlags.length === 0 && (
                           <div className="text-[9px] text-[#047857] bg-[#ECFDF3] rounded px-2 py-1">该企业已具备进入尽调条件</div>
                         )}
                       </div>
@@ -766,12 +1150,155 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                       <div className="rounded-lg border border-[#E2E8F0] p-3">
                         <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5 mb-2"><Clock size={12} className="text-[#64748B]" />流转信息</div>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-                          <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">当前状态</span><span className="text-[#0F172A] font-medium">{currentSample.approvalStatus}</span></div>
+                          <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">当前状态</span><span className="text-[#0F172A] font-medium">{currentSampleForFeed.approvalStatus}</span></div>
                           <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">下一步动作</span><span className="text-[#2563EB] font-medium">{currentItem.nextAction}</span></div>
                           <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">推荐时间</span><span className="text-[#0F172A]">{currentItem.recommendTime}</span></div>
                           <div className="text-[10px] flex justify-between"><span className="text-[#64748B]">来源批次</span><span className="text-[#0F172A]">{currentItem.sourceBatch}</span></div>
                         </div>
                       </div>
+
+                      {/* AI 下一步引导卡 — 根据企业状态动态生成 */}
+                      {(() => {
+                        const lp = currentSampleForFeed.loanPath;
+                        const hasRisk = currentSampleForFeed.riskFlags.length > 0;
+                        const isHighConf = currentSampleForFeed.agentHints.confidence >= 80 && currentSampleForFeed.evidenceCoverage >= 80;
+                        const isObserve = currentSampleForFeed.segmentTag === 'C待观察';
+                        const isDanger = currentSampleForFeed.segmentTag === 'D风险经营中';
+
+                        let guidance: {
+                          tone: 'green' | 'blue' | 'amber' | 'red';
+                          icon: React.ReactNode;
+                          title: string;
+                          reason: string;
+                          primaryLabel: string;
+                          primaryAction: () => void;
+                          secondaryLabel?: string;
+                          secondaryAction?: () => void;
+                        };
+
+                        // 混合路径：最高优先级，直接进入审批
+                        if (lp === 'hybrid') {
+                          guidance = {
+                            tone: 'green',
+                            icon: <CheckCircle2 size={13} className="text-[#047857]" />,
+                            title: '混合路径 — 最高优先级，建议直接进入审批',
+                            reason: `三流数据良好（置信度 ${currentSampleForFeed.agentHints.confidence}%）+ ${currentSampleForFeed.collateral?.type}抵押（评估 ${currentSampleForFeed.collateral?.estimatedValue}，LTV ${Math.round((currentSampleForFeed.collateral?.ltvRatio ?? 0) * 100)}%），双重保障，授信依据最充分。`,
+                            primaryLabel: '直接进入尽调 →',
+                            primaryAction: () => { selectSample(currentSampleForFeed.id); navigate('smart-due-diligence', 'material'); },
+                            secondaryLabel: '核验抵押物产权',
+                            secondaryAction: () => navigate('smart-identify', 'graph'),
+                          };
+                        // 抵押路径：产权清晰直接进尽调，待核验先核产权
+                        } else if (lp === 'collateral') {
+                          const propRisk = currentSampleForFeed.collateral?.propertyRisk;
+                          if (propRisk === '清晰') {
+                            guidance = {
+                              tone: 'green',
+                              icon: <CheckCircle2 size={13} className="text-[#047857]" />,
+                              title: '抵押路径 — 产权清晰，可直接进入尽调',
+                              reason: `${currentSampleForFeed.collateral?.type}评估价值 ${currentSampleForFeed.collateral?.estimatedValue}，LTV ${Math.round((currentSampleForFeed.collateral?.ltvRatio ?? 0) * 100)}%，产权清晰无瑕疵。三流数据不足不影响授信判断，建议直接进入尽调。`,
+                              primaryLabel: '进入尽调 →',
+                              primaryAction: () => { selectSample(currentSampleForFeed.id); navigate('smart-due-diligence', 'material'); },
+                              secondaryLabel: currentSampleForFeed.collateral?.registered ? undefined : '办理抵押登记',
+                              secondaryAction: () => {},
+                            };
+                          } else {
+                            guidance = {
+                              tone: 'amber',
+                              icon: <AlertTriangle size={13} className="text-[#F59E0B]" />,
+                              title: '抵押路径 — 需先核验产权',
+                              reason: `${currentSampleForFeed.collateral?.type}评估价值 ${currentSampleForFeed.collateral?.estimatedValue}，但产权状态"${propRisk}"，建议先完成产权核验和抵押登记，再进入尽调。`,
+                              primaryLabel: '核验产权',
+                              primaryAction: () => navigate('smart-identify', 'graph'),
+                              secondaryLabel: '仍然进入尽调',
+                              secondaryAction: () => { selectSample(currentSampleForFeed.id); navigate('smart-due-diligence', 'material'); },
+                            };
+                          }
+                        } else if (isDanger) {
+                          guidance = {
+                            tone: 'red',
+                            icon: <AlertCircle size={13} className="text-[#DC2626]" />,
+                            title: '当前不建议直接推进',
+                            reason: `存在 ${currentSampleForFeed.riskFlags.length} 项风险标识（${currentSampleForFeed.riskFlags.join('、')}），建议先核验关系图谱，确认风险来源后再决定是否继续。`,
+                            primaryLabel: '查看关系图谱',
+                            primaryAction: () => navigate('smart-identify', 'graph'),
+                            secondaryLabel: '标记观察',
+                            secondaryAction: () => {},
+                          };
+                        } else if (hasRisk) {
+                          guidance = {
+                            tone: 'amber',
+                            icon: <AlertTriangle size={13} className="text-[#F59E0B]" />,
+                            title: '建议先核验关系图谱',
+                            reason: `检测到风险标识：${currentSampleForFeed.riskFlags.join('、')}。建议在进入尽调前，先通过关系图谱确认链路真实性，再决定是否推进。`,
+                            primaryLabel: '查看关系图谱',
+                            primaryAction: () => navigate('smart-identify', 'graph'),
+                            secondaryLabel: '仍然进入尽调',
+                            secondaryAction: () => { selectSample(currentSampleForFeed.id); navigate('smart-due-diligence', 'material'); },
+                          };
+                        } else if (isObserve) {
+                          guidance = {
+                            tone: 'amber',
+                            icon: <Eye size={13} className="text-[#F59E0B]" />,
+                            title: '建议进入观察池',
+                            reason: `当前证据覆盖度 ${currentSampleForFeed.evidenceCoverage}%，置信度 ${currentSampleForFeed.agentHints.confidence}%，尚不具备直接进入尽调的条件。建议加入候选池持续观察。`,
+                            primaryLabel: '加入候选池',
+                            primaryAction: () => navigate('smart-identify', 'list'),
+                            secondaryLabel: '查看公私联动',
+                            secondaryAction: () => navigate('smart-identify', 'linked'),
+                          };
+                        } else if (isHighConf) {
+                          guidance = {
+                            tone: 'green',
+                            icon: <CheckCircle2 size={13} className="text-[#047857]" />,
+                            title: '可直接进入尽调',
+                            reason: `三流匹配度高，置信度 ${currentSampleForFeed.agentHints.confidence}%，证据覆盖度 ${currentSampleForFeed.evidenceCoverage}%，无风险标识。建议直接触发一键尽调。`,
+                            primaryLabel: '一键尽调 →',
+                            primaryAction: () => { selectSample(currentSampleForFeed.id); navigate('smart-due-diligence', 'material'); },
+                            secondaryLabel: '先看关系图谱',
+                            secondaryAction: () => navigate('smart-identify', 'graph'),
+                          };
+                        } else {
+                          guidance = {
+                            tone: 'blue',
+                            icon: <Sparkles size={13} className="text-[#2563EB]" />,
+                            title: '建议补强后进入尽调',
+                            reason: `置信度 ${currentSampleForFeed.agentHints.confidence}%，证据覆盖度 ${currentSampleForFeed.evidenceCoverage}%，基础条件具备但仍有提升空间。可先核验公私联动，再进入尽调。`,
+                            primaryLabel: '核验公私联动',
+                            primaryAction: () => navigate('smart-identify', 'linked'),
+                            secondaryLabel: '直接进入尽调',
+                            secondaryAction: () => { selectSample(currentSampleForFeed.id); navigate('smart-due-diligence', 'material'); },
+                          };
+                        }
+
+                        const toneStyle = {
+                          green: { border: 'border-[#A7F3D0]', bg: 'bg-[#ECFDF5]', primary: 'bg-[#047857] hover:bg-[#065F46] text-white', secondary: 'border-[#A7F3D0] text-[#047857]' },
+                          blue:  { border: 'border-[#BFDBFE]', bg: 'bg-[#EFF6FF]', primary: 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white', secondary: 'border-[#BFDBFE] text-[#2563EB]' },
+                          amber: { border: 'border-[#FED7AA]', bg: 'bg-[#FFFBEB]', primary: 'bg-[#F59E0B] hover:bg-[#D97706] text-white', secondary: 'border-[#FED7AA] text-[#C2410C]' },
+                          red:   { border: 'border-[#FCA5A5]', bg: 'bg-[#FEF2F2]', primary: 'bg-[#DC2626] hover:bg-[#B91C1C] text-white', secondary: 'border-[#FCA5A5] text-[#DC2626]' },
+                        }[guidance.tone];
+
+                        return (
+                          <div className={cn('rounded-lg border p-3 space-y-2.5', toneStyle.border, toneStyle.bg)}>
+                            <div className="flex items-center gap-1.5">
+                              {guidance.icon}
+                              <span className="text-[11px] font-semibold text-[#0F172A]">AI 建议下一步</span>
+                              <span className="text-[10px] font-semibold text-[#0F172A]">— {guidance.title}</span>
+                            </div>
+                            <p className="text-[10px] text-[#475569] leading-4">{guidance.reason}</p>
+                            <div className="flex items-center gap-2 pt-0.5">
+                              <Button size="sm" className={cn('h-7 text-[10px] gap-1 flex-1', toneStyle.primary)} onClick={guidance.primaryAction}>
+                                {guidance.primaryLabel}
+                              </Button>
+                              {guidance.secondaryLabel && (
+                                <Button variant="outline" size="sm" className={cn('h-7 text-[10px] gap-1', toneStyle.secondary)} onClick={guidance.secondaryAction}>
+                                  {guidance.secondaryLabel}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </>
                 ) : (
@@ -951,7 +1478,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                         <div className="flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-[#0F172A]">当前候选详情</span>
                           <div className="flex items-center gap-1.5">
-                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#A7F3D0] text-[#047857]" onClick={() => navigate('smart-due-diligence', 'dd-report')}><FileSearch size={9} />进入尽调</Button>
+                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#A7F3D0] text-[#047857]" onClick={() => { selectSample(currentCandSample!.id); navigate('smart-due-diligence', 'dd-report'); }}><FileSearch size={9} />进入尽调</Button>
                             <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#BFDBFE] text-[#2563EB]" onClick={() => navigate('smart-approval', 'product-match')}><ArrowRight size={9} />审批前队列</Button>
                             <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'graph')}><Network size={9} />关系图谱</Button>
                             <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]" onClick={() => navigate('smart-identify', 'linked')}><Link2 size={9} />公私联动</Button>
@@ -1091,6 +1618,7 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
         const DIR_MAP = { upstream: { fill: '#FFF7ED', stroke: '#F97316', text: '#9A3412', label: '上游供应商', edgeLabel: '采购付款' }, downstream: { fill: '#EFF6FF', stroke: '#3B82F6', text: '#1E40AF', label: '下游采购方', edgeLabel: '销售收款' }, service: { fill: '#ECFDF5', stroke: '#10B981', text: '#065F46', label: '服务/物流', edgeLabel: '服务支付' } } as const;
         const STATUS_COLOR = { stable: '#10B981', attention: '#F59E0B', new: '#3B82F6' } as const;
         const strColor = (v: number) => v >= 80 ? '#10B981' : v >= 60 ? '#3B82F6' : v >= 40 ? '#F59E0B' : '#EF4444';
+        const currentSample = SAMPLES.find(s => s.id === selectedRecommend) ?? SAMPLES[0];
 
         const selNode = selectedGraphNode ? GRAPH_NODES.find(n => n.id === selectedGraphNode) ?? null : null;
         const coreCount = GRAPH_NODES.length + 2;
@@ -1141,11 +1669,132 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
               </div>
             </div>
 
-            {/* AI Insight */}
-            <AiInsight
-              message={`关系图谱已加载核心节点，点击节点查看链路详情与识别结论。`}
-              tone="info"
-            />
+            {/* 图谱顶部横幅 — 根据当前企业数据覆盖情况动态显示 */}
+            {(() => {
+              const ec = currentSample.evidenceCoverage;
+              const rs = currentSample.relationStrength;
+              const hasRisk = currentSample.riskFlags.length > 0;
+
+              // 数据丰富：三流验证通过
+              if (ec >= 85 && rs >= 80 && !hasRisk) return (
+                <div className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#7C3AED] flex items-center justify-center shrink-0">
+                        <CheckCircle2 size={13} className="text-white" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold text-[#1E3A5F]">
+                          {currentSample.shortName} · 经营真实性验证通过
+                          <span className="ml-2 text-[10px] font-normal text-[#64748B]">数据来源：行内对公流水 + 供应链平台回传</span>
+                        </div>
+                        <div className="text-[10px] text-[#475569] mt-0.5">
+                          三流匹配率98.6% · 全年无断单无断票 · 回款路径清晰 · 可直接进入尽调
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      {[
+                        { label: '三流匹配率', value: '98.6%', color: '#047857' },
+                        { label: '六维综合评分', value: '95分', color: '#2563EB' },
+                        { label: '平均回款周期', value: '34天', color: '#7C3AED' },
+                        { label: '连续开票', value: '12个月', color: '#047857' },
+                      ].map(m => (
+                        <div key={m.label} className="text-center">
+                          <div className="text-[9px] text-[#64748B]">{m.label}</div>
+                          <div className="text-[13px] font-bold" style={{ color: m.color }}>{m.value}</div>
+                        </div>
+                      ))}
+                      <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white ml-2"
+                        onClick={() => navigate('smart-due-diligence', 'material')}>
+                        <FileSearch size={10} />一键尽调 →
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+
+              // 数据一般：有部分数据，需补充
+              if (ec >= 60 && ec < 85) {
+                const missing: string[] = [];
+                if (currentSample.invoiceContinuityMonths < 10) missing.push('发票连续性不足');
+                if (currentSample.orderCount90d < 15) missing.push('订单频次偏低');
+                if (hasRisk) missing.push(...currentSample.riskFlags);
+                return (
+                  <div className="rounded-lg border border-[#FED7AA] bg-[#FFFBEB] px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-lg bg-[#F59E0B] flex items-center justify-center shrink-0">
+                          <AlertTriangle size={13} className="text-white" />
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold text-[#92400E]">
+                            {currentSample.shortName} · 部分数据已接入，建议补充后进入尽调
+                          </div>
+                          <div className="text-[10px] text-[#78350F] mt-0.5">
+                            当前缺口：{missing.join(' · ')} · 补充后置信度预计提升至85%以上
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-center">
+                          <div className="text-[9px] text-[#92400E]">证据覆盖度</div>
+                          <div className="text-[13px] font-bold text-[#F59E0B]">{ec}%</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-[9px] text-[#92400E]">关系强度</div>
+                          <div className="text-[13px] font-bold text-[#F59E0B]">{rs}%</div>
+                        </div>
+                        <div className="flex flex-col gap-1 ml-2">
+                          <Button size="sm" className="h-6 text-[9px] gap-1 bg-[#F59E0B] hover:bg-[#D97706] text-white"
+                            onClick={() => navigate('smart-due-diligence', 'material')}>
+                            <FileSearch size={9} />仍然进入尽调
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#FED7AA] text-[#C2410C]"
+                            onClick={() => navigate('smart-identify', 'linked')}>
+                            <Link2 size={9} />先补充公私联动
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // 数据稀少：仅有工商信息或链路线索
+              return (
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-[#94A3B8] flex items-center justify-center shrink-0">
+                        <AlertCircle size={13} className="text-white" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold text-[#334155]">
+                          {currentSample.shortName} · 当前数据不足以支撑尽调
+                        </div>
+                        <div className="text-[10px] text-[#64748B] mt-0.5">
+                          仅有工商信息，缺少对公流水和发票数据 · 建议通过以下方式补充后再评估
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {[
+                        { label: '① 外勤录入材料', action: () => navigate('smart-due-diligence', 'material') },
+                        { label: '② 客户授权上传', action: () => navigate('smart-due-diligence', 'material') },
+                        { label: '③ 接入税票平台', action: () => navigate('strategy-config', 'data-source') },
+                      ].map(opt => (
+                        <Button key={opt.label} variant="outline" size="sm"
+                          className="h-7 text-[9px] border-[#E2E8F0] text-[#475569]"
+                          onClick={opt.action}>
+                          {opt.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 {/* Three-column: graph canvas + detail + AI */}
             <div className="grid grid-cols-1 gap-3" style={{ minHeight: 460 }}>
 
@@ -1286,41 +1935,135 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
                       </div>
                     </div>
 
-                    {/* Evidence panel */}
+                    {/* Evidence panel — 三流证据锚点 */}
                     <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 space-y-2.5">
-                      <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5"><FileCheck size={12} className="text-[#047857]" />关系证据</div>
-                      <p className="text-[10px] text-[#475569] leading-4">系统已基于对公流水、回款记录与物流履约信息，初步建立该节点与主链路的关联判断。</p>
-                      <div className="space-y-1.5">
-                        {EVIDENCE_TYPES.map(et => {
-                          const matched = selNode.evidenceSources.some(es => et.includes(es.replace('增值税', '')) || es.includes(et.slice(0, 2)));
-                          return (
-                            <div key={et} className={cn('flex items-center justify-between px-2.5 py-1.5 rounded text-[10px] border', matched ? 'bg-[#ECFDF3] border-[#A7F3D0]' : 'bg-[#F8FAFC] border-[#E2E8F0]')}>
-                              <span className={matched ? 'text-[#047857] font-medium' : 'text-[#94A3B8]'}>{et}</span>
-                              <div className="flex items-center gap-2">
-                                {matched ? (
-                                  <>
-                                    <span className="text-[9px] text-[#047857]">已匹配</span>
-                                    <Badge className="text-[7px] bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]">连续</Badge>
-                                  </>
-                                ) : (
-                                  <span className="text-[9px] text-[#94A3B8]">未覆盖</span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div className="text-[11px] font-semibold text-[#0F172A] flex items-center gap-1.5">
+                        <FileCheck size={12} className="text-[#047857]" />
+                        {selNode.id === 'gn-1' ? '衡远包装 ↔ 盛拓模组 · 交易链路证据' : '关系证据'}
                       </div>
-                      {selNode.evidenceSources.length < 3 && (
-                        <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
-                          <AlertCircle size={10} className="shrink-0 mt-0.5" />
-                          当前部分关系证据仍待人工确认，建议结合公私联动结果进一步核验。
+
+                      {selNode.id === 'gn-1' ? (
+                        /* 盛拓模组节点：展示衡远包装与盛拓模组之间的交易证据 */
+                        <div className="space-y-2.5">
+                          {/* 三流匹配总览 */}
+                          <div className="rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] px-3 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 size={14} className="text-[#047857]" />
+                              <span className="text-[11px] font-semibold text-[#047857]">三流匹配率 98.6%</span>
+                            </div>
+                            <span className="text-[10px] text-[#047857]">衡远包装→盛拓模组 · 48笔 · 全年无断单</span>
+                          </div>
+
+                          {/* 三流指标条 */}
+                          <div className="space-y-1.5">
+                            {[
+                              { label: '订单 → 发票', value: 100, desc: '48笔订单全部开票，100%对应' },
+                              { label: '订单 → 物流', value: 100, desc: '48笔订单全部有签收记录' },
+                              { label: '发票 → 回款', value: 98.6, desc: '年末大单跨年签收，属正常范围' },
+                            ].map(item => (
+                              <div key={item.label} className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className="text-[#475569] font-medium">{item.label}</span>
+                                  <span className="font-bold" style={{ color: item.value >= 99 ? '#047857' : '#F59E0B' }}>{item.value}%</span>
+                                </div>
+                                <div className="w-full h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
+                                  <div className="h-full rounded-full transition-all" style={{ width: `${item.value}%`, backgroundColor: item.value >= 99 ? '#10B981' : '#F59E0B' }} />
+                                </div>
+                                <div className="text-[9px] text-[#94A3B8]">{item.desc}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* 六维验证评分 */}
+                          <div className="rounded bg-[#F8FAFC] p-2 space-y-1.5">
+                            <div className="text-[10px] font-semibold text-[#0F172A]">六维验证 · 综合得分 95分</div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {[
+                                { dim: '连续性', score: 100 },
+                                { dim: '周期性', score: 95 },
+                                { dim: '对应性', score: 99 },
+                                { dim: '语义性', score: 98 },
+                                { dim: '集中度', score: 82 },
+                                { dim: '波动性', score: 94 },
+                              ].map(d => (
+                                <div key={d.dim} className="text-center">
+                                  <div className="text-[9px] text-[#64748B]">{d.dim}</div>
+                                  <div className="text-[13px] font-bold" style={{ color: d.score >= 90 ? '#047857' : d.score >= 80 ? '#F59E0B' : '#DC2626' }}>{d.score}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 关键锚点 */}
+                          <div className="space-y-1.5">
+                            <div className="text-[10px] font-semibold text-[#0F172A]">关键证据锚点</div>
+                            {[
+                              { label: 'Q4大额回款', date: '2025-12-27', amount: '119.7万', source: '交通银行流水', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+                              { label: 'Q3旺季收款', date: '2025-08-09', amount: '11.8万', source: '农业银行流水', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+                              { label: '工资发放验证', date: '2025-12-15', amount: '29.1万', source: '交通银行流水', color: '#7C3AED', bg: '#F3E8FF', border: '#DDD6FE' },
+                            ].map(anchor => (
+                              <div key={anchor.label} className="flex items-center justify-between px-2.5 py-1.5 rounded border text-[10px]"
+                                style={{ backgroundColor: anchor.bg, borderColor: anchor.border }}>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: anchor.color }} />
+                                  <span className="font-medium" style={{ color: anchor.color }}>{anchor.label}</span>
+                                  <span className="text-[#94A3B8]">{anchor.date}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold" style={{ color: anchor.color }}>{anchor.amount}</span>
+                                  <span className="text-[9px] text-[#94A3B8]">{anchor.source}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* 买方集中度 */}
+                          <div className="rounded bg-[#FFF7ED] border border-[#FED7AA] px-2.5 py-2 space-y-1">
+                            <div className="text-[10px] font-semibold text-[#C2410C]">⚠ 集中度提示</div>
+                            <div className="text-[9px] text-[#C2410C]">盛拓模组占全年订单 72.1%，超过55%阈值。属产业链结构性绑定，建议授信时加入回款归集条件。</div>
+                          </div>
+
+                          <Button size="sm" className="h-7 text-[10px] gap-1 bg-[#047857] hover:bg-[#065F46] text-white w-full"
+                            onClick={() => navigate('smart-due-diligence', 'material')}>
+                            <FileSearch size={10} />衡远包装链路验证通过 · 一键尽调 →
+                          </Button>
+                          <p className="text-[9px] text-[#94A3B8] leading-4 pt-0.5">
+                            以上证据来源：行内对公流水 + 供应链平台回传。若贵行尚未接入供应链平台，可通过外勤录入或客户上传材料替代，系统将自动适配可用的验证路径。
+                          </p>
+                        </div>
+                      ) : (
+                        /* 其他节点：原有证据面板 */
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-[#475569] leading-4">系统已基于对公流水、回款记录与物流履约信息，初步建立该节点与主链路的关联判断。</p>
+                          <div className="space-y-1.5">
+                            {EVIDENCE_TYPES.map(et => {
+                              const matched = selNode.evidenceSources.some(es => et.includes(es.replace('增值税', '')) || es.includes(et.slice(0, 2)));
+                              return (
+                                <div key={et} className={cn('flex items-center justify-between px-2.5 py-1.5 rounded text-[10px] border', matched ? 'bg-[#ECFDF3] border-[#A7F3D0]' : 'bg-[#F8FAFC] border-[#E2E8F0]')}>
+                                  <span className={matched ? 'text-[#047857] font-medium' : 'text-[#94A3B8]'}>{et}</span>
+                                  <div className="flex items-center gap-2">
+                                    {matched ? (
+                                      <><span className="text-[9px] text-[#047857]">已匹配</span><Badge className="text-[7px] bg-[#ECFDF3] text-[#047857] border-[#A7F3D0]">连续</Badge></>
+                                    ) : (
+                                      <span className="text-[9px] text-[#94A3B8]">未覆盖</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {selNode.evidenceSources.length < 3 && (
+                            <div className="rounded bg-[#FFF7ED] px-2 py-1.5 text-[9px] text-[#C2410C] flex items-start gap-1">
+                              <AlertCircle size={10} className="shrink-0 mt-0.5" />
+                              当前部分关系证据仍待人工确认，建议结合公私联动结果进一步核验。
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />查看原始证据</Button>
+                            <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Filter size={9} />切换证据类型</Button>
+                          </div>
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5">
-                        <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Eye size={9} />查看原始证据</Button>
-                        <Button variant="outline" size="sm" className="h-6 text-[9px] gap-1 border-[#E2E8F0] text-[#475569]"><Filter size={9} />切换证据类型</Button>
-                        <Button variant="ghost" size="sm" className="h-6 text-[9px] text-[#64748B]">查看更多</Button>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -1699,26 +2442,36 @@ export default function SmartIdentifyScene({ activeModule, onModuleChange }: Pro
   };
 
   return (
-    <SceneLayout
-      title={scene.title}
-      modules={scene.modules}
-      activeModule={activeModule}
-      onModuleChange={onModuleChange}
-      contextSlot={
-        <FlowProgress
-          steps={IDENTIFY_FLOW_STEPS}
-          currentStepId={getFlowStepId(activeModule)}
-          onStepClick={(id) => {
-            // Map flow step back to actual module
-            if (id === 'file-import') onModuleChange('file-import');
-            else if (id === 'feed') onModuleChange('feed');
-            else if (id === 'graph') onModuleChange('graph');
-          }}
-        />
-      }
-      aiPanel={renderAiPanel()}
-    >
-      {renderContent()}
-    </SceneLayout>
+    <div className="relative">
+      {/* CSV 解析成功 Toast */}
+      {csvToast?.visible && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-lg bg-[#0F172A] text-white px-4 py-2.5 shadow-xl text-[12px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <span className="text-[#4ADE80]">✓</span>
+          <span>成功解析 <strong>{csvToast.count}</strong> 条企业数据，推荐列表已更新</span>
+          <button onClick={() => setCsvToast(null)} className="ml-2 text-[#94A3B8] hover:text-white">✕</button>
+        </div>
+      )}
+      <SceneLayout
+        title={scene.title}
+        modules={scene.modules}
+        activeModule={activeModule}
+        onModuleChange={onModuleChange}
+        contextSlot={
+          <FlowProgress
+            steps={IDENTIFY_FLOW_STEPS}
+            currentStepId={getFlowStepId(activeModule)}
+            onStepClick={(id) => {
+              // Map flow step back to actual module
+              if (id === 'file-import') onModuleChange('file-import');
+              else if (id === 'feed') onModuleChange('feed');
+              else if (id === 'graph') onModuleChange('graph');
+            }}
+          />
+        }
+        aiPanel={renderAiPanel()}
+      >
+        {renderContent()}
+      </SceneLayout>
+    </div>
   );
 }

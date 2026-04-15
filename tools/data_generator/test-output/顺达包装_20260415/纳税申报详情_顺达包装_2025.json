@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "常州顺达包装材料有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 2478356,
+    "totalVAT": 74351,
+    "totalSurcharge": 8922,
+    "incomeTaxEstimate": 61959
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 169536,
+      "vat": 5086,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 234330,
+      "vat": 7030,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 298762,
+      "vat": 8963,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 154896,
+      "vat": 4647,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 332897,
+      "vat": 9987,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 382438,
+      "vat": 11473,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 308731,
+      "vat": 9262,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 314976,
+      "vat": 9449,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 281791,
+      "vat": 8454,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

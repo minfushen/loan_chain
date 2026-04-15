@@ -391,6 +391,26 @@ export type SampleStage = 'identified' | 'pre_credit' | 'manual_review' | 'appro
 export type ApprovalStatus = '待预授信' | '待补审' | '已批准' | '已降额' | '恢复中';
 export type SampleRiskStatus = '正常' | '观察' | '中度预警' | '恢复中';
 
+// 贷款路径：信用流贷 / 抵押贷款 / 混合（最高优先级）
+export type LoanPath = 'credit_flow' | 'collateral' | 'hybrid';
+
+// 抵押物类型优先级：房产 > 设备 > 存货
+export type CollateralType = '房产' | '设备' | '存货' | '应收账款质押';
+
+export interface CollateralInfo {
+  type: CollateralType;
+  /** 评估价值，如 "280万" */
+  estimatedValue: string;
+  /** 抵押率，如 0.7 表示 70% */
+  ltvRatio: number;
+  /** 产权风险 */
+  propertyRisk: '清晰' | '待核验' | '有瑕疵';
+  /** 是否已完成抵押登记 */
+  registered: boolean;
+  /** 备注 */
+  note: string;
+}
+
 export interface ChainLoanSample {
   id: string;
   companyName: string;
@@ -431,6 +451,9 @@ export interface ChainLoanSample {
     suggestedAgent: string;
     suggestedAction: string;
   };
+  // 贷款路径与抵押物信息（可选，信用流贷时为 undefined）
+  loanPath: LoanPath;
+  collateral?: CollateralInfo;
 }
 
 export const SAMPLES: ChainLoanSample[] = [
@@ -466,6 +489,7 @@ export const SAMPLES: ChainLoanSample[] = [
     nextAction: '进入补审作业',
     uiState: { badgeTone: 'blue', priority: 'high', featured: true },
     agentHints: { confidence: 92, suggestedAgent: '预授信引擎', suggestedAction: '生成预授信方案' },
+    loanPath: 'credit_flow',
   },
   {
     id: 'sample-jiali',
@@ -499,6 +523,7 @@ export const SAMPLES: ChainLoanSample[] = [
     nextAction: '进入观察池',
     uiState: { badgeTone: 'slate', priority: 'low', featured: false },
     agentHints: { confidence: 48, suggestedAgent: '识别引擎', suggestedAction: '补充物流与回款数据后复评' },
+    loanPath: 'credit_flow',
   },
   {
     id: 'sample-chiyuan',
@@ -532,6 +557,7 @@ export const SAMPLES: ChainLoanSample[] = [
     nextAction: '进入产品匹配',
     uiState: { badgeTone: 'amber', priority: 'medium', featured: false },
     agentHints: { confidence: 76, suggestedAgent: '产品匹配引擎', suggestedAction: '匹配运费贷产品方案' },
+    loanPath: 'credit_flow',
   },
   {
     id: 'sample-ruixin',
@@ -565,6 +591,7 @@ export const SAMPLES: ChainLoanSample[] = [
     nextAction: '进入在营观察',
     uiState: { badgeTone: 'amber', priority: 'medium', featured: false },
     agentHints: { confidence: 82, suggestedAgent: '规则引擎', suggestedAction: '执行集中度规则收缩' },
+    loanPath: 'credit_flow',
   },
   {
     id: 'sample-ruifeng',
@@ -598,6 +625,93 @@ export const SAMPLES: ChainLoanSample[] = [
     nextAction: '进入恢复作业',
     uiState: { badgeTone: 'red', priority: 'high', featured: true },
     agentHints: { confidence: 68, suggestedAgent: '预警引擎', suggestedAction: '启动额度收缩 + 恢复观察' },
+    loanPath: 'credit_flow',
+  },
+  // ── 抵押贷款样本：三流数据薄弱但有房产抵押，业务优先级高 ──
+  {
+    id: 'sample-mingde',
+    companyName: '南京明德机械制造有限公司',
+    shortName: '明德机械',
+    chainName: '工程机械配套产业链',
+    roleInChain: '零部件加工商',
+    segmentTag: 'A可授信',
+    stage: 'pre_credit',
+    productType: '抵押贷款',
+    annualSales: '310万',
+    recommendedLimit: '200万',
+    currentLimit: '0',
+    approvalStatus: '待预授信',
+    riskStatus: '正常',
+    relationStrength: 38,
+    authenticityScore: 44,
+    evidenceCoverage: 32,
+    mainChainPath: ['徐工集团', '明德机械'],
+    keyCounterparty: '徐工集团',
+    orderCount90d: 4,
+    orderAmount90d: '22万',
+    invoiceContinuityMonths: 3,
+    maxCustomerConcentration: '71%',
+    avgReceivableCycle: '62天',
+    logisticsStatus: '数据不完整',
+    accountFlowStatus: '流水较少，季节性波动',
+    riskFlags: ['三流数据不足'],
+    reviewReason: '经营数据薄弱，但持有厂房房产可作抵押，产权清晰，LTV 70%，业务优先级高',
+    aiSummary: '三流数据覆盖不足，但企业主名下厂房评估价值 280 万，产权清晰无查封，抵押率 70%，建议走抵押贷款路径直接进入审批。',
+    nextAction: '核验抵押物产权',
+    uiState: { badgeTone: 'green', priority: 'high', featured: true },
+    agentHints: { confidence: 88, suggestedAgent: '抵押评估引擎', suggestedAction: '发起抵押物产权核验' },
+    loanPath: 'collateral',
+    collateral: {
+      type: '房产',
+      estimatedValue: '280万',
+      ltvRatio: 0.70,
+      propertyRisk: '清晰',
+      registered: false,
+      note: '南京江宁区厂房，建筑面积 620㎡，无共有人，无查封记录，待办理抵押登记',
+    },
+  },
+  // ── 混合路径样本：既有三流数据又有设备抵押，最高优先级 ──
+  {
+    id: 'sample-haoyu',
+    companyName: '常熟浩宇精密零件有限公司',
+    shortName: '浩宇精密',
+    chainName: '新能源电池产业链',
+    roleInChain: '精密结构件供应商',
+    segmentTag: 'A可授信',
+    stage: 'pre_credit',
+    productType: '抵押+订单混合贷',
+    annualSales: '760万',
+    recommendedLimit: '300万',
+    currentLimit: '0',
+    approvalStatus: '待预授信',
+    riskStatus: '正常',
+    relationStrength: 78,
+    authenticityScore: 82,
+    evidenceCoverage: 75,
+    mainChainPath: ['宁川新能源', '盛拓模组科技', '浩宇精密'],
+    keyCounterparty: '盛拓模组科技',
+    orderCount90d: 16,
+    orderAmount90d: '134万',
+    invoiceContinuityMonths: 10,
+    maxCustomerConcentration: '55%',
+    avgReceivableCycle: '28天',
+    logisticsStatus: '签收稳定',
+    accountFlowStatus: '月均净流入 18.4万',
+    riskFlags: [],
+    reviewReason: '三流数据良好，同时持有数控设备可作抵押，双重保障，建议走混合路径最大化授信额度',
+    aiSummary: '经营数据扎实，三流匹配度高；同时持有数控加工设备评估价值 180 万，LTV 65%。混合路径可将授信额度提升至 300 万，建议优先推进。',
+    nextAction: '进入混合授信评估',
+    uiState: { badgeTone: 'blue', priority: 'high', featured: true },
+    agentHints: { confidence: 95, suggestedAgent: '混合授信引擎', suggestedAction: '生成混合授信方案' },
+    loanPath: 'hybrid',
+    collateral: {
+      type: '设备',
+      estimatedValue: '180万',
+      ltvRatio: 0.65,
+      propertyRisk: '清晰',
+      registered: true,
+      note: '5台数控加工中心，设备新旧程度良好，已完成动产抵押登记',
+    },
   },
 ];
 
@@ -793,3 +907,278 @@ export const CHAIN_LOAN_DEMO_ACTION_COPY = {
     secondary: '加入重点经营池',
   },
 } as const;
+
+// ── 智能体演示专用数据类型 ────────────────────────────────
+
+export type AgentTriggerReason =
+  | 'public_private_mixing'   // 公私混用
+  | 'cashflow_negative'       // 现金流为负
+  | 'concentration_high'      // 客户集中度超阈值
+  | 'low_confidence'          // 置信度不足
+  | 'missing_evidence';       // 证据缺失
+
+export type AgentRouteDecision = 'rule_engine_pass' | 'agent_required' | 'manual_required';
+export type AgentProgressStage = 'receive' | 'collect' | 'analyze' | 'conclude' | 'await_human';
+
+export interface AgentReasoningStep {
+  step: number;
+  label: string;
+  tool: string;
+  input: string;
+  output: string;
+  confidence?: number;
+  flagged?: boolean;
+}
+
+// 关键证据摘要条目（用于证据摘要区，不需要展开推理日志）
+export interface AgentEvidenceSummary {
+  icon: 'clock' | 'tag' | 'users' | 'trending' | 'shield' | 'check';
+  label: string;
+  value: string;
+  highlight?: boolean; // 是否为最关键证据
+}
+
+// 快捷问答预置条目
+export interface AgentQuickQA {
+  q: string;
+  a: string;
+}
+
+export interface AgentAnomalyCase {
+  id: string;
+  triggerReason: AgentTriggerReason;
+  ruleEngineVerdict: string;
+  ruleEngineAction: string;
+  // 规则无法直接决策的原因（中间冲突栏）
+  ruleGapReason: string;
+  agentVerdict: string;
+  agentAction: string;
+  evidenceKey: string;
+  confidenceBefore: number;
+  confidenceAfter: number;
+  // 当前进度阶段
+  currentStage: AgentProgressStage;
+  // 关键证据摘要（3-5条）
+  evidenceSummary: AgentEvidenceSummary[];
+  // 待确认事项
+  pendingConfirms: string[];
+  // 快捷问答
+  quickQA: AgentQuickQA[];
+  decisionAgentSteps: AgentReasoningStep[];
+  reviewAgentSteps: AgentReasoningStep[];
+  humanBoundary: 'auto' | 'agent_assist' | 'must_human';
+  finalRecommendation: string;
+  supplementRequired?: string;
+}
+
+export interface AgentDemoCase {
+  id: string;
+  companyName: string;
+  shortName: string;
+  legalPerson: string;
+  chainName: string;
+  roleInChain: string;
+  scene: string;
+  requestedLimit: string;
+  annualSales: string;
+  routeDecision: AgentRouteDecision;
+  routeReason: string;
+  // 任务状态标签
+  taskStatus: '智能体初判已完成，等待人工确认' | '智能体分析中' | '等待补充材料' | '已完成';
+  // 风险等级
+  riskLevel: 'low' | 'medium' | 'high';
+  anomaly: AgentAnomalyCase;
+}
+
+// ── 三个智能体作业详情用例 ────────────────────────────────────
+
+export const AGENT_DEMO_CASES: AgentDemoCase[] = [
+  {
+    id: 'agent-case-chenjihua',
+    companyName: '苏州晨辉五金配件有限公司',
+    shortName: '晨辉五金',
+    legalPerson: '陈建华',
+    chainName: '工程机械配套产业链',
+    roleInChain: '二级零部件供应商',
+    scene: '订单微贷',
+    requestedLimit: '120万',
+    annualSales: '580万',
+    routeDecision: 'agent_required',
+    routeReason: '命中"公私混用"异常规则，置信度 83%，低于 85% 阈值，规则引擎无法判断意图，路由至决策智能体',
+    taskStatus: '智能体初判已完成，等待人工确认',
+    riskLevel: 'medium',
+    anomaly: {
+      id: 'anomaly-public-private',
+      triggerReason: 'public_private_mixing',
+      ruleEngineVerdict: '法人个人账户与对公账户存在高频资金往来，触发公私混用预警',
+      ruleEngineAction: '案件标红，建议拒绝授信，移交人工复核',
+      ruleGapReason: '规则仅能识别往来频次异常，无法判断业务背景真实性。需结合行业结算习惯、交易对手身份、回款周期做补充分析，因此转由智能体执行关联判断。',
+      agentVerdict: '44次转账集中于月末回款周期，对手方固定为3家产业链上游企业，摘要关键词78%为货款/结算，72%概率为正常资金归集行为',
+      agentAction: '建议通过，补充法人身份证明及资金归集说明函后可直接进入预审',
+      evidenceKey: '陈建华个人账户近6个月44次转账，累计205万，转入对公账户，时间集中月末25-31日',
+      confidenceBefore: 83,
+      confidenceAfter: 91,
+      currentStage: 'await_human',
+      evidenceSummary: [
+        { icon: 'clock', label: '转账时间分布', value: '44笔集中于每月25-31日（回款周期末）', highlight: true },
+        { icon: 'tag', label: '摘要关键词', value: '78%含"货款/结算/回款"，消费类流出占比 < 5%' },
+        { icon: 'users', label: '固定对手方', value: '盛拓模组、宁川新能源关联方等3家产业链上游企业' },
+        { icon: 'trending', label: '三流匹配率', value: '87%，回款路径清晰可追溯' },
+        { icon: 'shield', label: '历史案例匹配', value: '与资金归集型案例匹配度 68%，非挪用特征明显' },
+      ],
+      pendingConfirms: [
+        '是否采纳智能体建议（倾向：正常资金归集）',
+        '是否要求客户补充法人资金归集说明函',
+        '是否需要转人工复核异常转账样本',
+      ],
+      quickQA: [
+        { q: '为什么建议通过？', a: '44笔转账全部集中于月末回款窗口，与产业链结算周期高度吻合；78%摘要含货款/结算关键词；对手方固定为3家上游企业，无消费类异常流出。综合判断为正常归集行为。' },
+        { q: '规则和智能体冲突在哪里？', a: '规则引擎只看到"个人账户→对公账户高频转账"这一表象，触发公私混用预警。智能体补充了时间分布、摘要语义、对手方身份三个维度，发现这是产业链回款归集的典型模式，而非挪用。' },
+        { q: '置信度为何从83%升到91%？', a: '审核智能体完成多假设验证后，挪用假设支持度仅18%（无消费类流出），归集假设支持度72%。补充说明函可进一步消除剩余不确定性，因此置信度提升至91%。' },
+        { q: '是否仍存在潜在风险？', a: '仍存在约9%的不确定性，主要来自：说明函尚未提交、部分转账摘要信息不完整。建议在补充说明函后再最终确认，或降额至80万作为保守方案。' },
+      ],
+      decisionAgentSteps: [
+        { step: 1, label: '任务分解', tool: 'task_decompose', input: '公私混用预警 + 授信申请材料', output: '识别3个子任务：转账意图分析、对手方核验、时间模式识别' },
+        { step: 2, label: '主体核验', tool: 'entity_verify', input: '陈建华身份证 + 企业工商信息', output: '法人与企业主体一致，无异常关联企业', confidence: 96 },
+        { step: 3, label: '财务分析', tool: 'financial_analyze', input: '近6个月对公账户流水', output: '月均净流入 14.2万，回款规律，无持续净流出', confidence: 88 },
+        { step: 4, label: '风险扫描', tool: 'risk_scan', input: '44次个人→对公转账记录', output: '⚠ 触发公私混用规则，但转账摘要78%含"货款/结算"关键词', confidence: 72, flagged: true },
+        { step: 5, label: '三流验证', tool: 'triple_flow_verify', input: '订单+发票+回款路径', output: '三流匹配率 87%，回款路径：盛拓模组→陈建华个人账户→晨辉五金对公账户', confidence: 87 },
+        { step: 6, label: '反思输出', tool: 'reflect_output', input: '以上5步推理结果', output: '综合判断：资金归集概率72%，建议补充说明函，置信度83%，触发审核智能体', confidence: 83 },
+      ],
+      reviewAgentSteps: [
+        { step: 1, label: '异常分类', tool: 'anomaly_classify', input: '公私混用预警 + 决策智能体推理结果', output: '分类：资金归集型（非挪用型），历史案例匹配度 68%' },
+        { step: 2, label: '多假设验证', tool: 'hypothesis_verify', input: '转账时间分布 + 对手方信息', output: '假设A（归集）：月末集中，对手方固定，支持度 72%\n假设B（挪用）：无消费类流出，支持度 18%' },
+        { step: 3, label: '补充核实请求', tool: 'supplement_request', input: '假设A需要的证明材料', output: '请求：法人身份证明 + 资金归集说明函（1份）' },
+        { step: 4, label: '双路径输出', tool: 'dual_path_output', input: '验证结论', output: '路径A（推荐）：补充说明函后通过，置信度提升至91%\n路径B（备选）：降额至80万，无需补充材料' },
+      ],
+      humanBoundary: 'agent_assist',
+      finalRecommendation: '补充法人资金归集说明函（1份）后，建议按原额度 120 万通过预审',
+      supplementRequired: '法人陈建华签字的资金归集说明函（说明个人账户代收货款后转入对公账户的原因）',
+    },
+  },
+  {
+    id: 'agent-case-zhangweimin',
+    companyName: '无锡鑫达电子元器件有限公司',
+    shortName: '鑫达电子',
+    legalPerson: '张伟民',
+    chainName: '消费电子产业链',
+    roleInChain: '三级电子元器件供应商',
+    scene: '税票贷',
+    requestedLimit: '80万',
+    annualSales: '420万',
+    routeDecision: 'agent_required',
+    routeReason: '命中"现金流恶化"规则，Q3净流出 -10,809元，置信度 81%，低于 85% 阈值，路由至决策智能体',
+    taskStatus: '智能体初判已完成，等待人工确认',
+    riskLevel: 'low',
+    anomaly: {
+      id: 'anomaly-cashflow-negative',
+      triggerReason: 'cashflow_negative',
+      ruleEngineVerdict: '2025Q3净现金流为负（-10,809元），触发现金流恶化规则',
+      ruleEngineAction: '评级降为C类，建议降额50%至40万，附加月度监控条件',
+      ruleGapReason: '规则仅对单季度净流出做绝对值判断，无法区分"季末集中缴税"与"经营持续恶化"。需结合纳税周期、流出对手方、跨季度趋势做综合判断。',
+      agentVerdict: 'Q3负值由季末集中缴税（增值税季报8,640元）+ 电费托收（2,169元）构成，Q1/Q2/Q4均为正流入，季节性特征显著，非经营恶化',
+      agentAction: '维持原评级B类，建议按原额度80万通过，附加季度现金流监控条件',
+      evidenceKey: '2025年9月22日大额流出：增值税季报缴纳8,640元 + 电费托收2,169元，合计10,809元',
+      confidenceBefore: 81,
+      confidenceAfter: 93,
+      currentStage: 'await_human',
+      evidenceSummary: [
+        { icon: 'clock', label: '流出时间戳', value: '9月22日单日集中流出，与增值税季报截止日完全吻合', highlight: true },
+        { icon: 'tag', label: '流出科目', value: '税务局8,640元（增值税季报）+ 供电局2,169元（电费托收）' },
+        { icon: 'trending', label: '跨季度对比', value: 'Q1 +18,420 / Q2 +22,180 / Q3 -10,809 / Q4 +19,650，季节性规律明显' },
+        { icon: 'check', label: '三流匹配率', value: '91%，Q3开票金额正常，订单无断单' },
+        { icon: 'shield', label: '历史案例匹配', value: '季节性税务型案例匹配度 84%，经营恶化假设支持度仅 7%' },
+      ],
+      pendingConfirms: [
+        '是否采纳智能体建议（维持B类评级，按80万通过）',
+        '是否附加季度现金流自动监控条件',
+        '是否需要客户提供纳税证明作为备案材料',
+      ],
+      quickQA: [
+        { q: '为什么Q3为负不代表经营恶化？', a: 'Q3流出的10,809元完全由两笔固定支出构成：增值税季报8,640元（税务局）+ 电费托收2,169元（供电局）。这两笔均为周期性必要支出，与经营状况无关。Q1/Q2/Q4均为正流入，趋势健康。' },
+        { q: '规则为何会误判？', a: '规则引擎对单季度净流出做绝对值判断，无法区分"季末集中缴税"与"持续经营恶化"。这是规则的覆盖盲区——它看到了负数，但不知道负数的原因。' },
+        { q: '置信度为何从81%升到93%？', a: '审核智能体完成时间戳分析后，流出时间与增值税季报截止日完全吻合，对手方为税务局和供电局（非经营性流出），经营恶化假设支持度仅7%。证据链完整，置信度大幅提升。' },
+        { q: '附加监控条件的意义是什么？', a: '虽然本次判断为季节性波动，但季度现金流监控可以在未来真正出现经营恶化时及时预警，是一个低成本的风险对冲手段，不影响本次授信决策。' },
+      ],
+      decisionAgentSteps: [
+        { step: 1, label: '任务分解', tool: 'task_decompose', input: 'Q3现金流异常 + 税票贷申请', output: '识别2个子任务：流出原因分析、季节性模式识别' },
+        { step: 2, label: '主体核验', tool: 'entity_verify', input: '企业工商信息 + 纳税记录', output: '增值税一般纳税人，季报缴税周期：1/4/7/10月，与异常时间吻合', confidence: 97 },
+        { step: 3, label: '财务分析', tool: 'financial_analyze', input: '近4个季度现金流数据', output: 'Q1: +18,420元 / Q2: +22,180元 / Q3: -10,809元 / Q4: +19,650元，季节性波动明显', confidence: 94 },
+        { step: 4, label: '风险扫描', tool: 'risk_scan', input: 'Q3流出明细', output: '⚠ 9月22日两笔流出：税务局8,640元（增值税季报）+ 供电局2,169元（电费托收）', confidence: 96, flagged: true },
+        { step: 5, label: '三流验证', tool: 'triple_flow_verify', input: '发票+订单+流水', output: '三流匹配率 91%，Q3开票金额正常，订单无断单，仅现金流受税款影响', confidence: 91 },
+        { step: 6, label: '反思输出', tool: 'reflect_output', input: '以上5步推理结果', output: '季末缴税导致短期负值，非经营恶化，置信度提升至93%，建议维持原评级', confidence: 93 },
+      ],
+      reviewAgentSteps: [
+        { step: 1, label: '异常分类', tool: 'anomaly_classify', input: '现金流负值 + 决策智能体推理', output: '分类：季节性税务型（非经营恶化型），历史案例匹配度 84%' },
+        { step: 2, label: '多假设验证', tool: 'hypothesis_verify', input: '流出时间 + 对手方 + 金额', output: '假设A（季末缴税）：时间/对手方/金额三项完全吻合，支持度 93%\n假设B（经营恶化）：Q1-Q4趋势不支持，支持度 7%' },
+        { step: 3, label: '补充核实请求', tool: 'supplement_request', input: '验证结论', output: '无需补充材料，现有证据已充分支撑结论' },
+        { step: 4, label: '双路径输出', tool: 'dual_path_output', input: '验证结论', output: '路径A（推荐）：维持B类评级，按80万通过，附加季度监控\n路径B（保守）：通过但降额至60万' },
+      ],
+      humanBoundary: 'agent_assist',
+      finalRecommendation: '维持B类评级，建议按原额度 80 万通过，附加季度现金流自动监控条件',
+    },
+  },
+  {
+    id: 'agent-case-lixiufang',
+    companyName: '常熟鸿泰包装印刷有限公司',
+    shortName: '鸿泰包装',
+    legalPerson: '李秀芳',
+    chainName: '新能源电池产业链',
+    roleInChain: '三级包装印刷供应商',
+    scene: '订单微贷',
+    requestedLimit: '120万',
+    annualSales: '640万',
+    routeDecision: 'agent_required',
+    routeReason: '命中"客户集中度超阈值"规则（72% > 70%），置信度 86%，边界案例，路由至决策智能体',
+    taskStatus: '智能体初判已完成，等待人工确认',
+    riskLevel: 'medium',
+    anomaly: {
+      id: 'anomaly-concentration-high',
+      triggerReason: 'concentration_high',
+      ruleEngineVerdict: '最大客户集中度72%，超过阈值70%，触发集中度规则',
+      ruleEngineAction: '机械降额至96万（原120万×80%），附加集中度监控',
+      ruleGapReason: '规则对集中度做绝对值判断，无法区分"主动集中风险"与"产业链结构性绑定"。需结合链主关系、合同稳定性、回款规律做综合判断。',
+      agentVerdict: '72%集中度来自盛拓模组（宁川新能源二级供应商），属产业链结构性绑定，近12个月回款周期标准差仅3.2天，链主更换供应商成本高，绑定关系稳定',
+      agentAction: '维持120万，附加回款归集条件（回款须进入本行对公账户）',
+      evidenceKey: '盛拓模组为宁川新能源指定供应商，鸿泰包装为其唯一包装材料供应商，合同期至2027年',
+      confidenceBefore: 86,
+      confidenceAfter: 92,
+      currentStage: 'await_human',
+      evidenceSummary: [
+        { icon: 'users', label: '链主绑定关系', value: '鸿泰包装为盛拓模组唯一指定包装供应商，合同期至2027年', highlight: true },
+        { icon: 'clock', label: '回款稳定性', value: '近12个月回款周期标准差仅3.2天，高度稳定' },
+        { icon: 'trending', label: '三流匹配率', value: '94%，12个月无断单，发票集中度与订单集中度一致' },
+        { icon: 'shield', label: '替代风险评估', value: '链主更换供应商成本高，产业链结构性绑定，非主动集中' },
+        { icon: 'check', label: '历史案例匹配', value: '产业链结构性集中案例匹配度 76%，风险性集中假设支持度 12%' },
+      ],
+      pendingConfirms: [
+        '是否采纳智能体建议（维持120万，不降额）',
+        '是否附加回款须进入本行对公账户条件',
+        '是否要求补充盛拓模组供货合同复印件',
+      ],
+      quickQA: [
+        { q: '集中度72%为何不降额？', a: '72%集中度来自产业链结构性绑定，而非主动集中风险。鸿泰包装是盛拓模组的唯一指定供应商（合同至2027年），链主更换供应商的成本极高。这与"客户流失导致集中"的风险场景本质不同。' },
+        { q: '规则为何会机械降额？', a: '规则引擎只看集中度数值（72% > 70%），无法判断集中的原因是"产业链绑定"还是"客户过度依赖"。这是规则的覆盖盲区——它看到了超阈值，但不知道背后的产业链结构。' },
+        { q: '回款稳定性如何支撑判断？', a: '近12个月回款周期标准差仅3.2天，说明盛拓模组的付款行为极度规律。这是链主绑定关系稳定的最直接证据——如果关系不稳定，回款周期会有明显波动。' },
+        { q: '附加回款归集条件的意义？', a: '要求回款进入本行对公账户，可以实时监控回款是否正常到账，一旦盛拓模组出现付款异常可立即预警。这是在维持额度的同时，对集中度风险的有效对冲。' },
+      ],
+      decisionAgentSteps: [
+        { step: 1, label: '任务分解', tool: 'task_decompose', input: '集中度超阈值预警 + 订单微贷申请', output: '识别3个子任务：集中度成因分析、链主绑定稳定性评估、替代风险评估' },
+        { step: 2, label: '主体核验', tool: 'entity_verify', input: '企业工商 + 合同信息', output: '与盛拓模组签订长期供货合同（2024-2027），唯一指定供应商条款', confidence: 95 },
+        { step: 3, label: '财务分析', tool: 'financial_analyze', input: '近12个月回款数据', output: '月均回款 53.3万，回款周期 28±3.2天，标准差极低，回款高度稳定', confidence: 93 },
+        { step: 4, label: '风险扫描', tool: 'risk_scan', input: '客户集中度结构', output: '⚠ 集中度72%超阈值，但盛拓模组为宁川新能源产业链核心节点，替换成本高', confidence: 88, flagged: true },
+        { step: 5, label: '三流验证', tool: 'triple_flow_verify', input: '订单+发票+回款', output: '三流匹配率 94%，订单连续12个月无断单，发票集中度与订单集中度一致', confidence: 94 },
+        { step: 6, label: '反思输出', tool: 'reflect_output', input: '以上5步推理结果', output: '产业链结构性集中，非主动集中风险，建议维持120万，置信度92%', confidence: 92 },
+      ],
+      reviewAgentSteps: [
+        { step: 1, label: '异常分类', tool: 'anomaly_classify', input: '集中度超阈值 + 决策智能体推理', output: '分类：产业链结构性集中（非风险性集中），历史案例匹配度 76%' },
+        { step: 2, label: '多假设验证', tool: 'hypothesis_verify', input: '合同结构 + 回款稳定性 + 替代风险', output: '假设A（结构性绑定）：合同/回款/产业链三项支持，支持度 88%\n假设B（风险性集中）：无替代客户开发迹象，支持度 12%' },
+        { step: 3, label: '补充核实请求', tool: 'supplement_request', input: '验证结论', output: '建议补充：盛拓模组供货合同复印件（确认唯一供应商条款）' },
+        { step: 4, label: '双路径输出', tool: 'dual_path_output', input: '验证结论', output: '路径A（推荐）：维持120万，附加回款归集条件\n路径B（保守）：降额至108万（90%），无需补充材料' },
+      ],
+      humanBoundary: 'agent_assist',
+      finalRecommendation: '维持原额度 120 万，附加回款须进入本行对公账户条件，建议补充供货合同复印件',
+      supplementRequired: '盛拓模组与鸿泰包装供货合同复印件（确认唯一供应商条款及合同期限）',
+    },
+  },
+];

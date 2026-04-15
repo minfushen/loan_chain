@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "常州鑫达精密机械有限公司",
+    "year": 2025,
+    "taxType": "一般纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 20734821,
+    "totalVAT": 622045,
+    "totalSurcharge": 74645,
+    "incomeTaxEstimate": 518371
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 1243897,
+      "vat": 37317,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 1264608,
+      "vat": 37938,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 1378318,
+      "vat": 41350,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 1864927,
+      "vat": 55948,
+      "status": "正常"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 1845228,
+      "vat": 55357,
+      "status": "正常"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 1852293,
+      "vat": 55569,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 1782559,
+      "vat": 53477,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 2029241,
+      "vat": 60877,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 1858754,
+      "vat": 55763,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 2031358,
+      "vat": 60941,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 1763888,
+      "vat": 52917,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 1819750,
+      "vat": 54592,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

@@ -1,0 +1,65 @@
+# #7 绿能新材 — 成立时间短（观察池）
+company_name: "溧阳绿能新材料有限公司"
+short_name: "绿能新材"
+credit_code: "91320400MA1XXXXX07"
+legal_person: "赵国强"
+industry: "新材料"
+chain_name: "新能源电池产业链"
+role_in_chain: "三级新材料供应商"
+region: "江苏溧阳"
+established_date: "2023-03-18"
+registered_capital: 200
+employee_count: 12
+company_type: "有限责任公司"
+business_scope: "新能源材料的研发与销售；生物降解材料、环保包装材料"
+vat_type: "小规模纳税人"
+
+counterparties:
+  - name: "衡远包装材料有限公司"
+    code: "B-HY"
+    weight: 0.45
+    is_main_chain: true
+  - name: "锐信新材料有限公司"
+    code: "B-RX"
+    weight: 0.30
+    is_main_chain: false
+  - name: "其他客户"
+    code: "B-OTHER"
+    weight: 0.25
+    is_main_chain: false
+
+products:
+  - name: "生物降解包装膜"
+    spec: "标准型"
+    unit_price_min: 30.0
+    unit_price_max: 55.0
+  - name: "环保缓冲材料"
+    spec: "通用型"
+    unit_price_min: 22.0
+    unit_price_max: 40.0
+
+annual_sales: 480.0
+order_count_12m: 56
+receivable_cycle_base: 38
+receivable_cycle_jitter: 6
+
+logistics_carrier: "驰远物流"
+logistics_region: "江苏常州"
+ship_days_after_order: 5
+logistics_transit_days: 2
+
+bank_accounts:
+  - bank_name: "农业银行"
+    account_masked: "6228****7781"
+    weight: 1.0
+
+anomalies:
+  - type: "short_history"
+    severity: 0.6
+    month_range: [1, 12]
+
+year: 2025
+seed: 107
+prefix: "LN"
+main_chain_path: ["宁川新能源", "盛拓模组科技", "衡远包装", "绿能新材"]
+key_counterparty: "衡远包装材料有限公司"

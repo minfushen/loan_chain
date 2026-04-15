@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "company": "常州华宇塑料制品有限公司",
+    "year": 2025,
+    "taxType": "小规模纳税人"
+  },
+  "annual": {
+    "totalTaxableIncome": 2123148,
+    "totalVAT": 63694,
+    "totalSurcharge": 7643,
+    "incomeTaxEstimate": 53079
+  },
+  "monthlyDetails": [
+    {
+      "month": "2025-01",
+      "taxableIncome": 156646,
+      "vat": 4699,
+      "status": "正常"
+    },
+    {
+      "month": "2025-02",
+      "taxableIncome": 165529,
+      "vat": 4966,
+      "status": "正常"
+    },
+    {
+      "month": "2025-03",
+      "taxableIncome": 190159,
+      "vat": 5705,
+      "status": "正常"
+    },
+    {
+      "month": "2025-04",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-05",
+      "taxableIncome": 0,
+      "vat": 0,
+      "status": "零申报"
+    },
+    {
+      "month": "2025-06",
+      "taxableIncome": 74055,
+      "vat": 2222,
+      "status": "正常"
+    },
+    {
+      "month": "2025-07",
+      "taxableIncome": 204946,
+      "vat": 6148,
+      "status": "正常"
+    },
+    {
+      "month": "2025-08",
+      "taxableIncome": 256290,
+      "vat": 7689,
+      "status": "正常"
+    },
+    {
+      "month": "2025-09",
+      "taxableIncome": 323718,
+      "vat": 9712,
+      "status": "正常"
+    },
+    {
+      "month": "2025-10",
+      "taxableIncome": 193854,
+      "vat": 5816,
+      "status": "正常"
+    },
+    {
+      "month": "2025-11",
+      "taxableIncome": 277244,
+      "vat": 8317,
+      "status": "正常"
+    },
+    {
+      "month": "2025-12",
+      "taxableIncome": 280708,
+      "vat": 8421,
+      "status": "正常"
+    }
+  ],
+  "compliance": {
+    "filingCompliance": "按时申报",
+    "taxArrears": false,
+    "taxViolation": false
+  }
+}

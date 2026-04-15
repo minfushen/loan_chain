@@ -1,0 +1,101 @@
+{
+  "company_name": "南京明辉化工有限公司",
+  "short_name": "明辉化工",
+  "credit_code": "91320400MA1XXXXX10",
+  "legal_person": "黄志明",
+  "legal_person_id": "",
+  "industry": "化工原料",
+  "chain_name": "新能源电池产业链",
+  "role_in_chain": "二级化工原料供应商",
+  "region": "江苏南京",
+  "established_date": "2014-02-18",
+  "registered_capital": 1000.0,
+  "employee_count": 55,
+  "company_type": "有限责任公司",
+  "business_scope": "化工原料（不含危化品）的销售；锂电池电解液原料、溶剂材料",
+  "vat_type": "一般纳税人",
+  "counterparties": [
+    {
+      "name": "宁川新能源科技有限公司",
+      "code": "B-NC",
+      "weight": 0.4,
+      "is_main_chain": true
+    },
+    {
+      "name": "盛拓模组科技有限公司",
+      "code": "B-ST",
+      "weight": 0.3,
+      "is_main_chain": true
+    },
+    {
+      "name": "其他客户A",
+      "code": "B-OA",
+      "weight": 0.18,
+      "is_main_chain": false
+    },
+    {
+      "name": "其他客户B",
+      "code": "B-OB",
+      "weight": 0.12,
+      "is_main_chain": false
+    }
+  ],
+  "products": [
+    {
+      "name": "电解液溶剂",
+      "spec": "电池级DMC",
+      "unit_price_min": 160.0,
+      "unit_price_max": 240.0
+    },
+    {
+      "name": "碳酸酯类溶剂",
+      "spec": "工业级EC/EMC",
+      "unit_price_min": 120.0,
+      "unit_price_max": 200.0
+    },
+    {
+      "name": "功能添加剂",
+      "spec": "定制配方",
+      "unit_price_min": 250.0,
+      "unit_price_max": 400.0
+    }
+  ],
+  "annual_sales": 1420.0,
+  "order_count_12m": 104,
+  "avg_order_amount": 136538.46,
+  "receivable_cycle_base": 29,
+  "receivable_cycle_jitter": 4,
+  "logistics_carrier": "驰远物流",
+  "logistics_region": "江苏南京",
+  "ship_days_after_order": 3,
+  "logistics_transit_days": 2,
+  "bank_accounts": [
+    {
+      "bank_name": "工商银行",
+      "account_masked": "6222****6631",
+      "branch": "",
+      "weight": 0.45
+    },
+    {
+      "bank_name": "中国银行",
+      "account_masked": "6217****4472",
+      "branch": "",
+      "weight": 0.35
+    },
+    {
+      "bank_name": "建设银行",
+      "account_masked": "6227****8813",
+      "branch": "",
+      "weight": 0.2
+    }
+  ],
+  "anomalies": [],
+  "year": 2025,
+  "seed": 110,
+  "main_chain_path": [
+    "宁川新能源",
+    "明辉化工"
+  ],
+  "key_counterparty": "宁川新能源科技有限公司",
+  "prefix": "MH"
+}

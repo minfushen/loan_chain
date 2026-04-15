@@ -1,0 +1,73 @@
+# #14 东方配件 — 订单下滑预警场景
+company_name: "常州东方配件制造有限公司"
+short_name: "东方配件"
+credit_code: "91320400MA1XXXXX14"
+legal_person: "钱卫东"
+industry: "机械配件"
+chain_name: "新能源电池产业链"
+role_in_chain: "三级机械配件供应商"
+region: "江苏常州"
+established_date: "2017-05-12"
+registered_capital: 400
+employee_count: 24
+company_type: "有限责任公司"
+business_scope: "机械配件、金属结构件的加工与销售；五金冲压件"
+vat_type: "小规模纳税人"
+
+counterparties:
+  - name: "鑫达精密机械有限公司"
+    code: "B-XD"
+    weight: 0.52
+    is_main_chain: true
+  - name: "其他客户"
+    code: "B-OTHER"
+    weight: 0.48
+    is_main_chain: false
+
+products:
+  - name: "金属冲压件"
+    spec: "不锈钢定制"
+    unit_price_min: 25.0
+    unit_price_max: 55.0
+  - name: "五金连接件"
+    spec: "标准型"
+    unit_price_min: 15.0
+    unit_price_max: 35.0
+
+annual_sales: 680.0
+order_count_12m: 36
+receivable_cycle_base: 44
+receivable_cycle_jitter: 6
+
+logistics_carrier: "驰远物流"
+logistics_region: "江苏常州"
+ship_days_after_order: 5
+logistics_transit_days: 2
+
+bank_accounts:
+  - bank_name: "农业银行"
+    account_masked: "6228****2241"
+    weight: 0.60
+  - bank_name: "建设银行"
+    account_masked: "6227****5562"
+    weight: 0.40
+
+anomalies:
+  - type: "order_decline"
+    severity: 0.3
+    month_range: [8, 12]
+  - type: "extended_receivable"
+    severity: 0.4
+    month_range: [9, 12]
+  - type: "delayed_logistics"
+    severity: 0.3
+    month_range: [10, 12]
+  - type: "net_outflow"
+    severity: 0.5
+    month_range: [10, 12]
+
+year: 2025
+seed: 114
+prefix: "DF"
+main_chain_path: ["宁川新能源", "盛拓模组科技", "鑫达精密", "东方配件"]
+key_counterparty: "鑫达精密机械有限公司"
